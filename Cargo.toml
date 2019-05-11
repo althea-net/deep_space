@@ -5,3 +5,4 @@ authors = ["Michał Papierski <michal@papierski.net>"]
 edition = "2018"
 
 [dependencies]
+num256 = "0.2"
