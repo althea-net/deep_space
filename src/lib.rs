@@ -2,6 +2,7 @@ extern crate failure;
 extern crate num256;
 extern crate num_bigint;
 extern crate num_traits;
+extern crate secp256k1;
 extern crate sha2;
 
 pub mod address;

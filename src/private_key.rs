@@ -4,6 +4,8 @@ use crate::public_key::PublicKey;
 use failure::Error;
 use num_bigint::BigUint;
 use num_traits::Num;
+use secp256k1::{All, Secp256k1};
+use secp256k1::{Message, PublicKey as PublicKeyEC, SecretKey};
 use sha2::{Digest, Sha256};
 
 /// This structure represents a private key
@@ -34,7 +36,11 @@ impl PrivateKey {
     }
 
     fn to_public_key(&self) -> Result<PublicKey, Error> {
-        unimplemented!("to_public_key");
+        let secp256k1 = Secp256k1::new();
+        let sk = SecretKey::from_slice(&self.0)?;
+        let pkey = PublicKeyEC::from_secret_key(&secp256k1, &sk);
+        let compressed = pkey.serialize();
+        Ok(PublicKey::from_bytes(compressed))
     }
 }
 
@@ -54,6 +60,14 @@ fn test_secret() {
     let public_key = private_key
         .to_public_key()
         .expect("Unable to create public key");
+
+    assert_eq!(
+        public_key.as_slice(),
+        &vec![
+            2, 150, 81, 169, 170, 196, 194, 43, 39, 179, 1, 154, 238, 109, 247, 70, 38, 110, 26,
+            231, 70, 238, 121, 119, 42, 110, 94, 173, 25, 142, 189, 7, 195
+        ][..]
+    );
     let address = public_key.address().expect("Unable to create public key");
     // assert_eq!(address, "99BCC000F7810F8BBB2AF6F03AE37D135DC87852");
 
