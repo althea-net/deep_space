@@ -1,7 +1,14 @@
+extern crate failure;
 extern crate num256;
+extern crate num_bigint;
+extern crate num_traits;
+extern crate sha2;
 
+pub mod address;
 pub mod coin;
 pub mod msg;
+pub mod private_key;
+pub mod public_key;
 pub mod stdfee;
 pub mod stdsignmsg;
 
