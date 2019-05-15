@@ -68,8 +68,13 @@ fn test_secret() {
             231, 70, 238, 121, 119, 42, 110, 94, 173, 25, 142, 189, 7, 195
         ][..]
     );
-    let address = public_key.address().expect("Unable to create public key");
-    // assert_eq!(address, "99BCC000F7810F8BBB2AF6F03AE37D135DC87852");
+    let address = public_key
+        .to_address()
+        .expect("Unable to create public key");
+    assert_eq!(
+        address.to_string(),
+        "99BCC000F7810F8BBB2AF6F03AE37D135DC87852"
+    );
 
     // Address =
     // let public_key = private_key.to_public_key().expect("Unable to convert to a public key");
