@@ -2,18 +2,28 @@ use crate::address::Address;
 use bech32::{Bech32, ToBase32};
 use failure::Error;
 use ripemd160::{Digest as Ripemd160Digest, Ripemd160};
-use serde::{Serialize, Serializer};
+use serde::{ser::SerializeMap, Serialize, Serializer};
 use sha2::{Digest, Sha256};
 use std::fmt::{self, Debug};
 
 pub struct PublicKey([u8; 33]);
+
+impl Default for PublicKey {
+    fn default() -> Self {
+        Self([0u8; 33])
+    }
+}
 
 impl Serialize for PublicKey {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        serializer.serialize_str(&base64::encode(&self.0[..]))
+        // TODO: A proper enum would be easier to serialize
+        let mut map = serializer.serialize_map(Some(2))?;
+        map.serialize_entry("type", "tendermint/PubKeySecp256k1")?;
+        map.serialize_entry("value", &base64::encode(&self.0[..]))?;
+        map.end()
     }
 }
 
@@ -89,5 +99,16 @@ fn check_bech32() {
     assert_eq!(
         res,
         "cosmospub1addwnpepq2t9r2d2cnpzkfanqxdwum0hgcnxuxh8gmh8jae2de026xvwh5ruxuv5let"
+    );
+}
+
+#[test]
+fn serialize_secp256k1_pubkey() {
+    let public_key = PublicKey::default();
+    let serialized = serde_json::to_string(&public_key).unwrap();
+    let deserialized: serde_json::Value = serde_json::from_str(&serialized).unwrap();
+    assert_eq!(
+        deserialized,
+        json!({"type": "tendermint/PubKeySecp256k1", "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"})
     );
 }
