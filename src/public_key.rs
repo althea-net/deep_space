@@ -2,9 +2,26 @@ use crate::address::Address;
 use bech32::{Bech32, ToBase32};
 use failure::Error;
 use ripemd160::{Digest as Ripemd160Digest, Ripemd160};
+use serde::{Serialize, Serializer};
 use sha2::{Digest, Sha256};
+use std::fmt::{self, Debug};
 
 pub struct PublicKey([u8; 33]);
+
+impl Serialize for PublicKey {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&base64::encode(&self.0[..]))
+    }
+}
+
+impl Debug for PublicKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.into_iter().fmt(f)
+    }
+}
 
 impl PublicKey {
     pub fn from_bytes(bytes: [u8; 33]) -> Self {

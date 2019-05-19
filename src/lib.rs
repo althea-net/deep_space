@@ -6,13 +6,18 @@ extern crate num_bigint;
 extern crate num_traits;
 extern crate ripemd160;
 extern crate secp256k1;
+extern crate serde;
 extern crate sha2;
+#[macro_use]
+extern crate serde_derive;
+extern crate base64;
 
 pub mod address;
 pub mod coin;
 pub mod msg;
 pub mod private_key;
 pub mod public_key;
+pub mod signature;
 pub mod stdfee;
 pub mod stdsignmsg;
 
