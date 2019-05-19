@@ -62,7 +62,7 @@ fn test_secret() {
         .expect("Unable to create public key");
 
     assert_eq!(
-        public_key.as_slice(),
+        public_key.as_bytes(),
         &vec![
             2, 150, 81, 169, 170, 196, 194, 43, 39, 179, 1, 154, 238, 109, 247, 70, 38, 110, 26,
             231, 70, 238, 121, 119, 42, 110, 94, 173, 25, 142, 189, 7, 195
