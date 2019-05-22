@@ -1,9 +1,10 @@
-use stdfee::StdFee;
-use signature::Signature;
+use crate::signature::Signature;
+use crate::stdfee::StdFee;
 
-#[derive(Serialize)]
-struct StdTx {
+#[derive(Serialize, Default)]
+pub struct StdTx {
     msg: Vec<String>,
     fee: StdFee,
+    memo: String,
     signature: Signature,
 }
