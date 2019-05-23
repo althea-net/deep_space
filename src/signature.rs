@@ -1,7 +1,6 @@
 use crate::public_key::PublicKey;
 use num256::Uint256;
 
-
 #[derive(Serialize, Debug, Default)]
 pub struct Signature {
     signature: String,

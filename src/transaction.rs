@@ -1,15 +1,12 @@
 use crate::stdtx::StdTx;
 
 #[derive(Serialize)]
-#[serde(rename="tx")]
+#[serde(rename = "tx")]
 pub enum Transaction {
+    #[serde(rename = "block")]
     Block(StdTx),
+    #[serde(rename = "sync")]
     Sync(StdTx),
+    #[serde(rename = "async")]
     Async(StdTx),
-}
-
-#[test]
-fn serialize_transaction() {
-    let stdtx = StdTx::default();
-    let tx = Transaction::Block(stdtx);
 }
