@@ -1,8 +1,8 @@
 extern crate deep_space;
-use deep_space::client::encode;
+use deep_space::client::txs_encode;
 use futures::Future;
 
 fn main() -> Result<(), Box<std::error::Error>> {
-    encode().wait().unwrap();
+    txs_encode().wait().unwrap();
     Ok(())
 }

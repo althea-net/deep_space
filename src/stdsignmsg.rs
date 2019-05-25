@@ -1,3 +1,4 @@
+use crate::msg::Msg;
 use crate::stdfee::StdFee;
 
 pub struct StdSignMsg {
@@ -5,6 +6,6 @@ pub struct StdSignMsg {
     account_number: u64,
     sequence: u64,
     fee: StdFee,
-    // msgs: Vec<Msg>,
+    msgs: Vec<Msg>,
     memo: String,
 }
