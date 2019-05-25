@@ -2,6 +2,7 @@ use serde::Serialize;
 use serde::Serializer;
 
 /// Any arbitrary message
+#[derive(Debug)]
 pub struct Msg;
 
 impl Serialize for Msg {

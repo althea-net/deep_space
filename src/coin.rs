@@ -1,8 +1,8 @@
 use num256::Uint256;
 
 /// Coin holds some amount of one currency
-#[derive(Serialize, Default)]
+#[derive(Serialize, Debug, Default)]
 pub struct Coin {
-    denom: String,
-    amount: Uint256,
+    pub denom: String,
+    pub amount: Uint256,
 }

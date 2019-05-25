@@ -1,10 +1,11 @@
 use crate::public_key::PublicKey;
 use num256::Uint256;
 
+/// Signed data
 #[derive(Serialize, Debug, Default)]
 pub struct Signature {
-    signature: String,
-    pub_key: PublicKey,
-    account_number: String,
-    sequence: Uint256,
+    pub signature: String,
+    pub pub_key: PublicKey,
+    pub account_number: String,
+    pub sequence: Uint256,
 }

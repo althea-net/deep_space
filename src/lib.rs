@@ -17,6 +17,7 @@ extern crate futures;
 extern crate reqwest;
 
 pub mod address;
+pub mod canonical_json;
 pub mod client;
 pub mod coin;
 pub mod msg;

@@ -1,6 +1,7 @@
 ///! Private key implementation supports secp256k1
 use crate::address::Address;
 use crate::public_key::PublicKey;
+use crate::stdsignmsg::StdSignMsg;
 use failure::Error;
 use num_bigint::BigUint;
 use num_traits::Num;
@@ -42,10 +43,18 @@ impl PrivateKey {
         let compressed = pkey.serialize();
         Ok(PublicKey::from_bytes(compressed))
     }
+
+    /// Signs
+    fn sign_std_msg(&self, std_sign_msg: StdSignMsg) -> Result<(), Error> {
+        Ok(())
+    }
 }
 
 #[test]
 fn test_secret() {
+    use crate::coin::Coin;
+    use crate::msg::Msg;
+    use crate::stdfee::StdFee;
     let private_key = PrivateKey::from_secret(b"mySecret");
     assert_eq!(
         private_key.0,
@@ -76,6 +85,18 @@ fn test_secret() {
         "99BCC000F7810F8BBB2AF6F03AE37D135DC87852"
     );
 
-    // Address =
-    // let public_key = private_key.to_public_key().expect("Unable to convert to a public key");
+    let std_sign_msg = StdSignMsg {
+        chain_id: "test-chain".to_string(),
+        account_number: 1u64,
+        sequence: 1u64,
+        fee: StdFee {
+            amount: vec![Coin {
+                denom: "stake".to_string(),
+                amount: 1u64.into(),
+            }],
+            gas: 200_000,
+        },
+        msgs: vec![Msg],
+        memo: "hello from Curiousity".to_string(),
+    };
 }
