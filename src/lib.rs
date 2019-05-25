@@ -13,8 +13,11 @@ extern crate serde_derive;
 extern crate base64;
 #[macro_use]
 extern crate serde_json;
+extern crate futures;
+extern crate reqwest;
 
 pub mod address;
+pub mod client;
 pub mod coin;
 pub mod msg;
 pub mod private_key;
