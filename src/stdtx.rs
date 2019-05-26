@@ -1,10 +1,11 @@
+use crate::msg::Msg;
 use crate::signature::Signature;
 use crate::stdfee::StdFee;
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Default, Debug)]
 pub struct StdTx {
-    msg: Vec<String>,
-    fee: StdFee,
-    memo: String,
-    signature: Signature,
+    pub msg: Vec<Msg>,
+    pub fee: StdFee,
+    pub memo: String,
+    pub signature: Signature,
 }

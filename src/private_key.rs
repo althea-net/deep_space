@@ -1,8 +1,11 @@
 ///! Private key implementation supports secp256k1
 use crate::address::Address;
+use crate::msg::Msg;
 use crate::public_key::PublicKey;
 use crate::signature::Signature;
 use crate::stdsignmsg::StdSignMsg;
+use crate::stdtx::StdTx;
+use crate::transaction::Transaction;
 use failure::Error;
 use num_bigint::BigUint;
 use num_traits::Num;
@@ -44,7 +47,7 @@ impl PrivateKey {
     }
 
     /// Signs (?)
-    pub fn sign_std_msg(&self, std_sign_msg: StdSignMsg) -> Result<Signature, Error> {
+    pub fn sign_std_msg(&self, std_sign_msg: StdSignMsg) -> Result<Transaction, Error> {
         // TODO: SHA256(std_sign_msg.to_bytes())
         let bytes = std_sign_msg.to_bytes()?;
         let data = Sha256::digest(&bytes);
@@ -56,15 +59,27 @@ impl PrivateKey {
         let sig = secp256k1.sign(&msg, &sk);
         // Extract DER form
         let der = sig.serialize_der();
-        assert_eq!(der.len(), 70);
-        Ok(Signature {
+        // assert_eq!(der.len(), 70);
+        if der.len() > 70 {
+            println!("(!) der len {}", der.len());
+        }
+        let signature = Signature {
             signature: der,
             pub_key: self.to_public_key()?,
             // XXX: account_number is a string or a number?
             account_number: std_sign_msg.account_number.to_string(),
             // XXX: sequence is a string or a number?
             sequence: std_sign_msg.sequence.to_string(),
-        })
+        };
+        // unimplemented!();
+        let std_tx = StdTx {
+            msg: std_sign_msg.msgs,
+            fee: std_sign_msg.fee,
+            memo: std_sign_msg.memo,
+            signature: signature,
+        };
+
+        Ok(Transaction::Block(std_tx))
     }
 }
 
@@ -114,7 +129,7 @@ fn test_secret() {
             }],
             gas: 200_000,
         },
-        msgs: vec![Msg],
+        msgs: vec!["string".into()],
         memo: "hello from Curiousity".to_string(),
     };
 
