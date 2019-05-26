@@ -1,6 +1,7 @@
 ///! Private key implementation supports secp256k1
 use crate::address::Address;
 use crate::public_key::PublicKey;
+use crate::signature::Signature;
 use crate::stdsignmsg::StdSignMsg;
 use failure::Error;
 use num_bigint::BigUint;
@@ -11,10 +12,10 @@ use sha2::{Digest, Sha256};
 
 /// This structure represents a private key
 #[derive(Debug, Eq, PartialEq)]
-struct PrivateKey([u8; 32]);
+pub struct PrivateKey([u8; 32]);
 
 impl PrivateKey {
-    fn from_secret(secret: &[u8]) -> PrivateKey {
+    pub fn from_secret(secret: &[u8]) -> PrivateKey {
         let sec_hash = Sha256::digest(secret);
 
         let mut i = BigUint::from_str_radix(&format!("{:x}", sec_hash), 16).expect("form_radix_be");
@@ -29,14 +30,12 @@ impl PrivateKey {
         i %= n;
         i += 1u64;
 
-        let i_bytes = i.to_bytes_be();
-
         let mut result: [u8; 32] = Default::default();
         result.copy_from_slice(&i.to_bytes_be());
         PrivateKey(result)
     }
 
-    fn to_public_key(&self) -> Result<PublicKey, Error> {
+    pub fn to_public_key(&self) -> Result<PublicKey, Error> {
         let secp256k1 = Secp256k1::new();
         let sk = SecretKey::from_slice(&self.0)?;
         let pkey = PublicKeyEC::from_secret_key(&secp256k1, &sk);
@@ -44,9 +43,28 @@ impl PrivateKey {
         Ok(PublicKey::from_bytes(compressed))
     }
 
-    /// Signs
-    fn sign_std_msg(&self, std_sign_msg: StdSignMsg) -> Result<(), Error> {
-        Ok(())
+    /// Signs (?)
+    pub fn sign_std_msg(&self, std_sign_msg: StdSignMsg) -> Result<Signature, Error> {
+        // TODO: SHA256(std_sign_msg.to_bytes())
+        let bytes = std_sign_msg.to_bytes()?;
+        let data = Sha256::digest(&bytes);
+
+        let secp256k1 = Secp256k1::new();
+        let sk = SecretKey::from_slice(&self.0)?;
+        let msg = Message::from_slice(&data)?;
+        // Do some signing
+        let sig = secp256k1.sign(&msg, &sk);
+        // Extract DER form
+        let der = sig.serialize_der();
+        assert_eq!(der.len(), 70);
+        Ok(Signature {
+            signature: der,
+            pub_key: self.to_public_key()?,
+            // XXX: account_number is a string or a number?
+            account_number: std_sign_msg.account_number.to_string(),
+            // XXX: sequence is a string or a number?
+            sequence: std_sign_msg.sequence.to_string(),
+        })
     }
 }
 
@@ -99,4 +117,6 @@ fn test_secret() {
         msgs: vec![Msg],
         memo: "hello from Curiousity".to_string(),
     };
+
+    private_key.sign_std_msg(std_sign_msg).unwrap();
 }
