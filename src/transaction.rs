@@ -1,7 +1,7 @@
 use crate::stdtx::StdTx;
 
 #[derive(Serialize, Debug)]
-#[serde(rename = "tx")]
+#[serde(tag = "mode", content = "tx")]
 pub enum Transaction {
     #[serde(rename = "block")]
     Block(StdTx),
