@@ -1,5 +1,8 @@
+use bech32::{Bech32, ToBase32};
+use failure::Error;
 use std::fmt::Write;
 
+#[derive(Default)]
 pub struct Address([u8; 20]);
 
 impl Address {
@@ -13,4 +16,17 @@ impl Address {
         }
         s
     }
+    pub fn to_bech32<T: Into<String>>(&self, hrp: T) -> Result<String, Error> {
+        let bech32 = Bech32::new(hrp.into(), self.0.to_base32())?;
+        Ok(bech32.to_string())
+    }
+}
+
+#[test]
+fn test_bech32() {
+    let address = Address::default();
+    assert_eq!(
+        address.to_bech32("cosmos").unwrap(),
+        "cosmos1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqnrql8a"
+    );
 }
