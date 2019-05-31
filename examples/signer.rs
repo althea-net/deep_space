@@ -7,6 +7,8 @@ use deep_space::private_key::PrivateKey;
 use deep_space::stdfee::StdFee;
 use deep_space::stdsignmsg::StdSignMsg;
 use futures::Future;
+use std::fs::File;
+use std::io::Write;
 
 const SECRET: &'static str = "mySecret";
 
@@ -47,7 +49,13 @@ fn main() -> Result<(), Box<std::error::Error>> {
 
     let tx = private_key.sign_std_msg(std_sign_msg)?;
     println!("TX {:?}", tx);
-    println!("{}", serde_json::to_string_pretty(&tx)?);
+
+    let mut file = File::create("signed_msg.json")?;
+
+    let s = serde_json::to_string_pretty(&tx)?;
+    file.write_all(s.as_bytes())?;
+
+    println!("{}", s);
 
     Ok(())
 }
