@@ -1,4 +1,5 @@
 use crate::coin::Coin;
+use num256::Uint256;
 
 /// StdFee includes the amount of coins paid in fees and the maximum
 /// gas to be used by the transaction. The ratio yields an effective "gasprice",
@@ -6,5 +7,5 @@ use crate::coin::Coin;
 #[derive(Serialize, Default, Debug)]
 pub struct StdFee {
     pub amount: Vec<Coin>,
-    pub gas: u64,
+    pub gas: Uint256,
 }

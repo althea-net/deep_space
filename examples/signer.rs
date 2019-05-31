@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
                 denom: "validatortoken".to_string(),
                 amount: 1u64.into(),
             }],
-            gas: 200_000,
+            gas: 200_000u64.into(),
         },
         msgs: vec![Msg::SendMsg {
             from_address: address,
