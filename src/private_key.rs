@@ -129,7 +129,7 @@ fn test_secret() {
             }],
             gas: 200_000,
         },
-        msgs: vec!["string".into()],
+        msgs: vec![Msg::Test("foo".to_string())],
         memo: "hello from Curiousity".to_string(),
     };
 

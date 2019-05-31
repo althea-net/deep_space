@@ -1,4 +1,5 @@
 extern crate deep_space;
+use deep_space::address::Address;
 use deep_space::client::txs_encode;
 use deep_space::coin::Coin;
 use deep_space::msg::Msg;
@@ -16,22 +17,31 @@ fn main() -> Result<(), Box<std::error::Error>> {
     let public_key = private_key.to_public_key()?;
     let address = public_key.to_address()?;
     // Print some diagnostics
-    println!("Address: {}", address.to_string());
-    println!("Bech32: {}", public_key.to_bech32("cosmospub")?);
+    println!("Address: {}", address.to_bech32("cosmos")?);
+    println!("Public key: {}", public_key.to_bech32("cosmospub")?);
     // Sign some stuff
 
     let std_sign_msg = StdSignMsg {
-        chain_id: "test-chain".to_string(),
+        chain_id: "testing".to_string(),
         account_number: 1u64,
         sequence: 1u64,
         fee: StdFee {
             amount: vec![Coin {
-                denom: "stake".to_string(),
+                denom: "validatortoken".to_string(),
                 amount: 1u64.into(),
             }],
             gas: 200_000,
         },
-        msgs: vec!["asdfaskdfasdfasmsg1".into()],
+        msgs: vec![Msg::SendMsg {
+            from_address: address,
+            to_address: Address::from_bech32(
+                "osmos1zl0rh9gjf0hw9srcvhc0l4vsccqse5a6w3v66d".to_string(),
+            )?,
+            amount: vec![Coin {
+                denom: "validatortoken".to_string(),
+                amount: 1u32.into(),
+            }],
+        }],
         memo: "hello from Curiousity".to_string(),
     };
 
