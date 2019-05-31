@@ -35,7 +35,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
         msgs: vec![Msg::SendMsg {
             from_address: address,
             to_address: Address::from_bech32(
-                "osmos1zl0rh9gjf0hw9srcvhc0l4vsccqse5a6w3v66d".to_string(),
+                "cosmos1zl0rh9gjf0hw9srcvhc0l4vsccqse5a6w3v66d".to_string(),
             )?,
             amount: vec![Coin {
                 denom: "validatortoken".to_string(),
