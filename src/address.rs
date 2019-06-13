@@ -4,7 +4,7 @@ use serde::Serialize;
 use serde::Serializer;
 use std::fmt::Write;
 
-#[derive(Default, Debug, PartialEq, Eq)]
+#[derive(Default, Debug, PartialEq, Eq, Copy, Clone)]
 pub struct Address([u8; 20]);
 
 impl Address {

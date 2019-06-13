@@ -7,5 +7,5 @@ pub struct StdTx {
     pub msg: Vec<Msg>,
     pub fee: StdFee,
     pub memo: String,
-    pub signature: Signature,
+    pub signatures: Vec<Signature>,
 }

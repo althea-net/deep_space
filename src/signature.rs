@@ -1,7 +1,7 @@
 use crate::public_key::PublicKey;
 use serde::Serializer;
 
-fn base64_serialize<S>(x: &[u8], s: S) -> Result<S::Ok, S::Error>
+pub(crate) fn base64_serialize<S>(x: &[u8], s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -9,6 +9,7 @@ where
     // unimplemented!();
     // s.serialize_f32()
 }
+
 /// Signed data
 #[derive(Serialize, Debug, Default)]
 pub struct Signature {
@@ -16,8 +17,8 @@ pub struct Signature {
     #[serde(serialize_with = "base64_serialize")]
     pub signature: Vec<u8>,
     pub pub_key: PublicKey,
-    pub account_number: String,
-    pub sequence: String,
+    // pub account_number: String,
+    // pub sequence: String,
 }
 
 #[test]

@@ -4,6 +4,7 @@ use crate::msg::Msg;
 use crate::public_key::PublicKey;
 use crate::signature::Signature;
 use crate::stdsignmsg::StdSignMsg;
+use crate::stdsigndoc::StdSignDoc;
 use crate::stdtx::StdTx;
 use crate::transaction::Transaction;
 use failure::Error;
@@ -49,7 +50,12 @@ impl PrivateKey {
     /// Signs (?)
     pub fn sign_std_msg(&self, std_sign_msg: StdSignMsg) -> Result<Transaction, Error> {
         // TODO: SHA256(std_sign_msg.to_bytes())
-        let bytes = std_sign_msg.to_bytes()?;
+
+        let sign_doc = std_sign_msg.clone().to_sign_doc()?;
+        let bytes = sign_doc.to_bytes()?;
+
+        // let bytes = std_sign_msg.to_bytes()?;
+        println!("Signature: {}", String::from_utf8(bytes.clone())?);
         let data = Sha256::digest(&bytes);
 
         let secp256k1 = Secp256k1::new();
@@ -67,16 +73,16 @@ impl PrivateKey {
             signature: der,
             pub_key: self.to_public_key()?,
             // XXX: account_number is a string or a number?
-            account_number: std_sign_msg.account_number.to_string(),
+            // account_number: std_sign_msg.account_number.to_string(),
             // XXX: sequence is a string or a number?
-            sequence: std_sign_msg.sequence.to_string(),
+            // sequence: std_sign_msg.sequence.to_string(),
         };
         // unimplemented!();
         let std_tx = StdTx {
             msg: std_sign_msg.msgs,
             fee: std_sign_msg.fee,
             memo: std_sign_msg.memo,
-            signature: signature,
+            signatures: vec![signature],
         };
 
         Ok(Transaction::Block(std_tx))

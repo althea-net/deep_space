@@ -26,6 +26,7 @@ pub mod public_key;
 pub mod signature;
 pub mod stdfee;
 pub mod stdsignmsg;
+pub mod stdsigndoc;
 pub mod stdtx;
 pub mod transaction;
 

@@ -1,19 +1,31 @@
 use crate::address::Address;
 use crate::coin::Coin;
 use serde::Serialize;
+use failure::Error;
+use crate::canonical_json::to_canonical_json;
+use crate::signature::base64_serialize;
+
+#[derive(Serialize, Debug, Clone)]
+pub struct SendMsg {
+    pub from_address: Address,
+    pub to_address: Address,
+    pub amount: Vec<Coin>,
+}
 
 /// Any arbitrary message
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 #[serde(tag = "type", content = "value")]
 pub enum Msg {
     #[serde(rename = "cosmos-sdk/MsgSend")]
-    SendMsg {
-        from_address: Address,
-        to_address: Address,
-        amount: Vec<Coin>,
-    },
+    SendMsg(SendMsg),
     #[serde(rename = "deep_space/Test")]
     Test(String),
+}
+
+impl Msg {
+    pub fn to_sign_bytes(self) -> Result<Vec<u8>, Error> {
+        Ok(to_canonical_json(self)?)
+    }
 }
 
 #[cfg(test)]
