@@ -25,8 +25,8 @@ pub mod private_key;
 pub mod public_key;
 pub mod signature;
 pub mod stdfee;
-pub mod stdsignmsg;
 pub mod stdsigndoc;
+pub mod stdsignmsg;
 pub mod stdtx;
 pub mod transaction;
 

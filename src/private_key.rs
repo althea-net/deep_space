@@ -3,8 +3,9 @@ use crate::address::Address;
 use crate::msg::Msg;
 use crate::public_key::PublicKey;
 use crate::signature::Signature;
-use crate::stdsignmsg::StdSignMsg;
+use crate::stdfee::StdFee;
 use crate::stdsigndoc::StdSignDoc;
+use crate::stdsignmsg::StdSignMsg;
 use crate::stdtx::StdTx;
 use crate::transaction::Transaction;
 use failure::Error;
@@ -64,13 +65,10 @@ impl PrivateKey {
         // Do some signing
         let sig = secp256k1.sign(&msg, &sk);
         // Extract DER form
-        let der = sig.serialize_der();
-        // assert_eq!(der.len(), 70);
-        if der.len() > 70 {
-            println!("(!) der len {}", der.len());
-        }
+        let compact = sig.serialize_compact().to_vec();
+        // debug_assert!(&compact[..32] > &compact[32..]);
         let signature = Signature {
-            signature: der,
+            signature: compact.to_vec(),
             pub_key: self.to_public_key()?,
             // XXX: account_number is a string or a number?
             // account_number: std_sign_msg.account_number.to_string(),

@@ -3,10 +3,10 @@ use deep_space::address::Address;
 use deep_space::client::txs_encode;
 use deep_space::coin::Coin;
 use deep_space::msg::Msg;
+use deep_space::msg::SendMsg;
 use deep_space::private_key::PrivateKey;
 use deep_space::stdfee::StdFee;
 use deep_space::stdsignmsg::StdSignMsg;
-use deep_space::msg::SendMsg;
 use futures::Future;
 use std::fs::File;
 use std::io::Write;
@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
     let std_sign_msg = StdSignMsg {
         chain_id: "testing".to_string(),
         account_number: 1u64,
-        sequence: 1u64,
+        sequence: 0u64,
         fee: StdFee {
             amount: None,
             // amount: vec![Coin {
@@ -39,7 +39,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
         msgs: vec![Msg::SendMsg(SendMsg {
             from_address: address,
             to_address: Address::from_bech32(
-                "cosmos1zl0rh9gjf0hw9srcvhc0l4vsccqse5a6w3v66d".to_string(),
+                "cosmos1pr2n6tfymnn2tk6rkxlu9q5q2zq5ka3wtu7sdj".to_string(),
             )?,
             amount: vec![Coin {
                 denom: "validatortoken".to_string(),

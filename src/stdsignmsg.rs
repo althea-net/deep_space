@@ -1,10 +1,12 @@
 use crate::canonical_json::to_canonical_json;
 use crate::msg::Msg;
 use crate::stdfee::StdFee;
+use crate::stdsigndoc::RawMessage;
+use crate::stdsigndoc::StdSignDoc;
 use failure::Error;
 use serde_json::Value;
 
-#[derive(Serialize, Debug, Default)]
+#[derive(Serialize, Debug, Default, Clone)]
 pub struct StdSignMsg {
     pub chain_id: String,
     pub account_number: u64,
@@ -19,6 +21,28 @@ impl StdSignMsg {
     /// format.
     pub fn to_bytes(&self) -> Result<Vec<u8>, Error> {
         Ok(to_canonical_json(&self)?)
+    }
+
+    pub fn to_sign_doc(&self) -> Result<StdSignDoc, Error> {
+        let raw_msgs = self
+            .msgs
+            .clone()
+            .into_iter()
+            .map(|msg| msg.to_sign_bytes().map(RawMessage))
+            .collect::<Result<Vec<_>, _>>()?;
+        // self.msgs.clone().into_iter().map(|msg| {});
+
+        Ok(StdSignDoc {
+            chain_id: self.chain_id.clone(),
+            account_number: self.account_number.clone().to_string(),
+            sequence: self.sequence.clone().to_string(),
+            fee: StdFee {
+                amount: Some(vec![]),
+                ..self.fee.clone()
+            },
+            msgs: raw_msgs,
+            memo: self.memo.clone(),
+        })
     }
 }
 
