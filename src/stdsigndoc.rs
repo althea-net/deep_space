@@ -31,5 +31,5 @@ impl StdSignDoc {
 fn to_bytes() {
     let std_sign_msg = StdSignDoc::default();
     // Safe enough to compare as this is canonical JSON and the representation should be always the same
-    assert_eq!(std_sign_msg.to_bytes().unwrap(), b"{\"account_number\":0,\"chain_id\":\"\",\"fee\":{\"amount\":[],\"gas\":0},\"memo\":\"\",\"msgs\":[],\"sequence\":0}".to_vec());
+    assert_eq!(String::from_utf8(std_sign_msg.to_bytes().unwrap()).unwrap(), "{\"account_number\":\"\",\"chain_id\":\"\",\"fee\":{\"amount\":null,\"gas\":\"0\"},\"memo\":\"\",\"msgs\":[],\"sequence\":\"\"}");
 }

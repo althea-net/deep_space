@@ -127,11 +127,11 @@ fn test_secret() {
         account_number: 1u64,
         sequence: 1u64,
         fee: StdFee {
-            amount: vec![Coin {
+            amount: Some(vec![Coin {
                 denom: "stake".to_string(),
                 amount: 1u64.into(),
-            }],
-            gas: 200_000,
+            }]),
+            gas: 200_000u64.into(),
         },
         msgs: vec![Msg::Test("foo".to_string())],
         memo: "hello from Curiousity".to_string(),

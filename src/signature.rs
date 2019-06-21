@@ -41,8 +41,6 @@ fn sig_serialize() {
     let sig = Signature {
         signature: vec![1, 2, 3, 4, 5],
         pub_key: PublicKey::default(),
-        account_number: "Account".to_string(),
-        sequence: "Sequence".to_string(),
     };
     let s = serde_json::to_string(&sig).unwrap();
     let v: serde_json::Value = serde_json::from_str(&s).unwrap();
@@ -54,8 +52,6 @@ fn sig_serialize() {
                 "type": "tendermint/PubKeySecp256k1",
                 "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
             },
-            "account_number": "Account",
-            "sequence": "Sequence"
         })
     )
 }
