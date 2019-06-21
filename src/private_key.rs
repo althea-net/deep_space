@@ -1,17 +1,13 @@
 ///! Private key implementation supports secp256k1
-use crate::address::Address;
-use crate::msg::Msg;
 use crate::public_key::PublicKey;
 use crate::signature::Signature;
-use crate::stdfee::StdFee;
-use crate::stdsigndoc::StdSignDoc;
 use crate::stdsignmsg::StdSignMsg;
 use crate::stdtx::StdTx;
 use crate::transaction::Transaction;
 use failure::Error;
 use num_bigint::BigUint;
 use num_traits::Num;
-use secp256k1::{All, Secp256k1};
+use secp256k1::Secp256k1;
 use secp256k1::{Message, PublicKey as PublicKeyEC, SecretKey};
 use sha2::{Digest, Sha256};
 

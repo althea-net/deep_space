@@ -11,10 +11,16 @@ extern crate sha2;
 #[macro_use]
 extern crate serde_derive;
 extern crate base64;
-#[macro_use]
-extern crate serde_json;
 extern crate futures;
 extern crate reqwest;
+
+#[cfg(test)]
+#[macro_use]
+extern crate serde_json;
+
+#[cfg(not(test))]
+#[macro_use]
+extern crate serde_json;
 
 pub mod address;
 pub mod canonical_json;

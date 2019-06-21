@@ -1,7 +1,6 @@
 use crate::address::Address;
 use crate::canonical_json::to_canonical_json;
 use crate::coin::Coin;
-use crate::signature::base64_serialize;
 use failure::Error;
 use serde::Serialize;
 
@@ -31,7 +30,6 @@ impl Msg {
 #[cfg(test)]
 mod tests {
     use super::Msg;
-    use crate::coin::Coin;
     use serde_json::{from_str, to_string, Value};
     #[test]
     fn test_serialize_msg() {

@@ -1,7 +1,7 @@
 use crate::address::Address;
 use bech32::{Bech32, ToBase32};
 use failure::Error;
-use ripemd160::{Digest as Ripemd160Digest, Ripemd160};
+use ripemd160::Ripemd160;
 use serde::{ser::SerializeMap, Serialize, Serializer};
 use sha2::{Digest, Sha256};
 use std::fmt::{self, Debug};

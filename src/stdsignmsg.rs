@@ -4,7 +4,6 @@ use crate::stdfee::StdFee;
 use crate::stdsigndoc::RawMessage;
 use crate::stdsigndoc::StdSignDoc;
 use failure::Error;
-use serde_json::Value;
 
 #[derive(Serialize, Debug, Default, Clone)]
 pub struct StdSignMsg {
@@ -30,7 +29,6 @@ impl StdSignMsg {
             .into_iter()
             .map(|msg| msg.to_sign_bytes().map(RawMessage))
             .collect::<Result<Vec<_>, _>>()?;
-        // self.msgs.clone().into_iter().map(|msg| {});
 
         Ok(StdSignDoc {
             chain_id: self.chain_id.clone(),

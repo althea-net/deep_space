@@ -1,9 +1,7 @@
 use crate::canonical_json::to_canonical_json;
-use crate::msg::Msg;
 use crate::signature::string_serialize;
 use crate::stdfee::StdFee;
 use failure::Error;
-use serde_json::Value;
 
 #[derive(Serialize, Debug)]
 pub struct RawMessage(#[serde(serialize_with = "string_serialize")] pub Vec<u8>);

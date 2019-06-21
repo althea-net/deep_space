@@ -7,8 +7,6 @@ where
     S: Serializer,
 {
     s.serialize_str(&base64::encode(x))
-    // unimplemented!();
-    // s.serialize_f32()
 }
 
 pub(crate) fn string_serialize<S>(x: &[u8], s: S) -> Result<S::Ok, S::Error>
@@ -17,12 +15,7 @@ where
 {
     let ss = String::from_utf8(x.to_vec()).unwrap();
     let val: Value = from_str(&ss).unwrap();
-    // val.serialize(s)
     val.serialize(s)
-    // s.serialize(val)
-    // s.serialize_str(&String::from_utf8(x.to_vec()).unwrap())
-    // unimplemented!();
-    // s.serialize_f32()
 }
 
 /// Signed data

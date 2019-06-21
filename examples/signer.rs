@@ -30,10 +30,6 @@ fn main() -> Result<(), Box<std::error::Error>> {
         sequence: 0u64,
         fee: StdFee {
             amount: None,
-            // amount: vec![Coin {
-            //     denom: "validatortoken".to_string(),
-            //     amount: 1u64.into(),
-            // }],
             gas: 200_000u64.into(),
         },
         msgs: vec![Msg::SendMsg(SendMsg {
