@@ -1,13 +1,11 @@
 extern crate deep_space;
 use deep_space::address::Address;
-use deep_space::client::txs_encode;
 use deep_space::coin::Coin;
 use deep_space::msg::Msg;
 use deep_space::msg::SendMsg;
 use deep_space::private_key::PrivateKey;
 use deep_space::stdfee::StdFee;
 use deep_space::stdsignmsg::StdSignMsg;
-use futures::Future;
 use std::fs::File;
 use std::io::Write;
 

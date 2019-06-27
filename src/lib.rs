@@ -19,7 +19,6 @@ extern crate reqwest;
 extern crate serde_json;
 
 #[cfg(not(test))]
-#[macro_use]
 extern crate serde_json;
 
 pub mod address;
