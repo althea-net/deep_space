@@ -1,5 +1,6 @@
-///! Naive implementation of canonical JSON
 use serde::Serialize;
+///! Naive implementation of canonical JSON
+use serde::Serializer;
 use serde_json::{from_str, to_string, Error, Value};
 
 /// Creates a canonical JSON representation of any serializable objects.
@@ -12,6 +13,21 @@ pub fn to_canonical_json(s: impl Serialize) -> Result<Vec<u8>, Error> {
     let s = to_string(&v)?;
     // Returns a vector of bytes
     Ok(s.as_bytes().to_vec())
+}
+
+/// Serialize a slice of bytes as a JSON object.
+pub(crate) fn canonical_json_serialize<S>(x: &[u8], s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    // NOTE: This is probably least efficient way of achieving this, and it's
+    // very likely that avoiding this step and serializing a structure directly
+    // could be more efficent. However, the source of this bytes is a canonical json,
+    // which after deserializing into `Value` should maintain its properties, so
+    // therefore this process shouldn't make any problem.
+    let ss = String::from_utf8(x.to_vec()).unwrap();
+    let val: Value = from_str(&ss).unwrap();
+    val.serialize(s)
 }
 
 #[test]

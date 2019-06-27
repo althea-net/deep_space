@@ -1,11 +1,14 @@
-use crate::canonical_json::to_canonical_json;
-use crate::signature::string_serialize;
+use crate::canonical_json::{canonical_json_serialize, to_canonical_json};
 use crate::stdfee::StdFee;
 use failure::Error;
 
+/// A raw message that gets serialized as a JSON
 #[derive(Serialize, Debug)]
-pub struct RawMessage(#[serde(serialize_with = "string_serialize")] pub Vec<u8>);
+pub struct RawMessage(#[serde(serialize_with = "canonical_json_serialize")] pub Vec<u8>);
 
+/// An internal structure that gets created during the signing process
+/// that contains most of the properties of a `StdSignMsg` in a
+/// preparation of a payload for a signing process.
 #[derive(Serialize, Debug, Default)]
 pub struct StdSignDoc {
     pub chain_id: String,

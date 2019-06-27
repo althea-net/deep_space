@@ -2,6 +2,7 @@ use crate::public_key::PublicKey;
 use serde::{Serialize, Serializer};
 use serde_json::{from_str, Value};
 
+/// Serializes a slice of bytes in base64. For usage with serde macros.
 pub(crate) fn base64_serialize<S>(x: &[u8], s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -9,24 +10,14 @@ where
     s.serialize_str(&base64::encode(x))
 }
 
-pub(crate) fn string_serialize<S>(x: &[u8], s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    let ss = String::from_utf8(x.to_vec()).unwrap();
-    let val: Value = from_str(&ss).unwrap();
-    val.serialize(s)
-}
-
-/// Signed data
+/// Signed data that contains both the signature, and the public key
+/// used to sign it.
 #[derive(Serialize, Debug, Default)]
 pub struct Signature {
     /// Signature in a raw DER form (about 70 bytes)
     #[serde(serialize_with = "base64_serialize")]
     pub signature: Vec<u8>,
     pub pub_key: PublicKey,
-    // pub account_number: String,
-    // pub sequence: String,
 }
 
 #[test]

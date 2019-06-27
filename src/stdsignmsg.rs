@@ -5,13 +5,23 @@ use crate::stdsigndoc::RawMessage;
 use crate::stdsigndoc::StdSignDoc;
 use failure::Error;
 
+/// This denotes a payload that should be signed.
+///
+/// Contains all the important data for a successful transaction, and can
+/// contain other messages with instructions regarding what to do.
 #[derive(Serialize, Debug, Default, Clone)]
 pub struct StdSignMsg {
+    /// Chain ID. Example value: "testing"
     pub chain_id: String,
+    /// Account number. Example value: 1
     pub account_number: u64,
+    /// Sequence number starts with 0 and should always increase
     pub sequence: u64,
+    /// Fee. Amount should be `None`, and `gas` is the actual gas price.
     pub fee: StdFee,
+    /// A list of messages
     pub msgs: Vec<Msg>,
+    /// Arbitrary message that should be part of the transaction
     pub memo: String,
 }
 
@@ -22,11 +32,13 @@ impl StdSignMsg {
         Ok(to_canonical_json(&self)?)
     }
 
+    ///
     pub fn to_sign_doc(&self) -> Result<StdSignDoc, Error> {
         let raw_msgs = self
             .msgs
             .clone()
             .into_iter()
+            // Convert every message into a `RawMessage` which is a canonical JSON.
             .map(|msg| msg.to_sign_bytes().map(RawMessage))
             .collect::<Result<Vec<_>, _>>()?;
 

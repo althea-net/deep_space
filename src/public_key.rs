@@ -6,6 +6,9 @@ use serde::{ser::SerializeMap, Serialize, Serializer};
 use sha2::{Digest, Sha256};
 use std::fmt::{self, Debug};
 
+/// Represents a public key of a given private key in the Cosmos Network.
+///
+/// Can be created from a private key only.
 pub struct PublicKey([u8; 33]);
 
 impl Default for PublicKey {
@@ -34,19 +37,24 @@ impl Debug for PublicKey {
 }
 
 impl PublicKey {
+    /// Create a public key using an array of bytes
     pub fn from_bytes(bytes: [u8; 33]) -> Self {
         Self(bytes)
     }
+    /// Create a public key using a slice of bytes
     pub fn from_slice(bytes: &[u8]) -> Result<Self, Error> {
         ensure!(bytes.len() == 33, "Invalid slice length");
         let mut result = [0u8; 33];
         result.copy_from_slice(bytes);
         Ok(Self(result))
     }
+
+    /// Returns bytes of a given public key as a slice of bytes
     pub fn as_bytes(&self) -> &[u8] {
         &self.0
     }
 
+    /// Create an address object using a given public key.
     pub fn to_address(&self) -> Result<Address, Error> {
         let sha256 = Sha256::digest(&self.0);
         let ripemd160 = Ripemd160::digest(&sha256);
@@ -55,12 +63,19 @@ impl PublicKey {
         Ok(Address::from_bytes(bytes))
     }
 
+    /// Creates amino representation of a given public key.
+    ///
+    /// It is used internally for bech32 encoding.
     pub fn to_amino_bytes(&self) -> Vec<u8> {
         let mut key_bytes = vec![0xEB, 0x5A, 0xE9, 0x87, 0x21];
         key_bytes.extend(self.as_bytes());
         key_bytes
     }
 
+    /// Create a bech32 encoded public key.
+    ///
+    /// * `hrp` - A prefix for a bech32 encoding. By a convention
+    /// Cosmos Network uses `cosmospub` as a prefix for encoding public keys.
     pub fn to_bech32<T: Into<String>>(&self, hrp: T) -> Result<String, Error> {
         let bech32 = Bech32::new(hrp.into(), self.to_amino_bytes().to_base32())?;
         Ok(bech32.to_string())

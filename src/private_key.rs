@@ -11,16 +11,18 @@ use secp256k1::Secp256k1;
 use secp256k1::{Message, PublicKey as PublicKeyEC, SecretKey};
 use sha2::{Digest, Sha256};
 
-/// This structure represents a private key
+/// This structure represents a private key of a Cosmos Network.
 #[derive(Debug, Eq, PartialEq)]
 pub struct PrivateKey([u8; 32]);
 
 impl PrivateKey {
+    /// Create a private key using an arbitrary slice of bytes.
     pub fn from_secret(secret: &[u8]) -> PrivateKey {
         let sec_hash = Sha256::digest(secret);
 
         let mut i = BigUint::from_str_radix(&format!("{:x}", sec_hash), 16).expect("form_radix_be");
 
+        // Parameters of the curve as explained in https://en.bitcoin.it/wiki/Secp256k1
         let mut n = BigUint::from_str_radix(
             "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141",
             16,
@@ -36,6 +38,7 @@ impl PrivateKey {
         PrivateKey(result)
     }
 
+    /// Obtain a public key for a given private key
     pub fn to_public_key(&self) -> Result<PublicKey, Error> {
         let secp256k1 = Secp256k1::new();
         let sk = SecretKey::from_slice(&self.0)?;
@@ -44,15 +47,13 @@ impl PrivateKey {
         Ok(PublicKey::from_bytes(compressed))
     }
 
-    /// Signs (?)
+    /// Signs a transaction that contains at least one message using a single
+    /// private key.
     pub fn sign_std_msg(&self, std_sign_msg: StdSignMsg) -> Result<Transaction, Error> {
-        // TODO: SHA256(std_sign_msg.to_bytes())
-
         let sign_doc = std_sign_msg.clone().to_sign_doc()?;
         let bytes = sign_doc.to_bytes()?;
 
-        // let bytes = std_sign_msg.to_bytes()?;
-        println!("Signature: {}", String::from_utf8(bytes.clone())?);
+        // SHA256 of the sign document is signed
         let data = Sha256::digest(&bytes);
 
         let secp256k1 = Secp256k1::new();
@@ -60,18 +61,14 @@ impl PrivateKey {
         let msg = Message::from_slice(&data)?;
         // Do some signing
         let sig = secp256k1.sign(&msg, &sk);
-        // Extract DER form
+        // Extract compact form
         let compact = sig.serialize_compact().to_vec();
-        // debug_assert!(&compact[..32] > &compact[32..]);
         let signature = Signature {
             signature: compact.to_vec(),
             pub_key: self.to_public_key()?,
-            // XXX: account_number is a string or a number?
-            // account_number: std_sign_msg.account_number.to_string(),
-            // XXX: sequence is a string or a number?
-            // sequence: std_sign_msg.sequence.to_string(),
         };
-        // unimplemented!();
+
+        // Put a single signature in a result
         let std_tx = StdTx {
             msg: std_sign_msg.msgs,
             fee: std_sign_msg.fee,
@@ -79,6 +76,7 @@ impl PrivateKey {
             signatures: vec![signature],
         };
 
+        // A block type is created by default
         Ok(Transaction::Block(std_tx))
     }
 }
