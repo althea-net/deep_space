@@ -1,5 +1,5 @@
 use crate::address::Address;
-use bech32::{Bech32, ToBase32};
+use bech32::{self, ToBase32};
 use failure::Error;
 use ripemd160::Ripemd160;
 use serde::{ser::SerializeMap, Serialize, Serializer};
@@ -77,7 +77,7 @@ impl PublicKey {
     /// * `hrp` - A prefix for a bech32 encoding. By a convention
     /// Cosmos Network uses `cosmospub` as a prefix for encoding public keys.
     pub fn to_bech32<T: Into<String>>(&self, hrp: T) -> Result<String, Error> {
-        let bech32 = Bech32::new(hrp.into(), self.to_amino_bytes().to_base32())?;
+        let bech32 = bech32::encode(&hrp.into(), self.to_amino_bytes().to_base32())?;
         Ok(bech32.to_string())
     }
 }

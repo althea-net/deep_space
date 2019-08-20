@@ -11,7 +11,7 @@ use std::io::Write;
 
 const SECRET: &'static str = "mySecret";
 
-fn main() -> Result<(), Box<std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Prepare keys
     println!(r#"Private key secret="{}""#, SECRET);
     let private_key = PrivateKey::from_secret(SECRET.as_bytes());
