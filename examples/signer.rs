@@ -9,7 +9,7 @@ use deep_space::stdsignmsg::StdSignMsg;
 use std::fs::File;
 use std::io::Write;
 
-const SECRET: &'static str = "mySecret";
+const SECRET: &str = "mySecret";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Prepare keys
