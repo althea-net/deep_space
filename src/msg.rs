@@ -2,7 +2,6 @@ use crate::address::Address;
 use crate::canonical_json::to_canonical_json;
 use crate::coin::Coin;
 use failure::Error;
-use serde::Serialize;
 
 #[derive(Serialize, Debug, Clone)]
 pub struct SendMsg {
