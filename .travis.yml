@@ -1,0 +1,62 @@
+language: rust
+cache: cargo
+sudo: required
+services: docker
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+env:
+  global:
+    - secure: "iHjaLZwR7u+2z0NPfYZ/y74Txozb51tAJgh9fTR9FuZGgbyTlJaHT2a/LltCTaONsesIdmRkT789sDn5eoCcyS+Tc/8OpKAvnUyoMbqroy+PENAi4LIUL3lHYcfQfexAbDvJRaenj+561dv7Td3JsLQfoZJpF8XWTgsdK2UugEgRrzjY/OrjQSytL+fzcZtju1vonrlIrugJFenQcduZOkTv554SFXJzjvhv/t+hEBFUmPZcTQRH+fweShpasj4qk999QurMIrgBRaWFgi+bEhIRS0z6CXxo+hbsTNfTn3byOOETCqhlHepb+O4fNWHNIsr4G4tQrcyauxURUVHFGp166uOHShxBpFtBLpHoKkE6in0L1GhVjsAW7OaRV5BaGOjyFHhk6HWk1DZ5Esvkkog3/aIYOpdRLpmhlkmgFQ9qGe0HkKTNyMcKub1ZXynibqJS7fajPQouAP1eZFwSfxqid0xxcBQHgqjhDJW7iB8ONx1tCox/b++C8Vw02I7Nf2YEyZVA4eF+joY/y9AeKUlYlaQX0RnHpwZ1G5tDnk4TmBykQ1TPpn4wSaLLUqmT9hLd3Cwrs9p+exK8ajpZD/6zwFyWuKfHlY3l9eN3VjyCvNe60+5WoBM5O+sP2zjD5JhQ0ga0ga/Gsw0QiipCS6r7rN0ZpOtm+ViHAEzt2cQ="
+  matrix:
+    - TARGET="x86_64-unknown-linux-gnu"
+    - TARGET="mips-unknown-linux-gnu"
+    - TARGET="mipsel-unknown-linux-gnu"
+    - TARGET="mips64-unknown-linux-gnuabi64"
+    - TARGET="mips64el-unknown-linux-gnuabi64"
+    - TARGET="aarch64-unknown-linux-gnu"
+
+before_install:
+  - command -v cross 1>/dev/null || cargo install cross
+
+script:
+  - cross build --target $TARGET --verbose --all
+  - cross test --target $TARGET --verbose --all
+
+matrix:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+  include:
+    - rust: stable
+      env:
+      before_install:
+      script:
+        - rustup component add rustfmt-preview
+        - cargo fmt --all -- --check
+    - name: Clippy
+      rust: stable
+      env:
+      before_install:
+      before_script:
+        - rustup component add clippy-preview
+      script:
+        - cargo clippy --all-targets --all-features -- -D warnings
+    - name: Benchmark
+      rust: stable
+      env:
+      before_install:
+      script:
+        - cargo bench
+
+deploy:
+  # Create new crates.io package
+  - provider: script
+    skip_cleanup: true
+    script: cargo publish --token ${CRATESIO_TOKEN}
+    on:
+      condition: x$CRATESIO_TOKEN != 'x' && $TRAVIS_RUST_VERSION = stable && $TARGET = 'x86_64-unknown-linux-gnu'
+      tags: true
