@@ -21,7 +21,7 @@ pub enum Msg {
 }
 
 impl Msg {
-    pub fn to_sign_bytes(self) -> Result<Vec<u8>, Error> {
+    pub fn to_sign_bytes(&self) -> Result<Vec<u8>, Error> {
         Ok(to_canonical_json(self)?)
     }
 }

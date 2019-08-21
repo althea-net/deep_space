@@ -44,8 +44,8 @@ impl StdSignMsg {
 
         Ok(StdSignDoc {
             chain_id: self.chain_id.clone(),
-            account_number: self.account_number.clone().to_string(),
-            sequence: self.sequence.clone().to_string(),
+            account_number: self.account_number.to_string(),
+            sequence: self.sequence.to_string(),
             fee: StdFee {
                 amount: Some(vec![]),
                 ..self.fee.clone()

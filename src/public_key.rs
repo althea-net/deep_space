@@ -32,7 +32,7 @@ impl Serialize for PublicKey {
 
 impl Debug for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.into_iter().fmt(f)
+        self.0.iter().fmt(f)
     }
 }
 

@@ -1,3 +1,7 @@
+#![warn(clippy::all)]
+#![allow(clippy::pedantic)]
+#![forbid(unsafe_code)]
+
 #[macro_use]
 extern crate failure;
 extern crate bech32;

@@ -6,6 +6,6 @@
 
 A lightweight, cross-compile friendly Cosmos client written in pure Rust.
 
-# Getting Started
+## Getting Started
 
 See the docs for the API and some usage examples.

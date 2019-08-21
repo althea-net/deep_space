@@ -1,5 +1,5 @@
 use crate::public_key::PublicKey;
-use serde::{Serializer};
+use serde::Serializer;
 
 /// Serializes a slice of bytes in base64. For usage with serde macros.
 pub(crate) fn base64_serialize<S>(x: &[u8], s: S) -> Result<S::Ok, S::Error>

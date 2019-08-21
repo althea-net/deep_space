@@ -40,7 +40,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 amount: 1u32.into(),
             }],
         })],
-        memo: "hello from Curiosity".to_string(), 
+        memo: "hello from Curiosity".to_string(),
     };
 
     let tx = private_key.sign_std_msg(std_sign_msg)?;
