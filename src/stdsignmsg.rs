@@ -46,10 +46,7 @@ impl StdSignMsg {
             chain_id: self.chain_id.clone(),
             account_number: self.account_number.to_string(),
             sequence: self.sequence.to_string(),
-            fee: StdFee {
-                amount: Some(vec![]),
-                ..self.fee.clone()
-            },
+            fee: self.fee.clone(),
             msgs: raw_msgs,
             memo: self.memo.clone(),
         })
@@ -60,5 +57,5 @@ impl StdSignMsg {
 fn to_bytes() {
     let std_sign_msg = StdSignMsg::default();
     // Safe enough to compare as this is canonical JSON and the representation should be always the same
-    assert_eq!(String::from_utf8(std_sign_msg.to_bytes().unwrap()).unwrap(), "{\"account_number\":0,\"chain_id\":\"\",\"fee\":{\"amount\":null,\"gas\":\"0\"},\"memo\":\"\",\"msgs\":[],\"sequence\":0}");
+    assert_eq!(String::from_utf8(std_sign_msg.to_bytes().unwrap()).unwrap(), "{\"account_number\":0,\"chain_id\":\"\",\"fee\":{\"amount\":[],\"gas\":\"0\"},\"memo\":\"\",\"msgs\":[],\"sequence\":0}");
 }

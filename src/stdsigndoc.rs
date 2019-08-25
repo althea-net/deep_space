@@ -30,7 +30,7 @@ impl StdSignDoc {
 
 #[test]
 fn to_bytes() {
-    let std_sign_msg = StdSignDoc::default();
+    let std_sign_doc = StdSignDoc::default();
     // Safe enough to compare as this is canonical JSON and the representation should be always the same
-    assert_eq!(String::from_utf8(std_sign_msg.to_bytes().unwrap()).unwrap(), "{\"account_number\":\"\",\"chain_id\":\"\",\"fee\":{\"amount\":null,\"gas\":\"0\"},\"memo\":\"\",\"msgs\":[],\"sequence\":\"\"}");
+    assert_eq!(String::from_utf8(std_sign_doc.to_bytes().unwrap()).unwrap(), "{\"account_number\":\"\",\"chain_id\":\"\",\"fee\":{\"amount\":[],\"gas\":\"0\"},\"memo\":\"\",\"msgs\":[],\"sequence\":\"\"}");
 }

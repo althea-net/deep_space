@@ -6,6 +6,6 @@ use num256::Uint256;
 /// which must be above some miminum to be accepted into the mempool.
 #[derive(Serialize, Default, Debug, Clone)]
 pub struct StdFee {
-    pub amount: Option<Vec<Coin>>,
+    pub amount: Vec<Coin>,
     pub gas: Uint256,
 }

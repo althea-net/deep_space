@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         account_number: 1u64,
         sequence: 0u64,
         fee: StdFee {
-            amount: None,
+            amount: vec![],
             gas: 200_000u64.into(),
         },
         msgs: vec![Msg::SendMsg(SendMsg {
