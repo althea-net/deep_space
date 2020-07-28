@@ -50,7 +50,7 @@ impl PrivateKey {
     /// Signs a transaction that contains at least one message using a single
     /// private key.
     pub fn sign_std_msg(&self, std_sign_msg: StdSignMsg) -> Result<Transaction, Error> {
-        let sign_doc = std_sign_msg.clone().to_sign_doc()?;
+        let sign_doc = std_sign_msg.to_sign_doc()?;
         let bytes = sign_doc.to_bytes()?;
 
         // SHA256 of the sign document is signed

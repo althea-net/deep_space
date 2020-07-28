@@ -78,7 +78,7 @@ impl PublicKey {
     /// Cosmos Network uses `cosmospub` as a prefix for encoding public keys.
     pub fn to_bech32<T: Into<String>>(&self, hrp: T) -> Result<String, Error> {
         let bech32 = bech32::encode(&hrp.into(), self.to_amino_bytes().to_base32())?;
-        Ok(bech32.to_string())
+        Ok(bech32)
     }
 }
 
