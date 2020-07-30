@@ -35,11 +35,4 @@ pub mod stdsigndoc;
 pub mod stdsignmsg;
 pub mod stdtx;
 pub mod transaction;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+pub mod utils;

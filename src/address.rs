@@ -1,3 +1,5 @@
+use crate::utils::hex_str_to_bytes;
+use crate::utils::ByteDecodeError;
 use bech32::{self, FromBase32, ToBase32};
 use failure::Error;
 use serde::Serialize;
@@ -5,9 +7,35 @@ use serde::Serializer;
 use std::fmt;
 use std::fmt::Display;
 use std::fmt::Formatter;
+use std::str::FromStr;
+
+#[derive(Debug)]
+pub enum AddressParseError {
+    Bech32WrongLength,
+    Bech32InvalidBase32,
+    Bech32InvalidEncoding,
+    HexDecodeError(ByteDecodeError),
+    HexDecodeErrorWrongLength,
+}
+
+impl fmt::Display for AddressParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            AddressParseError::Bech32WrongLength => write!(f, "Bech32WrongLength"),
+            AddressParseError::Bech32InvalidBase32 => write!(f, "Bech32InvalidBase32"),
+            AddressParseError::Bech32InvalidEncoding => write!(f, "Bech32InvalidEncoding"),
+            AddressParseError::HexDecodeError(val) => write!(f, "HexDecodeError {}", val),
+            AddressParseError::HexDecodeErrorWrongLength => {
+                write!(f, "HexDecodeError Wrong Length")
+            }
+        }
+    }
+}
+
+impl std::error::Error for AddressParseError {}
 
 /// An address that's derived from a given PublicKey
-#[derive(Default, Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(Default, Debug, PartialEq, Eq, Copy, Clone, Deserialize)]
 pub struct Address([u8; 20]);
 
 impl Address {
@@ -27,13 +55,44 @@ impl Address {
     /// Parse a bech32 encoded address
     ///
     /// * `s` - A bech32 encoded address
-    pub fn from_bech32(s: String) -> Result<Address, Error> {
-        let (_hrp, data) = bech32::decode(&s)?;
-        let vec: Vec<u8> = FromBase32::from_base32(&data)?;
+    pub fn from_bech32(s: String) -> Result<Address, AddressParseError> {
+        let (_hrp, data) = match bech32::decode(&s) {
+            Ok(val) => val,
+            Err(_e) => return Err(AddressParseError::Bech32InvalidEncoding),
+        };
+        let vec: Vec<u8> = match FromBase32::from_base32(&data) {
+            Ok(val) => val,
+            Err(_e) => return Err(AddressParseError::Bech32InvalidBase32),
+        };
         let mut addr = [0u8; 20];
-        ensure!(vec.len() == 20, "Wrong size of decoded bech32 data");
+        if vec.len() != 20 {
+            return Err(AddressParseError::Bech32WrongLength);
+        }
         addr.copy_from_slice(&vec);
         Ok(Address(addr))
+    }
+}
+
+impl FromStr for Address {
+    type Err = AddressParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // interpret as bech32 if prefixed, hex otherwise
+        if s.starts_with("cosmos1") {
+            Address::from_bech32(s.to_string())
+        } else {
+            match hex_str_to_bytes(s) {
+                Ok(bytes) => {
+                    if bytes.len() == 20 {
+                        let mut inner = [0; 20];
+                        inner.copy_from_slice(&bytes[0..20]);
+                        Ok(Address(inner))
+                    } else {
+                        Err(AddressParseError::HexDecodeErrorWrongLength)
+                    }
+                }
+                Err(e) => Err(AddressParseError::HexDecodeError(e)),
+            }
+        }
     }
 }
 
