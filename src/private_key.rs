@@ -4,12 +4,36 @@ use crate::signature::Signature;
 use crate::stdsignmsg::StdSignMsg;
 use crate::stdtx::StdTx;
 use crate::transaction::Transaction;
+use crate::utils::hex_str_to_bytes;
+use crate::utils::ByteDecodeError;
 use failure::Error;
 use num_bigint::BigUint;
 use num_traits::Num;
 use secp256k1::Secp256k1;
 use secp256k1::{Message, PublicKey as PublicKeyEC, SecretKey};
 use sha2::{Digest, Sha256};
+use std::fmt;
+use std::fmt::Result as FormatResult;
+use std::str::FromStr;
+
+#[derive(Debug)]
+pub enum PrivateKeyParseError {
+    HexDecodeError(ByteDecodeError),
+    HexDecodeErrorWrongLength,
+}
+
+impl fmt::Display for PrivateKeyParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> FormatResult {
+        match self {
+            PrivateKeyParseError::HexDecodeError(val) => write!(f, "PrivateKeyParseError {}", val),
+            PrivateKeyParseError::HexDecodeErrorWrongLength => {
+                write!(f, "PrivateKeyParseError Wrong Length")
+            }
+        }
+    }
+}
+
+impl std::error::Error for PrivateKeyParseError {}
 
 /// This structure represents a private key of a Cosmos Network.
 #[derive(Debug, Eq, PartialEq)]
@@ -78,6 +102,24 @@ impl PrivateKey {
 
         // A block type is created by default
         Ok(Transaction::Block(std_tx))
+    }
+}
+
+impl FromStr for PrivateKey {
+    type Err = PrivateKeyParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match hex_str_to_bytes(s) {
+            Ok(bytes) => {
+                if bytes.len() == 32 {
+                    let mut inner = [0; 32];
+                    inner.copy_from_slice(&bytes[0..32]);
+                    Ok(PrivateKey(inner))
+                } else {
+                    Err(PrivateKeyParseError::HexDecodeErrorWrongLength)
+                }
+            }
+            Err(e) => Err(PrivateKeyParseError::HexDecodeError(e)),
+        }
     }
 }
 
