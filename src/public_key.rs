@@ -55,12 +55,12 @@ impl PublicKey {
     }
 
     /// Create an address object using a given public key.
-    pub fn to_address(&self) -> Result<Address, Error> {
+    pub fn to_address(&self) -> Address {
         let sha256 = Sha256::digest(&self.0);
         let ripemd160 = Ripemd160::digest(&sha256);
         let mut bytes: [u8; 20] = Default::default();
         bytes.copy_from_slice(&ripemd160[..]);
-        Ok(Address::from_bytes(bytes))
+        Address::from_bytes(bytes)
     }
 
     /// Creates amino representation of a given public key.

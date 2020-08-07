@@ -151,8 +151,7 @@ fn test_secret() {
         ][..]
     );
     let address = public_key
-        .to_address()
-        .expect("Unable to create public key");
+        .to_address();
     assert_eq!(
         address.to_string(),
         "99BCC000F7810F8BBB2AF6F03AE37D135DC87852"

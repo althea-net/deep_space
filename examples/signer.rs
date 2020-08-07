@@ -16,7 +16,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(r#"Private key secret="{}""#, SECRET);
     let private_key = PrivateKey::from_secret(SECRET.as_bytes());
     let public_key = private_key.to_public_key()?;
-    let address = public_key.to_address()?;
+    let address = public_key.to_address();
     // Print some diagnostics
     println!("Address: {}", address.to_bech32("cosmos")?);
     println!("Public key: {}", public_key.to_bech32("cosmospub")?);
