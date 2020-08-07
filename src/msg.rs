@@ -3,7 +3,7 @@ use crate::canonical_json::to_canonical_json;
 use crate::coin::Coin;
 use failure::Error;
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SendMsg {
     pub from_address: Address,
     pub to_address: Address,
@@ -11,7 +11,7 @@ pub struct SendMsg {
 }
 
 /// Any arbitrary message
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type", content = "value")]
 pub enum Msg {
     #[serde(rename = "cosmos-sdk/MsgSend")]

@@ -9,7 +9,7 @@ use failure::Error;
 ///
 /// Contains all the important data for a successful transaction, and can
 /// contain other messages with instructions regarding what to do.
-#[derive(Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone)]
 pub struct StdSignMsg {
     /// Chain ID. Example value: "testing"
     pub chain_id: String,
