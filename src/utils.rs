@@ -36,3 +36,10 @@ pub fn hex_str_to_bytes(s: &str) -> Result<Vec<u8>, ByteDecodeError> {
         })
         .collect()
 }
+
+pub fn bytes_to_hex_str(bytes: &[u8]) -> String {
+    bytes
+        .iter()
+        .map(|b| format!("{:0>2x?}", b))
+        .fold(String::new(), |acc, x| acc + &x)
+}

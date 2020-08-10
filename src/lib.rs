@@ -26,6 +26,8 @@ extern crate serde_json;
 pub mod address;
 pub mod canonical_json;
 pub mod coin;
+#[cfg(feature = "key_import")]
+pub mod mnemonic;
 pub mod msg;
 pub mod private_key;
 pub mod public_key;
