@@ -24,6 +24,8 @@ extern crate serde_json;
 extern crate serde_json;
 
 pub mod address;
+#[cfg(feature = "bip39")]
+pub mod bip39;
 pub mod canonical_json;
 pub mod coin;
 pub mod msg;
