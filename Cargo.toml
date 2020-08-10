@@ -20,4 +20,12 @@ serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
 base64 = "0.12"
-clarity = "0.1"
+clarity = {version = "0.1", optional = true}
+
+[features]
+default = []
+# all features, used for testing
+all = ["peggy"]
+# message types and dependencies for the Peggy Cosmos Module
+# only module support that requires extra deps should be featurized
+peggy = ["clarity"]

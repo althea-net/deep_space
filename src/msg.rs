@@ -1,8 +1,10 @@
 use crate::address::Address;
 use crate::canonical_json::to_canonical_json;
 use crate::coin::Coin;
+#[cfg(feature = "peggy")]
 use clarity::Address as EthAddress;
 use failure::Error;
+#[cfg(feature = "peggy")]
 use num256::Uint256;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -12,6 +14,7 @@ pub struct SendMsg {
     pub amount: Vec<Coin>,
 }
 
+#[cfg(feature = "peggy")]
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct SetEthAddressMsg {
     #[serde(rename = "Address")]
@@ -21,13 +24,14 @@ pub struct SetEthAddressMsg {
     #[serde(rename = "Signature")]
     pub eth_signature: Vec<u8>,
 }
+#[cfg(feature = "peggy")]
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct ValsetRequestMsg {
     #[serde(rename = "Requester")]
     pub requester: Address,
 }
-
 /// a transaction we send to submit a valset confirmation signature
+#[cfg(feature = "peggy")]
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct ValsetConfirmMsg {
     #[serde(rename = "Validator")]
@@ -44,10 +48,13 @@ pub struct ValsetConfirmMsg {
 pub enum Msg {
     #[serde(rename = "cosmos-sdk/MsgSend")]
     SendMsg(SendMsg),
+    #[cfg(feature = "peggy")]
     #[serde(rename = "peggy/MsgSetEthAddress")]
     SetEthAddressMsg(SetEthAddressMsg),
+    #[cfg(feature = "peggy")]
     #[serde(rename = "peggy/MsgValsetRequest")]
     ValsetRequestMsg(ValsetRequestMsg),
+    #[cfg(feature = "peggy")]
     #[serde(rename = "peggy/MsgValsetConfirm")]
     ValsetConfirmMsg(ValsetConfirmMsg),
     #[serde(rename = "deep_space/Test")]

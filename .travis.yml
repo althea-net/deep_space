@@ -23,8 +23,8 @@ before_install:
   - command -v cross 1>/dev/null || cargo install cross
 
 script:
-  - cross build --target $TARGET --verbose --all
-  - cross test --target $TARGET --verbose --all
+  - cross build --target $TARGET --verbose --all --features all
+  - cross test --target $TARGET --verbose --all --features all
 
 matrix:
   allow_failures:
