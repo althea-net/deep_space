@@ -12,7 +12,6 @@ use crate::utils::hex_str_to_bytes;
 use crate::utils::ByteDecodeError;
 use failure::Error;
 use num_bigint::BigUint;
-use num_traits::Num;
 use secp256k1::constants::CURVE_ORDER as CurveN;
 use secp256k1::Secp256k1;
 use secp256k1::{Message, PublicKey as PublicKeyEC, SecretKey};
@@ -67,11 +66,13 @@ impl std::error::Error for HDWalletError {}
 pub struct PrivateKey([u8; 32]);
 
 impl PrivateKey {
-    /// Create a private key using an arbitrary slice of bytes.
+    /// Create a private key using an arbitrary slice of bytes. This function is not resistant to side
+    /// channel attacks and may reveal your secret and private key. It is on the other hand more compact
+    /// than the bip32+bip39 logic
     pub fn from_secret(secret: &[u8]) -> PrivateKey {
         let sec_hash = Sha256::digest(secret);
 
-        let mut i = BigUint::from_str_radix(&format!("{:x}", sec_hash), 16).expect("form_radix_be");
+        let mut i = BigUint::from_bytes_be(&sec_hash);
 
         // Parameters of the curve as explained in https://en.bitcoin.it/wiki/Secp256k1
         let mut n = BigUint::from_bytes_be(&CurveN);
@@ -205,7 +206,6 @@ fn master_key_from_seed(seed_bytes: &[u8]) -> ([u8; 32], [u8; 32]) {
     use hmac::crypto_mac::NewMac;
     use hmac::Hmac;
     type HmacSha512 = Hmac<Sha512>;
-    let n = BigUint::from_bytes_be(&CurveN);
 
     let mut hasher = HmacSha512::new_varkey(b"Bitcoin seed").unwrap();
     hasher.update(&seed_bytes);
@@ -215,12 +215,8 @@ fn master_key_from_seed(seed_bytes: &[u8]) -> ([u8; 32], [u8; 32]) {
     master_secret_key.copy_from_slice(&hash[0..32]);
     master_chain_code.copy_from_slice(&hash[32..64]);
 
-    let key_check = BigUint::from_bytes_be(&master_secret_key);
-    if key_check == 0u32.into() {
-        panic!("Master key is zeros! {:?}", hash)
-    } else if key_check > n {
-        panic!("Master key not in curve space!")
-    }
+    // key check
+    let _ = SecretKey::from_slice(&master_secret_key).unwrap();
 
     (master_secret_key, master_chain_code)
 }
@@ -239,9 +235,8 @@ fn get_child_key(
     use hmac::crypto_mac::NewMac;
     use hmac::Hmac;
     type HmacSha512 = Hmac<Sha512>;
-    let i = if hardened { 2u32.pow(31) + i } else { i };
-    let n = BigUint::from_bytes_be(&CurveN);
 
+    let i = if hardened { 2u32.pow(31) + i } else { i };
     let mut hasher = HmacSha512::new_varkey(&c_parent).unwrap();
     if hardened {
         hasher.update(&[0u8]);
@@ -255,18 +250,30 @@ fn get_child_key(
     hasher.update(&i.to_be_bytes());
 
     let l_param = hasher.finalize().into_bytes();
-    let parse_i_l = BigUint::from_bytes_be(&l_param[0..32]);
-    let parent_key = BigUint::from_bytes_be(&k_parent);
-    let child_key = (parse_i_l.clone() + parent_key) % n.clone();
 
-    if child_key == 0u32.into() {
-        panic!("child key is zeros!");
-    } else if parse_i_l > n {
-        panic!("child key not in curve space!")
-    }
+    // If you wanted to do this on your own it would go like this
+    // but this implementation is not constant time and performs
+    // allocations, opening us up to side channel attacks.
+    // that being said our Hmac and SHA libraries don't clearly
+    // indicate if they are constant time. So this ship may have
+    // already sailed
+    //
+    // let n = BigUint::from_bytes_be(&CurveN);
+    // let parse_i_l = BigUint::from_bytes_be(&l_param[0..32]);
+    // let parent_key = BigUint::from_bytes_be(&k_parent);
+    // let child_key = (parse_i_l.clone() + parent_key) % n.clone();
+    // if child_key == 0u32.into() {
+    //     panic!("child key is zeros!");
+    // } else if parse_i_l > n {
+    //     panic!("child key not in curve space!")
+    // }
+
+    let mut parse_i_l = SecretKey::from_slice(&l_param[0..32]).unwrap();
+    parse_i_l.add_assign(&k_parent).unwrap();
+    let child_key = parse_i_l;
 
     let mut child_key_res: [u8; 32] = [0; 32];
-    child_key_res.copy_from_slice(&child_key.to_bytes_be());
+    child_key_res.copy_from_slice(&hex_str_to_bytes(&format!("{:x}", child_key)).unwrap());
     let mut chain_code_res: [u8; 32] = [0; 32];
     chain_code_res.copy_from_slice(&l_param[32..64]);
     (child_key_res, chain_code_res)
