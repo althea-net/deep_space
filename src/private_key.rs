@@ -129,7 +129,6 @@ impl PrivateKey {
                 val = val.trim_matches('\'');
             }
             if let Ok(parsed_int) = val.parse() {
-                println!("hardened {}, num {}", hardened, parsed_int);
                 let (s, c) = get_child_key(secret_key, chain_code, parsed_int, hardened);
                 secret_key = s;
                 chain_code = c;
