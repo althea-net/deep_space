@@ -97,6 +97,9 @@ impl PrivateKey {
     /// that's going to be the key you want essentially all the time. If you need
     /// a different path use from_hd_wallet_path()
     pub fn from_phrase(phrase: &str, passphrase: &str) -> Result<PrivateKey, HDWalletError> {
+        if phrase.is_empty() {
+            return Err(HDWalletError::Bip39Error(Bip39Error::BadWordCount(0)));
+        }
         PrivateKey::from_hd_wallet_path("m/44'/118'/0'/0/0", phrase, passphrase)
     }
 
