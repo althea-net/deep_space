@@ -9,6 +9,7 @@ use std::fmt::{self, Debug};
 /// Represents a public key of a given private key in the Cosmos Network.
 ///
 /// Can be created from a private key only.
+#[derive(Copy, Clone)]
 pub struct PublicKey([u8; 33]);
 
 impl Default for PublicKey {
