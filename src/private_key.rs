@@ -316,8 +316,8 @@ fn test_secret() {
 
     let std_sign_msg = StdSignMsg {
         chain_id: "test-chain".to_string(),
-        account_number: 1u64,
-        sequence: 1u64,
+        account_number: 1u128,
+        sequence: 1u128,
         fee: StdFee {
             amount: vec![Coin {
                 denom: "stake".to_string(),
