@@ -111,9 +111,8 @@ impl Serialize for Address {
 
 impl Display for Address {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        for &byte in self.0.iter() {
-            write!(f, "{:02X}", byte).expect("Unable to write");
-        }
+        let display = self.to_bech32("cosmos").unwrap();
+        write!(f, "{}", display).expect("Unable to write");
         Ok(())
     }
 }
