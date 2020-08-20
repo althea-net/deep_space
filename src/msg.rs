@@ -17,28 +17,27 @@ pub struct SendMsg {
 #[cfg(feature = "peggy")]
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct SetEthAddressMsg {
-    #[serde(rename = "Address")]
+    #[serde(rename = "address")]
     pub eth_address: EthAddress,
-    #[serde(rename = "Validator")]
+    #[serde(rename = "validator")]
     pub validator: Address,
-    #[serde(rename = "Signature")]
+    #[serde(rename = "signature")]
     pub eth_signature: Vec<u8>,
 }
 #[cfg(feature = "peggy")]
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct ValsetRequestMsg {
-    #[serde(rename = "Requester")]
     pub requester: Address,
 }
 /// a transaction we send to submit a valset confirmation signature
 #[cfg(feature = "peggy")]
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct ValsetConfirmMsg {
-    #[serde(rename = "Validator")]
+    #[serde(rename = "validator")]
     pub validator: Address,
-    #[serde(rename = "Nonce")]
+    #[serde(rename = "nonce")]
     pub nonce: Uint256,
-    #[serde(rename = "EthSig")]
+    #[serde(rename = "signature")]
     pub eth_signature: Vec<u8>,
 }
 
