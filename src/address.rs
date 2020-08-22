@@ -39,6 +39,11 @@ impl std::error::Error for AddressParseError {}
 pub struct Address([u8; 20]);
 
 impl Address {
+    /// Get raw bytes of the address.
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+
     pub fn from_bytes(bytes: [u8; 20]) -> Address {
         Address(bytes)
     }
