@@ -8,6 +8,7 @@ use crate::signature::Signature;
 use crate::stdsignmsg::StdSignMsg;
 use crate::stdtx::StdTx;
 use crate::transaction::Transaction;
+use crate::transaction::TransactionSendType;
 use crate::utils::hex_str_to_bytes;
 use crate::utils::ByteDecodeError;
 use failure::Error;
@@ -150,7 +151,11 @@ impl PrivateKey {
 
     /// Signs a transaction that contains at least one message using a single
     /// private key.
-    pub fn sign_std_msg(&self, std_sign_msg: StdSignMsg) -> Result<Transaction, Error> {
+    pub fn sign_std_msg(
+        &self,
+        std_sign_msg: StdSignMsg,
+        mode: TransactionSendType,
+    ) -> Result<Transaction, Error> {
         let sign_doc = std_sign_msg.to_sign_doc()?;
         let bytes = sign_doc.to_bytes()?;
 
@@ -177,8 +182,11 @@ impl PrivateKey {
             signatures: vec![signature],
         };
 
-        // A block type is created by default
-        Ok(Transaction::Block(std_tx))
+        Ok(match mode {
+            TransactionSendType::Async => Transaction::Async(std_tx),
+            TransactionSendType::Block => Transaction::Block(std_tx),
+            TransactionSendType::Sync => Transaction::Sync(std_tx),
+        })
     }
 }
 
@@ -329,7 +337,9 @@ fn test_secret() {
         memo: "hello from Curiousity".to_string(),
     };
 
-    private_key.sign_std_msg(std_sign_msg).unwrap();
+    private_key
+        .sign_std_msg(std_sign_msg, TransactionSendType::Block)
+        .unwrap();
 }
 
 #[cfg(feature = "key_import")]

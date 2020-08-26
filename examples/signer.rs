@@ -6,6 +6,7 @@ use deep_space::msg::SendMsg;
 use deep_space::private_key::PrivateKey;
 use deep_space::stdfee::StdFee;
 use deep_space::stdsignmsg::StdSignMsg;
+use deep_space::transaction::TransactionSendType;
 use std::fs::File;
 use std::io::Write;
 
@@ -43,7 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         memo: "hello from Curiosity".to_string(),
     };
 
-    let tx = private_key.sign_std_msg(std_sign_msg)?;
+    let tx = private_key.sign_std_msg(std_sign_msg, TransactionSendType::Block)?;
     println!("TX {:?}", tx);
 
     let mut file = File::create("signed_msg.json")?;
