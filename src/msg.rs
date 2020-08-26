@@ -21,8 +21,9 @@ pub struct SetEthAddressMsg {
     pub eth_address: EthAddress,
     #[serde(rename = "validator")]
     pub validator: Address,
+    /// a hex encoded string representing the Ethereum signature
     #[serde(rename = "signature")]
-    pub eth_signature: Vec<u8>,
+    pub eth_signature: String,
 }
 #[cfg(feature = "peggy")]
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
