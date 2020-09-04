@@ -319,7 +319,7 @@ fn test_secret() {
     let address = public_key.to_address();
     assert_eq!(
         address.to_string(),
-        "99BCC000F7810F8BBB2AF6F03AE37D135DC87852"
+        "cosmos1nx7vqq8hsy8chwe27mcr4cmazdwus7zjl2ds0p"
     );
 
     let std_sign_msg = StdSignMsg {
