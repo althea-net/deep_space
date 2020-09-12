@@ -39,7 +39,7 @@ pub struct ValsetConfirmMsg {
     #[serde(rename = "nonce")]
     pub nonce: Uint256,
     #[serde(rename = "signature")]
-    pub eth_signature: Vec<u8>,
+    pub eth_signature: String,
 }
 
 /// Any arbitrary message
