@@ -5,8 +5,6 @@ use crate::coin::Coin;
 use clarity::Address as EthAddress;
 use failure::Error;
 #[cfg(feature = "peggy")]
-use num256::Uint256;
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SendMsg {
     pub from_address: Address,
@@ -37,7 +35,7 @@ pub struct ValsetConfirmMsg {
     #[serde(rename = "validator")]
     pub validator: Address,
     #[serde(rename = "nonce")]
-    pub nonce: Uint256,
+    pub nonce: u64,
     #[serde(rename = "signature")]
     pub eth_signature: String,
 }
