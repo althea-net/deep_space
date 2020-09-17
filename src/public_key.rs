@@ -1,10 +1,13 @@
 use crate::address::Address;
-use bech32::{self, ToBase32};
+use crate::utils::hex_str_to_bytes;
+use crate::utils::ByteDecodeError;
+use bech32::{self, FromBase32, ToBase32};
 use failure::Error;
 use ripemd160::Ripemd160;
 use serde::{ser::SerializeMap, Serialize, Serializer};
 use sha2::{Digest, Sha256};
 use std::fmt::{self, Debug};
+use std::str::FromStr;
 
 /// Represents a public key of a given private key in the Cosmos Network.
 ///
@@ -17,6 +20,18 @@ impl Default for PublicKey {
         Self([0u8; 33])
     }
 }
+
+impl PartialEq for PublicKey {
+    fn eq(&self, other: &Self) -> bool {
+        for (a, b) in self.0.iter().zip(other.0.iter()) {
+            if a != b {
+                return false;
+            }
+        }
+        true
+    }
+}
+impl Eq for PublicKey {}
 
 impl Serialize for PublicKey {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -81,6 +96,76 @@ impl PublicKey {
         let bech32 = bech32::encode(&hrp.into(), self.to_amino_bytes().to_base32())?;
         Ok(bech32)
     }
+
+    /// Parse a bech32 encoded public key
+    ///
+    /// * `s` - A bech32 encoded public key
+    pub fn from_bech32(s: String) -> Result<PublicKey, PublicKeyParseError> {
+        let (_hrp, data) = match bech32::decode(&s) {
+            Ok(val) => val,
+            Err(_e) => return Err(PublicKeyParseError::Bech32InvalidEncoding),
+        };
+        let vec: Vec<u8> = match FromBase32::from_base32(&data) {
+            Ok(val) => val,
+            Err(_e) => return Err(PublicKeyParseError::Bech32InvalidBase32),
+        };
+        let mut key = [0u8; 33];
+        if vec.len() != 38 {
+            return Err(PublicKeyParseError::Bech32WrongLength);
+        }
+        // the amnio representation prepends 5 bytes, we truncate those here
+        // see to_amino_bytes()
+        key.copy_from_slice(&vec[5..]);
+        Ok(PublicKey(key))
+    }
+}
+
+#[derive(Debug)]
+pub enum PublicKeyParseError {
+    Bech32WrongLength,
+    Bech32InvalidBase32,
+    Bech32InvalidEncoding,
+    HexDecodeError(ByteDecodeError),
+    HexDecodeErrorWrongLength,
+}
+
+impl fmt::Display for PublicKeyParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            PublicKeyParseError::Bech32WrongLength => write!(f, "Bech32WrongLength"),
+            PublicKeyParseError::Bech32InvalidBase32 => write!(f, "Bech32InvalidBase32"),
+            PublicKeyParseError::Bech32InvalidEncoding => write!(f, "Bech32InvalidEncoding"),
+            PublicKeyParseError::HexDecodeError(val) => write!(f, "HexDecodeError {}", val),
+            PublicKeyParseError::HexDecodeErrorWrongLength => {
+                write!(f, "HexDecodeError Wrong Length")
+            }
+        }
+    }
+}
+
+impl std::error::Error for PublicKeyParseError {}
+
+impl FromStr for PublicKey {
+    type Err = PublicKeyParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // interpret as bech32 if prefixed, hex otherwise
+        if s.starts_with("cosmospub") {
+            PublicKey::from_bech32(s.to_string())
+        } else {
+            match hex_str_to_bytes(s) {
+                Ok(bytes) => {
+                    if bytes.len() == 33 {
+                        let mut inner = [0; 33];
+                        inner.copy_from_slice(&bytes[0..33]);
+                        Ok(PublicKey(inner))
+                    } else {
+                        Err(PublicKeyParseError::HexDecodeErrorWrongLength)
+                    }
+                }
+                Err(e) => Err(PublicKeyParseError::HexDecodeError(e)),
+            }
+        }
+    }
 }
 
 #[test]
@@ -116,6 +201,10 @@ fn check_bech32() {
         res,
         "cosmospub1addwnpepq2t9r2d2cnpzkfanqxdwum0hgcnxuxh8gmh8jae2de026xvwh5ruxuv5let"
     );
+
+    let check: Result<PublicKey, PublicKeyParseError> =
+        "cosmospub1addwnpepq2t9r2d2cnpzkfanqxdwum0hgcnxuxh8gmh8jae2de026xvwh5ruxuv5let".parse();
+    assert_eq!(check.unwrap(), public_key)
 }
 
 #[test]
