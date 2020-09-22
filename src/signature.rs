@@ -11,7 +11,7 @@ where
 
 /// Signed data that contains both the signature, and the public key
 /// used to sign it.
-#[derive(Serialize, Debug, Default)]
+#[derive(Serialize, Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Signature {
     /// Signature in a raw DER form (about 70 bytes)
     #[serde(serialize_with = "base64_serialize")]

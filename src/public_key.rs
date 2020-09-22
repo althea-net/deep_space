@@ -6,8 +6,11 @@ use failure::Error;
 use ripemd160::Ripemd160;
 use serde::{ser::SerializeMap, Serialize, Serializer};
 use sha2::{Digest, Sha256};
-use std::fmt::{self, Debug};
-use std::str::FromStr;
+use std::{
+    fmt::{self, Debug},
+    hash::Hash,
+};
+use std::{hash::Hasher, str::FromStr};
 
 /// Represents a public key of a given private key in the Cosmos Network.
 ///
@@ -32,6 +35,14 @@ impl PartialEq for PublicKey {
     }
 }
 impl Eq for PublicKey {}
+
+impl Hash for PublicKey {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        for byte in self.0.iter() {
+            byte.hash(state);
+        }
+    }
+}
 
 impl Serialize for PublicKey {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

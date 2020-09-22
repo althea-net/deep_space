@@ -7,7 +7,7 @@ use failure::Error;
 #[cfg(feature = "peggy")]
 use num256::Uint256;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct SendMsg {
     pub from_address: Address,
     pub to_address: Address,
@@ -15,7 +15,7 @@ pub struct SendMsg {
 }
 
 #[cfg(feature = "peggy")]
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct SetEthAddressMsg {
     #[serde(rename = "address")]
     pub eth_address: EthAddress,
@@ -26,13 +26,13 @@ pub struct SetEthAddressMsg {
     pub eth_signature: String,
 }
 #[cfg(feature = "peggy")]
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct ValsetRequestMsg {
     pub requester: Address,
 }
 /// a transaction we send to submit a valset confirmation signature
 #[cfg(feature = "peggy")]
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct ValsetConfirmMsg {
     #[serde(rename = "validator")]
     pub validator: Address,
@@ -43,7 +43,7 @@ pub struct ValsetConfirmMsg {
 }
 
 /// Any arbitrary message
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(tag = "type", content = "value")]
 pub enum Msg {
     #[serde(rename = "cosmos-sdk/MsgSend")]

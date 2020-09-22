@@ -35,7 +35,7 @@ impl fmt::Display for AddressParseError {
 impl std::error::Error for AddressParseError {}
 
 /// An address that's derived from a given PublicKey
-#[derive(Default, Debug, PartialEq, Eq, Copy, Clone, Deserialize)]
+#[derive(Default, Debug, PartialEq, Eq, Copy, Clone, Deserialize, Hash)]
 pub struct Address([u8; 20]);
 
 impl Address {

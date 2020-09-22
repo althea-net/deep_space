@@ -63,7 +63,7 @@ impl fmt::Display for HDWalletError {
 impl std::error::Error for HDWalletError {}
 
 /// This structure represents a private key of a Cosmos Network.
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
 pub struct PrivateKey([u8; 32]);
 
 impl PrivateKey {

@@ -3,7 +3,7 @@ use crate::signature::Signature;
 use crate::stdfee::StdFee;
 
 /// An enum that bundles the signed transaction with signatures.
-#[derive(Serialize, Default, Debug)]
+#[derive(Serialize, Default, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct StdTx {
     pub msg: Vec<Msg>,
     pub fee: StdFee,
