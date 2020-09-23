@@ -1,7 +1,6 @@
 use crate::utils::hex_str_to_bytes;
 use crate::utils::ByteDecodeError;
 use bech32::{self, FromBase32, ToBase32};
-use failure::Error;
 use serde::Serialize;
 use serde::Serializer;
 use std::fmt;
@@ -10,7 +9,7 @@ use std::fmt::Formatter;
 use std::str::FromStr;
 
 #[derive(Debug)]
-pub enum AddressParseError {
+pub enum AddressError {
     Bech32WrongLength,
     Bech32InvalidBase32,
     Bech32InvalidEncoding,
@@ -18,21 +17,33 @@ pub enum AddressParseError {
     HexDecodeErrorWrongLength,
 }
 
-impl fmt::Display for AddressParseError {
+impl fmt::Display for AddressError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            AddressParseError::Bech32WrongLength => write!(f, "Bech32WrongLength"),
-            AddressParseError::Bech32InvalidBase32 => write!(f, "Bech32InvalidBase32"),
-            AddressParseError::Bech32InvalidEncoding => write!(f, "Bech32InvalidEncoding"),
-            AddressParseError::HexDecodeError(val) => write!(f, "HexDecodeError {}", val),
-            AddressParseError::HexDecodeErrorWrongLength => {
-                write!(f, "HexDecodeError Wrong Length")
-            }
+            AddressError::Bech32WrongLength => write!(f, "Bech32WrongLength"),
+            AddressError::Bech32InvalidBase32 => write!(f, "Bech32InvalidBase32"),
+            AddressError::Bech32InvalidEncoding => write!(f, "Bech32InvalidEncoding"),
+            AddressError::HexDecodeError(val) => write!(f, "HexDecodeError {}", val),
+            AddressError::HexDecodeErrorWrongLength => write!(f, "HexDecodeError Wrong Length"),
         }
     }
 }
 
-impl std::error::Error for AddressParseError {}
+impl std::error::Error for AddressError {}
+
+impl From<bech32::Error> for AddressError {
+    fn from(error: bech32::Error) -> Self {
+        match error {
+            bech32::Error::InvalidLength => AddressError::Bech32WrongLength,
+            bech32::Error::InvalidChar(_) => AddressError::Bech32InvalidBase32,
+            bech32::Error::InvalidData(_) => AddressError::Bech32InvalidEncoding,
+            bech32::Error::InvalidChecksum => AddressError::Bech32InvalidEncoding,
+            bech32::Error::InvalidPadding => AddressError::Bech32InvalidEncoding,
+            bech32::Error::MixedCase => AddressError::Bech32InvalidEncoding,
+            bech32::Error::MissingSeparator => AddressError::Bech32InvalidEncoding,
+        }
+    }
+}
 
 /// An address that's derived from a given PublicKey
 #[derive(Default, Debug, PartialEq, Eq, Copy, Clone, Deserialize, Hash)]
@@ -52,7 +63,7 @@ impl Address {
     ///
     /// * `hrp` - A prefix for bech32 encoding. The convention for addresses
     /// in Cosmos is `cosmos`.
-    pub fn to_bech32<T: Into<String>>(&self, hrp: T) -> Result<String, Error> {
+    pub fn to_bech32<T: Into<String>>(&self, hrp: T) -> Result<String, AddressError> {
         let bech32 = bech32::encode(&hrp.into(), self.0.to_base32())?;
         Ok(bech32)
     }
@@ -60,18 +71,18 @@ impl Address {
     /// Parse a bech32 encoded address
     ///
     /// * `s` - A bech32 encoded address
-    pub fn from_bech32(s: String) -> Result<Address, AddressParseError> {
+    pub fn from_bech32(s: String) -> Result<Address, AddressError> {
         let (_hrp, data) = match bech32::decode(&s) {
             Ok(val) => val,
-            Err(_e) => return Err(AddressParseError::Bech32InvalidEncoding),
+            Err(_e) => return Err(AddressError::Bech32InvalidEncoding),
         };
         let vec: Vec<u8> = match FromBase32::from_base32(&data) {
             Ok(val) => val,
-            Err(_e) => return Err(AddressParseError::Bech32InvalidBase32),
+            Err(_e) => return Err(AddressError::Bech32InvalidBase32),
         };
         let mut addr = [0u8; 20];
         if vec.len() != 20 {
-            return Err(AddressParseError::Bech32WrongLength);
+            return Err(AddressError::Bech32WrongLength);
         }
         addr.copy_from_slice(&vec);
         Ok(Address(addr))
@@ -79,7 +90,7 @@ impl Address {
 }
 
 impl FromStr for Address {
-    type Err = AddressParseError;
+    type Err = AddressError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // interpret as bech32 if prefixed, hex otherwise
         if s.starts_with("cosmos1") {
@@ -92,10 +103,10 @@ impl FromStr for Address {
                         inner.copy_from_slice(&bytes[0..20]);
                         Ok(Address(inner))
                     } else {
-                        Err(AddressParseError::HexDecodeErrorWrongLength)
+                        Err(AddressError::HexDecodeErrorWrongLength)
                     }
                 }
-                Err(e) => Err(AddressParseError::HexDecodeError(e)),
+                Err(e) => Err(AddressError::HexDecodeError(e)),
             }
         }
     }

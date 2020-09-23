@@ -1,6 +1,5 @@
-use crate::canonical_json::{canonical_json_serialize, to_canonical_json};
+use crate::canonical_json::{canonical_json_serialize, to_canonical_json, CanonicalJsonError};
 use crate::stdfee::StdFee;
-use failure::Error;
 
 /// A raw message that gets serialized as a JSON
 #[derive(Serialize, Debug)]
@@ -23,7 +22,7 @@ pub struct StdSignDoc {
 impl StdSignDoc {
     /// This creates a bytes based using a canonical JSON serialization
     /// format.
-    pub fn to_bytes(&self) -> Result<Vec<u8>, Error> {
+    pub fn to_bytes(&self) -> Result<Vec<u8>, CanonicalJsonError> {
         Ok(to_canonical_json(&self)?)
     }
 }

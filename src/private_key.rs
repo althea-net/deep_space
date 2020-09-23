@@ -1,3 +1,4 @@
+use crate::canonical_json::CanonicalJsonError;
 ///! Private key implementation supports secp256k1
 #[cfg(feature = "key_import")]
 use crate::mnemonic::Bip39Error;
@@ -11,9 +12,9 @@ use crate::transaction::Transaction;
 use crate::transaction::TransactionSendType;
 use crate::utils::hex_str_to_bytes;
 use crate::utils::ByteDecodeError;
-use failure::Error;
 use num_bigint::BigUint;
 use secp256k1::constants::CURVE_ORDER as CurveN;
+use secp256k1::Error as CurveError;
 use secp256k1::Secp256k1;
 use secp256k1::{Message, PublicKey as PublicKeyEC, SecretKey};
 #[cfg(feature = "key_import")]
@@ -24,23 +25,37 @@ use std::fmt::Result as FormatResult;
 use std::str::FromStr;
 
 #[derive(Debug)]
-pub enum PrivateKeyParseError {
+pub enum PrivateKeyError {
     HexDecodeError(ByteDecodeError),
     HexDecodeErrorWrongLength,
+    CurveError(CurveError),
+    CanonicalJsonError(CanonicalJsonError),
 }
 
-impl fmt::Display for PrivateKeyParseError {
+impl fmt::Display for PrivateKeyError {
     fn fmt(&self, f: &mut fmt::Formatter) -> FormatResult {
         match self {
-            PrivateKeyParseError::HexDecodeError(val) => write!(f, "PrivateKeyParseError {}", val),
-            PrivateKeyParseError::HexDecodeErrorWrongLength => {
-                write!(f, "PrivateKeyParseError Wrong Length")
-            }
+            PrivateKeyError::HexDecodeError(val) => write!(f, "PrivateKeyError {}", val),
+            PrivateKeyError::HexDecodeErrorWrongLength => write!(f, "PrivateKeyError Wrong Length"),
+            PrivateKeyError::CurveError(val) => write!(f, "Secp256k1 Error {}", val),
+            PrivateKeyError::CanonicalJsonError(val) => write!(f, "CanonicalJsonError {}", val),
         }
     }
 }
 
-impl std::error::Error for PrivateKeyParseError {}
+impl std::error::Error for PrivateKeyError {}
+
+impl From<CurveError> for PrivateKeyError {
+    fn from(error: CurveError) -> Self {
+        PrivateKeyError::CurveError(error)
+    }
+}
+
+impl From<CanonicalJsonError> for PrivateKeyError {
+    fn from(error: CanonicalJsonError) -> Self {
+        PrivateKeyError::CanonicalJsonError(error)
+    }
+}
 
 #[cfg(feature = "key_import")]
 #[derive(Debug)]
@@ -141,7 +156,7 @@ impl PrivateKey {
     }
 
     /// Obtain a public key for a given private key
-    pub fn to_public_key(&self) -> Result<PublicKey, Error> {
+    pub fn to_public_key(&self) -> Result<PublicKey, PrivateKeyError> {
         let secp256k1 = Secp256k1::new();
         let sk = SecretKey::from_slice(&self.0)?;
         let pkey = PublicKeyEC::from_secret_key(&secp256k1, &sk);
@@ -155,7 +170,7 @@ impl PrivateKey {
         &self,
         std_sign_msg: StdSignMsg,
         mode: TransactionSendType,
-    ) -> Result<Transaction, Error> {
+    ) -> Result<Transaction, PrivateKeyError> {
         let sign_doc = std_sign_msg.to_sign_doc()?;
         let bytes = sign_doc.to_bytes()?;
 
@@ -191,7 +206,7 @@ impl PrivateKey {
 }
 
 impl FromStr for PrivateKey {
-    type Err = PrivateKeyParseError;
+    type Err = PrivateKeyError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match hex_str_to_bytes(s) {
             Ok(bytes) => {
@@ -200,10 +215,10 @@ impl FromStr for PrivateKey {
                     inner.copy_from_slice(&bytes[0..32]);
                     Ok(PrivateKey(inner))
                 } else {
-                    Err(PrivateKeyParseError::HexDecodeErrorWrongLength)
+                    Err(PrivateKeyError::HexDecodeErrorWrongLength)
                 }
             }
-            Err(e) => Err(PrivateKeyParseError::HexDecodeError(e)),
+            Err(e) => Err(PrivateKeyError::HexDecodeError(e)),
         }
     }
 }

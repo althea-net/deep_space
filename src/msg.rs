@@ -1,9 +1,9 @@
 use crate::address::Address;
 use crate::canonical_json::to_canonical_json;
+use crate::canonical_json::CanonicalJsonError;
 use crate::coin::Coin;
 #[cfg(feature = "peggy")]
 use clarity::Address as EthAddress;
-use failure::Error;
 #[cfg(feature = "peggy")]
 use num256::Uint256;
 
@@ -62,7 +62,7 @@ pub enum Msg {
 }
 
 impl Msg {
-    pub fn to_sign_bytes(&self) -> Result<Vec<u8>, Error> {
+    pub fn to_sign_bytes(&self) -> Result<Vec<u8>, CanonicalJsonError> {
         Ok(to_canonical_json(self)?)
     }
 }

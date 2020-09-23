@@ -1,10 +1,32 @@
-use serde::Serialize;
 ///! Naive implementation of canonical JSON
+use serde::Serialize;
 use serde::Serializer;
-use serde_json::{from_str, to_string, Error, Value};
+use serde_json::{from_str, to_string, Error as SerdeJsonError, Value};
+use std::fmt;
+
+#[derive(Debug)]
+pub enum CanonicalJsonError {
+    SerializationError(SerdeJsonError),
+}
+
+impl fmt::Display for CanonicalJsonError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CanonicalJsonError::SerializationError(val) => write!(f, "SerializationError{}", val),
+        }
+    }
+}
+
+impl std::error::Error for CanonicalJsonError {}
+
+impl From<SerdeJsonError> for CanonicalJsonError {
+    fn from(error: SerdeJsonError) -> Self {
+        CanonicalJsonError::SerializationError(error)
+    }
+}
 
 /// Creates a canonical JSON representation of any serializable objects.
-pub fn to_canonical_json(s: impl Serialize) -> Result<Vec<u8>, Error> {
+pub fn to_canonical_json(s: impl Serialize) -> Result<Vec<u8>, CanonicalJsonError> {
     // Serialize any object to String first
     let s = to_string(&s)?;
     // Deserialize into Value which would order keys

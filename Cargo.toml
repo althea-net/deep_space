@@ -9,7 +9,6 @@ edition = "2018"
 
 [dependencies]
 num256 = "0.3"
-failure = "0.1"
 sha2 = "0.9"
 num-bigint = "0.3"
 num-traits = "0.2"

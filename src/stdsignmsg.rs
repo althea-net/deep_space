@@ -1,9 +1,9 @@
 use crate::canonical_json::to_canonical_json;
+use crate::canonical_json::CanonicalJsonError;
 use crate::msg::Msg;
 use crate::stdfee::StdFee;
 use crate::stdsigndoc::RawMessage;
 use crate::stdsigndoc::StdSignDoc;
-use failure::Error;
 
 /// This denotes a payload that should be signed.
 ///
@@ -28,12 +28,12 @@ pub struct StdSignMsg {
 impl StdSignMsg {
     /// This creates a bytes based using a canonical JSON serialization
     /// format.
-    pub fn to_bytes(&self) -> Result<Vec<u8>, Error> {
+    pub fn to_bytes(&self) -> Result<Vec<u8>, CanonicalJsonError> {
         Ok(to_canonical_json(&self)?)
     }
 
     ///
-    pub fn to_sign_doc(&self) -> Result<StdSignDoc, Error> {
+    pub fn to_sign_doc(&self) -> Result<StdSignDoc, CanonicalJsonError> {
         let raw_msgs = self
             .msgs
             .clone()
