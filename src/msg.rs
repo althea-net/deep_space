@@ -107,6 +107,24 @@ pub struct EthereumBridgeMultiSigUpdateClaim {
 }
 
 #[cfg(feature = "peggy")]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Eq, PartialEq, Hash)]
+pub struct EthereumBridgeBootstrappedClaim {
+    /// the claim nonce, in case multiple claims are made before one passes
+    nonce: Uint256,
+    /// the validator set in the contract being claimed
+    allowed_validator_set: Vec<EthAddress>,
+    /// the powers of the validator set in the contract being claimed
+    validator_powers: Vec<Uint256>,
+    /// the peggy ID a 32 byte unique value encoded as a hex string
+    peggy_id: String,
+    /// the amount of voting power (measured by the bridge, not cosmos) required
+    /// to start the bridge, remember bridge powers are normalized to u32 max so
+    /// this would be computed as some percentage of that with on bearing on what
+    /// Cosmos would consider the power number to be.
+    start_threshold: Uint256,
+}
+
+#[cfg(feature = "peggy")]
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 pub enum EthereumBridgeClaim {
     EthereumBridgeDepositClaim(EthereumBridgeDepositClaim),
