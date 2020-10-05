@@ -5,10 +5,8 @@ use bech32::{self, FromBase32, ToBase32};
 use ripemd160::Ripemd160;
 use serde::{ser::SerializeMap, Serialize, Serializer};
 use sha2::{Digest, Sha256};
-use std::{
-    fmt::{self, Debug},
-    hash::Hash,
-};
+use std::fmt::{self, Debug};
+use std::hash::Hash;
 use std::{hash::Hasher, str::FromStr};
 
 #[derive(Debug)]

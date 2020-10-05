@@ -18,9 +18,7 @@ bech32 = "0.7"
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
-base64 = "0.12"
-clarity = {version = "0.3", optional = true}
-# clarity = {path = "../clarity", optional = true}
+base64 = "0.13"
 unicode-normalization = {version = "0.1", optional = true}
 pbkdf2 = {version = "0.5", optional = true}
 hmac = {version = "0.9", optional = true}
@@ -29,9 +27,6 @@ rand = {version = "0.7", optional = true}
 [features]
 default = ["all"]
 # all features, used for testing
-all = ["peggy", "key_import"]
-# message types and dependencies for the Peggy Cosmos Module
-# only module support that requires extra deps should be featurized
-peggy = ["clarity"]
+all = ["key_import"]
 # enable bip39 mnemonic + bip32 HD wallet
 key_import = ["unicode-normalization", "pbkdf2", "hmac", "rand"]

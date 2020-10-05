@@ -1,4 +1,3 @@
-use crate::canonical_json::CanonicalJsonError;
 ///! Private key implementation supports secp256k1
 #[cfg(feature = "key_import")]
 use crate::mnemonic::Bip39Error;
@@ -12,6 +11,7 @@ use crate::transaction::Transaction;
 use crate::transaction::TransactionSendType;
 use crate::utils::hex_str_to_bytes;
 use crate::utils::ByteDecodeError;
+use crate::{canonical_json::CanonicalJsonError, msg::DeepSpaceMsg};
 use num_bigint::BigUint;
 use secp256k1::constants::CURVE_ORDER as CurveN;
 use secp256k1::Error as CurveError;
@@ -166,11 +166,11 @@ impl PrivateKey {
 
     /// Signs a transaction that contains at least one message using a single
     /// private key.
-    pub fn sign_std_msg(
+    pub fn sign_std_msg<M: serde::Serialize + std::clone::Clone + DeepSpaceMsg>(
         &self,
-        std_sign_msg: StdSignMsg,
+        std_sign_msg: StdSignMsg<M>,
         mode: TransactionSendType,
-    ) -> Result<Transaction, PrivateKeyError> {
+    ) -> Result<Transaction<M>, PrivateKeyError> {
         let sign_doc = std_sign_msg.to_sign_doc()?;
         let bytes = sign_doc.to_bytes()?;
 

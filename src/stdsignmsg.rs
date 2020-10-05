@@ -1,16 +1,18 @@
 use crate::canonical_json::to_canonical_json;
 use crate::canonical_json::CanonicalJsonError;
-use crate::msg::Msg;
+use crate::msg::DeepSpaceMsg;
 use crate::stdfee::StdFee;
 use crate::stdsigndoc::RawMessage;
 use crate::stdsigndoc::StdSignDoc;
+use serde::Serialize;
+use std::clone::Clone;
 
 /// This denotes a payload that should be signed.
 ///
 /// Contains all the important data for a successful transaction, and can
 /// contain other messages with instructions regarding what to do.
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
-pub struct StdSignMsg {
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct StdSignMsg<M> {
     /// Chain ID. Example value: "testing"
     pub chain_id: String,
     /// Account number. Example value: 1
@@ -20,13 +22,26 @@ pub struct StdSignMsg {
     /// Fee. Amount should be `None`, and `gas` is the actual gas price.
     pub fee: StdFee,
     /// A list of messages
-    pub msgs: Vec<Msg>,
+    pub msgs: Vec<M>,
     /// Arbitrary message that should be part of the transaction
     pub memo: String,
 }
 
-impl StdSignMsg {
-    /// This creates a bytes based using a canonical JSON serialization
+impl<M: Serialize + Clone + DeepSpaceMsg> Default for StdSignMsg<M> {
+    fn default() -> StdSignMsg<M> {
+        StdSignMsg {
+            chain_id: "".to_string(),
+            account_number: 0,
+            sequence: 0,
+            fee: StdFee::default(),
+            msgs: Vec::new(),
+            memo: "".to_string(),
+        }
+    }
+}
+
+impl<M: Serialize + Clone + DeepSpaceMsg> StdSignMsg<M> {
+    /// This creates a bytes based message using a canonical JSON serialization
     /// format.
     pub fn to_bytes(&self) -> Result<Vec<u8>, CanonicalJsonError> {
         Ok(to_canonical_json(&self)?)
@@ -55,7 +70,8 @@ impl StdSignMsg {
 
 #[test]
 fn to_bytes() {
-    let std_sign_msg = StdSignMsg::default();
+    use crate::msg::Msg;
+    let std_sign_msg: StdSignMsg<Msg> = StdSignMsg::default();
     // Safe enough to compare as this is canonical JSON and the representation should be always the same
     assert_eq!(String::from_utf8(std_sign_msg.to_bytes().unwrap()).unwrap(), "{\"account_number\":0,\"chain_id\":\"\",\"fee\":{\"amount\":[],\"gas\":\"0\"},\"memo\":\"\",\"msgs\":[],\"sequence\":0}");
 }

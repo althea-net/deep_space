@@ -5,13 +5,13 @@ use crate::stdtx::StdTx;
 /// broadcasted transaction.
 #[derive(Serialize, Debug, Clone, Eq, PartialEq)]
 #[serde(tag = "mode", content = "tx")]
-pub enum Transaction {
+pub enum Transaction<M> {
     #[serde(rename = "block")]
-    Block(StdTx),
+    Block(StdTx<M>),
     #[serde(rename = "sync")]
-    Sync(StdTx),
+    Sync(StdTx<M>),
     #[serde(rename = "async")]
-    Async(StdTx),
+    Async(StdTx<M>),
 }
 
 pub enum TransactionSendType {
