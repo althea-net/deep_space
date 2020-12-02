@@ -1,6 +1,7 @@
 use crate::address::Address;
 use crate::utils::hex_str_to_bytes;
 use crate::utils::ByteDecodeError;
+use base64::DecodeError;
 use bech32::{self, FromBase32, ToBase32};
 use ripemd160::Ripemd160;
 use serde::{ser::SerializeMap, Serialize, Serializer};
@@ -15,8 +16,9 @@ pub enum PublicKeyError {
     Bech32InvalidBase32,
     Bech32InvalidEncoding,
     HexDecodeError(ByteDecodeError),
+    Base64DecodeError(DecodeError),
     HexDecodeErrorWrongLength,
-    BytesDecideErrorWrongLength,
+    BytesDecodeErrorWrongLength,
 }
 
 impl fmt::Display for PublicKeyError {
@@ -26,7 +28,8 @@ impl fmt::Display for PublicKeyError {
             PublicKeyError::Bech32InvalidBase32 => write!(f, "Bech32InvalidBase32"),
             PublicKeyError::Bech32InvalidEncoding => write!(f, "Bech32InvalidEncoding"),
             PublicKeyError::HexDecodeError(val) => write!(f, "HexDecodeError {}", val),
-            PublicKeyError::BytesDecideErrorWrongLength => {
+            PublicKeyError::Base64DecodeError(val) => write!(f, "Base64DecodeError {}", val),
+            PublicKeyError::BytesDecodeErrorWrongLength => {
                 write!(f, "BytesDecodeError Wrong Length")
             }
             PublicKeyError::HexDecodeErrorWrongLength => write!(f, "HexDecodeError Wrong Length"),
@@ -109,7 +112,7 @@ impl PublicKey {
     /// Create a public key using a slice of bytes
     pub fn from_slice(bytes: &[u8]) -> Result<Self, PublicKeyError> {
         if bytes.len() != 33 {
-            return Err(PublicKeyError::BytesDecideErrorWrongLength);
+            return Err(PublicKeyError::BytesDecodeErrorWrongLength);
         }
         let mut result = [0u8; 33];
         result.copy_from_slice(bytes);
@@ -178,17 +181,24 @@ impl FromStr for PublicKey {
         if s.starts_with("cosmospub") {
             PublicKey::from_bech32(s.to_string())
         } else {
-            match hex_str_to_bytes(s) {
+            if let Ok(bytes) = hex_str_to_bytes(s) {
+                if bytes.len() == 33 {
+                    let mut inner = [0; 33];
+                    inner.copy_from_slice(&bytes[0..33]);
+                    return Ok(PublicKey(inner));
+                }
+            }
+            match base64::decode(s) {
                 Ok(bytes) => {
                     if bytes.len() == 33 {
                         let mut inner = [0; 33];
                         inner.copy_from_slice(&bytes[0..33]);
                         Ok(PublicKey(inner))
                     } else {
-                        Err(PublicKeyError::HexDecodeErrorWrongLength)
+                        Err(PublicKeyError::BytesDecodeErrorWrongLength)
                     }
                 }
-                Err(e) => Err(PublicKeyError::HexDecodeError(e)),
+                Err(e) => Err(PublicKeyError::Base64DecodeError(e)),
             }
         }
     }
@@ -242,4 +252,10 @@ fn serialize_secp256k1_pubkey() {
         deserialized,
         json!({"type": "tendermint/PubKeySecp256k1", "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"})
     );
+}
+
+#[test]
+fn parse_base64_pubkey() {
+    let key = "AvDDT1xY7hXKTy5ESqckNpBbQIArTkf21CfLFDnmWUY4";
+    let _key: PublicKey = key.parse().unwrap();
 }

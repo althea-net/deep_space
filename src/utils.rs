@@ -25,7 +25,10 @@ impl Error for ByteDecodeError {}
 /// A function that takes a hexadecimal representation of bytes
 /// back into a stream of bytes.
 pub fn hex_str_to_bytes(s: &str) -> Result<Vec<u8>, ByteDecodeError> {
-    let s = if s.starts_with("0x") { &s[2..] } else { s };
+    let s = match s.strip_prefix("0x") {
+        Some(v) => v,
+        None => s,
+    };
     s.as_bytes()
         .chunks(2)
         // .into_iter()
