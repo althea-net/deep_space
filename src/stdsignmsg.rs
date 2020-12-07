@@ -16,9 +16,9 @@ pub struct StdSignMsg<M> {
     /// Chain ID. Example value: "testing"
     pub chain_id: String,
     /// Account number. Example value: 1
-    pub account_number: u128,
+    pub account_number: u64,
     /// Sequence number starts with 0 and should always increase
-    pub sequence: u128,
+    pub sequence: u64,
     /// Fee. Amount should be `None`, and `gas` is the actual gas price.
     pub fee: StdFee,
     /// A list of messages

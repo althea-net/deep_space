@@ -25,8 +25,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let std_sign_msg = StdSignMsg {
         chain_id: "testing".to_string(),
-        account_number: 1u128,
-        sequence: 0u128,
+        account_number: 1u64,
+        sequence: 0u64,
         fee: StdFee {
             amount: vec![],
             gas: 200_000u64.into(),
