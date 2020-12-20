@@ -84,7 +84,7 @@ pub struct PrivateKey([u8; 32]);
 impl PrivateKey {
     /// Create a private key using an arbitrary slice of bytes. This function is not resistant to side
     /// channel attacks and may reveal your secret and private key. It is on the other hand more compact
-    /// than the bip32+bip39 logic
+    /// than the bip32+bip39 logic.
     pub fn from_secret(secret: &[u8]) -> PrivateKey {
         let sec_hash = Sha256::digest(secret);
 
@@ -98,7 +98,14 @@ impl PrivateKey {
         i += 1u64;
 
         let mut result: [u8; 32] = Default::default();
-        result.copy_from_slice(&i.to_bytes_be());
+        let mut i_bytes = i.to_bytes_be();
+        // key has leading or trailing zero that's not displayed
+        // by default since this is a big int library missing a defined
+        // integer width.
+        while i_bytes.len() < 32 {
+            i_bytes.push(0);
+        }
+        result.copy_from_slice(&i_bytes);
         PrivateKey(result)
     }
 
@@ -508,4 +515,16 @@ fn test_vector_unhardened() {
     assert_eq!(c0.len(), correct_m0_chaincode.len());
     assert_eq!(m0.to_vec(), correct_m0_privkey);
     assert_eq!(c0.to_vec(), correct_m0_chaincode);
+}
+
+#[test]
+// this tests generating many thousands of private keys
+fn test_many_key_generation() {
+    use rand::Rng;
+    for _ in 0..1000 {
+        let mut rng = rand::thread_rng();
+        let secret: [u8; 32] = rng.gen();
+        let cosmos_key = PrivateKey::from_secret(&secret);
+        let _cosmos_address = cosmos_key.to_public_key().unwrap().to_address();
+    }
 }
