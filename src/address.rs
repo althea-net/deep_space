@@ -46,7 +46,7 @@ impl From<bech32::Error> for AddressError {
 }
 
 /// An address that's derived from a given PublicKey
-#[derive(Default, Debug, PartialEq, Eq, Copy, Clone, Deserialize, Hash)]
+#[derive(Default, PartialEq, Eq, Copy, Clone, Deserialize, Hash)]
 pub struct Address([u8; 20]);
 
 impl Address {
@@ -130,6 +130,12 @@ impl Display for Address {
         let display = self.to_bech32("cosmos").unwrap();
         write!(f, "{}", display).expect("Unable to write");
         Ok(())
+    }
+}
+
+impl fmt::Debug for Address {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.to_bech32("cosmos").unwrap())
     }
 }
 
