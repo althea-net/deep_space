@@ -78,7 +78,7 @@ impl Mnemonic {
     /// Performing this on a [Cow] means that all allocations for normalization
     /// can be avoided for languages without special UTF8 characters.
     #[inline]
-    fn normalize_utf8_cow<'a>(cow: &mut Cow<'a, str>) {
+    fn normalize_utf8_cow(cow: &mut Cow<str>) {
         let is_nfkd = unicode_normalization::is_nfkd_quick(cow.as_ref().chars());
         if is_nfkd != unicode_normalization::IsNormalized::Yes {
             *cow = Cow::Owned(cow.as_ref().nfkd().to_string());
