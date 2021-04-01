@@ -18,23 +18,3 @@ pub struct Signature {
     pub signature: Vec<u8>,
     pub pub_key: PublicKey,
 }
-
-#[test]
-fn sig_serialize() {
-    let sig = Signature {
-        signature: vec![1, 2, 3, 4, 5],
-        pub_key: PublicKey::default(),
-    };
-    let s = serde_json::to_string(&sig).unwrap();
-    let v: serde_json::Value = serde_json::from_str(&s).unwrap();
-    assert_eq!(
-        v,
-        json!({
-            "signature": base64::encode(&[1,2,3,4,5]),
-            "pub_key": {
-                "type": "tendermint/PubKeySecp256k1",
-                "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-            },
-        })
-    )
-}

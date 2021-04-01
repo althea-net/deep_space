@@ -1,12 +1,9 @@
 extern crate deep_space;
-use deep_space::address::Address;
-use deep_space::coin::Coin;
+use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
+use deep_space::coin::Fee;
 use deep_space::msg::Msg;
-use deep_space::msg::SendMsg;
 use deep_space::private_key::PrivateKey;
-use deep_space::stdfee::StdFee;
-use deep_space::stdsignmsg::StdSignMsg;
-use deep_space::transaction::TransactionSendType;
+use deep_space::{coin::Coin, private_key::MessageArgs};
 use std::fs::File;
 use std::io::Write;
 
@@ -21,30 +18,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Print some diagnostics
     println!("Address: {}", address.to_bech32("cosmos")?);
     println!("Public key: {}", public_key.to_bech32("cosmospub")?);
-    // Sign some stuff
 
-    let std_sign_msg = StdSignMsg {
-        chain_id: "testing".to_string(),
-        account_number: 1u64,
-        sequence: 0u64,
-        fee: StdFee {
-            amount: vec![],
-            gas: 200_000u64.into(),
-        },
-        msgs: vec![Msg::SendMsg(SendMsg {
-            from_address: address,
-            to_address: Address::from_bech32(
-                "cosmos1pr2n6tfymnn2tk6rkxlu9q5q2zq5ka3wtu7sdj".to_string(),
-            )?,
-            amount: vec![Coin {
-                denom: "validatortoken".to_string(),
-                amount: 1u32.into(),
-            }],
-        })],
-        memo: "hello from Curiosity".to_string(),
+    let coin = Coin {
+        denom: "validatortoken".to_string(),
+        amount: 1u32.into(),
     };
 
-    let tx = private_key.sign_std_msg(std_sign_msg, TransactionSendType::Block)?;
+    let send = MsgSend {
+        amount: vec![coin.clone().into()],
+        from_address: address.to_string(),
+        to_address: "cosmos1pr2n6tfymnn2tk6rkxlu9q5q2zq5ka3wtu7sdj".to_string(),
+    };
+
+    let fee = Fee {
+        amount: vec![coin],
+        gas_limit: 500_000,
+        granter: None,
+        payer: None,
+    };
+    let msg = Msg::new("cosmos-sdk/MsgSend", send);
+
+    let args = MessageArgs {
+        sequence: 0,
+        account_number: 0,
+        chain_id: "mychainid".to_string(),
+        fee,
+        timeout_height: 100,
+    };
+
+    let tx = private_key.sign_std_msg(&[msg], args, "")?;
     println!("TX {:?}", tx);
 
     let mut file = File::create("signed_msg.json")?;

@@ -1,23 +1,18 @@
-///! Private key implementation supports secp256k1
-#[cfg(feature = "key_import")]
-use crate::mnemonic::Bip39Error;
-#[cfg(feature = "key_import")]
 use crate::mnemonic::Mnemonic;
+use crate::msg::Msg;
 use crate::public_key::PublicKey;
-use crate::signature::Signature;
-use crate::stdsignmsg::StdSignMsg;
-use crate::stdtx::StdTx;
-use crate::transaction::Transaction;
-use crate::transaction::TransactionSendType;
 use crate::utils::hex_str_to_bytes;
 use crate::utils::ByteDecodeError;
-use crate::{canonical_json::CanonicalJsonError, msg::DeepSpaceMsg};
+use crate::{coin::Fee, mnemonic::Bip39Error};
+use cosmos_sdk_proto::cosmos::tx::v1beta1::{
+    mode_info, AuthInfo, ModeInfo, SignDoc, SignerInfo, TxBody, TxRaw,
+};
 use num_bigint::BigUint;
-use secp256k1::constants::CURVE_ORDER as CurveN;
+use prost::EncodeError;
 use secp256k1::Error as CurveError;
 use secp256k1::Secp256k1;
-use secp256k1::{Message, PublicKey as PublicKeyEC, SecretKey};
-#[cfg(feature = "key_import")]
+use secp256k1::{constants::CURVE_ORDER as CurveN, Message};
+use secp256k1::{PublicKey as PublicKeyEC, SecretKey};
 use sha2::Sha512;
 use sha2::{Digest, Sha256};
 use std::fmt;
@@ -29,7 +24,7 @@ pub enum PrivateKeyError {
     HexDecodeError(ByteDecodeError),
     HexDecodeErrorWrongLength,
     CurveError(CurveError),
-    CanonicalJsonError(CanonicalJsonError),
+    EncodeError(EncodeError),
 }
 
 impl fmt::Display for PrivateKeyError {
@@ -38,7 +33,7 @@ impl fmt::Display for PrivateKeyError {
             PrivateKeyError::HexDecodeError(val) => write!(f, "PrivateKeyError {}", val),
             PrivateKeyError::HexDecodeErrorWrongLength => write!(f, "PrivateKeyError Wrong Length"),
             PrivateKeyError::CurveError(val) => write!(f, "Secp256k1 Error {}", val),
-            PrivateKeyError::CanonicalJsonError(val) => write!(f, "CanonicalJsonError {}", val),
+            PrivateKeyError::EncodeError(val) => write!(f, "Could not encode message {}", val),
         }
     }
 }
@@ -51,31 +46,37 @@ impl From<CurveError> for PrivateKeyError {
     }
 }
 
-impl From<CanonicalJsonError> for PrivateKeyError {
-    fn from(error: CanonicalJsonError) -> Self {
-        PrivateKeyError::CanonicalJsonError(error)
+impl From<EncodeError> for PrivateKeyError {
+    fn from(error: EncodeError) -> Self {
+        PrivateKeyError::EncodeError(error)
     }
 }
 
-#[cfg(feature = "key_import")]
 #[derive(Debug)]
-pub enum HDWalletError {
+pub enum HdWalletError {
     Bip39Error(Bip39Error),
     InvalidPathSpec(String),
 }
 
-#[cfg(feature = "key_import")]
-impl fmt::Display for HDWalletError {
+impl fmt::Display for HdWalletError {
     fn fmt(&self, f: &mut fmt::Formatter) -> FormatResult {
         match self {
-            HDWalletError::Bip39Error(val) => write!(f, "{}", val),
-            HDWalletError::InvalidPathSpec(val) => write!(f, "HDWalletError invalid path {}", val),
+            HdWalletError::Bip39Error(val) => write!(f, "{}", val),
+            HdWalletError::InvalidPathSpec(val) => write!(f, "HDWalletError invalid path {}", val),
         }
     }
 }
 
-#[cfg(feature = "key_import")]
-impl std::error::Error for HDWalletError {}
+impl std::error::Error for HdWalletError {}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct MessageArgs {
+    pub sequence: u64,
+    pub fee: Fee,
+    pub timeout_height: u64,
+    pub chain_id: String,
+    pub account_number: u64,
+}
 
 /// This structure represents a private key of a Cosmos Network.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
@@ -109,7 +110,6 @@ impl PrivateKey {
         PrivateKey(result)
     }
 
-    #[cfg(feature = "key_import")]
     /// This function will take the key_import phrase provided by CosmosCLI
     /// and import that key. How this is done behind the scenes is quite
     /// complex. The actual seed bytes from the key_import are used to derive
@@ -119,21 +119,20 @@ impl PrivateKey {
     /// the potential key space. This function returns m/44'/118'/0'/0/0 because
     /// that's going to be the key you want essentially all the time. If you need
     /// a different path use from_hd_wallet_path()
-    pub fn from_phrase(phrase: &str, passphrase: &str) -> Result<PrivateKey, HDWalletError> {
+    pub fn from_phrase(phrase: &str, passphrase: &str) -> Result<PrivateKey, HdWalletError> {
         if phrase.is_empty() {
-            return Err(HDWalletError::Bip39Error(Bip39Error::BadWordCount(0)));
+            return Err(HdWalletError::Bip39Error(Bip39Error::BadWordCount(0)));
         }
         PrivateKey::from_hd_wallet_path("m/44'/118'/0'/0/0", phrase, passphrase)
     }
 
-    #[cfg(feature = "key_import")]
     pub fn from_hd_wallet_path(
         path: &str,
         phrase: &str,
         passphrase: &str,
-    ) -> Result<PrivateKey, HDWalletError> {
+    ) -> Result<PrivateKey, HdWalletError> {
         if !path.starts_with('m') || path.contains('\\') {
-            return Err(HDWalletError::InvalidPathSpec(path.to_string()));
+            return Err(HdWalletError::InvalidPathSpec(path.to_string()));
         }
         let mut iterator = path.split('/');
         // discard the m
@@ -156,7 +155,7 @@ impl PrivateKey {
                 secret_key = s;
                 chain_code = c;
             } else {
-                return Err(HDWalletError::InvalidPathSpec(path.to_string()));
+                return Err(HdWalletError::InvalidPathSpec(path.to_string()));
             }
         }
         Ok(PrivateKey(secret_key))
@@ -173,42 +172,84 @@ impl PrivateKey {
 
     /// Signs a transaction that contains at least one message using a single
     /// private key.
-    pub fn sign_std_msg<M: serde::Serialize + std::clone::Clone + DeepSpaceMsg>(
+    pub fn sign_std_msg(
         &self,
-        std_sign_msg: StdSignMsg<M>,
-        mode: TransactionSendType,
-    ) -> Result<Transaction<M>, PrivateKeyError> {
-        let sign_doc = std_sign_msg.to_sign_doc()?;
-        let bytes = sign_doc.to_bytes()?;
+        messages: &[Msg],
+        args: MessageArgs,
+        memo: impl Into<String>,
+    ) -> Result<Vec<u8>, PrivateKeyError> {
+        let our_pubkey = self.to_public_key()?;
+        // Create TxBody
+        let body = TxBody {
+            messages: messages.iter().map(|msg| msg.0.clone()).collect(),
+            memo: memo.into(),
+            timeout_height: args.timeout_height,
+            extension_options: Default::default(),
+            non_critical_extension_options: Default::default(),
+        };
 
-        // SHA256 of the sign document is signed
-        let data = Sha256::digest(&bytes);
+        // A protobuf serialization of a TxBody
+        let mut body_buf = Vec::new();
+        prost::Message::encode(&body, &mut body_buf).unwrap();
+
+        let mut pub_key_buf = Vec::new();
+        prost::Message::encode(&our_pubkey.to_vec(), &mut pub_key_buf).unwrap();
+
+        // TODO(tarcieri): extract proper key type
+        let pk_any = prost_types::Any {
+            type_url: "/cosmos.crypto.secp256k1.PubKey".to_string(),
+            value: our_pubkey.to_vec(),
+        };
+
+        let single = mode_info::Single { mode: 1 };
+
+        let mode = Some(ModeInfo {
+            sum: Some(mode_info::Sum::Single(single)),
+        });
+
+        let signer_info = SignerInfo {
+            public_key: Some(pk_any),
+            mode_info: mode,
+            sequence: args.sequence,
+        };
+
+        let auth_info = AuthInfo {
+            signer_infos: vec![signer_info],
+            fee: Some(args.fee.into()),
+        };
+
+        // Protobuf serialization of `AuthInfo`
+        let mut auth_buf = Vec::new();
+        prost::Message::encode(&auth_info, &mut auth_buf)?;
+
+        let sign_doc = SignDoc {
+            body_bytes: body_buf.clone(),
+            auth_info_bytes: auth_buf.clone(),
+            chain_id: args.chain_id.to_string(),
+            account_number: args.account_number,
+        };
+
+        // Protobuf serialization of `SignDoc`
+        let mut signdoc_buf = Vec::new();
+        prost::Message::encode(&sign_doc, &mut signdoc_buf)?;
 
         let secp256k1 = Secp256k1::new();
         let sk = SecretKey::from_slice(&self.0)?;
-        let msg = Message::from_slice(&data)?;
-        // Do some signing
-        let sig = secp256k1.sign(&msg, &sk);
-        // Extract compact form
-        let compact = sig.serialize_compact().to_vec();
-        let signature = Signature {
-            signature: compact.to_vec(),
-            pub_key: self.to_public_key()?,
+        let msg = Message::from_slice(&signdoc_buf)?;
+        // Sign the signdoc
+        let signed = secp256k1.sign(&msg, &sk);
+        let compact = signed.serialize_compact().to_vec();
+
+        let tx_raw = TxRaw {
+            body_bytes: body_buf,
+            auth_info_bytes: auth_buf,
+            signatures: vec![compact],
         };
 
-        // Put a single signature in a result
-        let std_tx = StdTx {
-            msg: std_sign_msg.msgs,
-            fee: std_sign_msg.fee,
-            memo: std_sign_msg.memo,
-            signatures: vec![signature],
-        };
+        let mut txraw_buf = Vec::new();
+        prost::Message::encode(&tx_raw, &mut txraw_buf)?;
 
-        Ok(match mode {
-            TransactionSendType::Async => Transaction::Async(std_tx),
-            TransactionSendType::Block => Transaction::Block(std_tx),
-            TransactionSendType::Sync => Transaction::Sync(std_tx),
-        })
+        Ok(txraw_buf)
     }
 }
 
@@ -230,7 +271,6 @@ impl FromStr for PrivateKey {
     }
 }
 
-#[cfg(feature = "key_import")]
 /// This derives the master key from seed bytes, the actual usage is typically
 /// for Cosmos key_import support, where we import a seed phrase.
 fn master_key_from_seed(seed_bytes: &[u8]) -> ([u8; 32], [u8; 32]) {
@@ -253,7 +293,6 @@ fn master_key_from_seed(seed_bytes: &[u8]) -> ([u8; 32], [u8; 32]) {
     (master_secret_key, master_chain_code)
 }
 
-#[cfg(feature = "key_import")]
 /// This keys the child key following the bip32 https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki
 /// specified derivation method. This method is internal because you should really be using the public API that
 /// handles key path parsing.
@@ -283,7 +322,9 @@ fn get_child_key(
 
     let l_param = hasher.finalize().into_bytes();
 
-    // If you wanted to do this on your own it would go like this
+    // If you wanted to do this on your own (without add_assign)
+    // it would go like this
+    //
     // but this implementation is not constant time and performs
     // allocations, opening us up to side channel attacks.
     // that being said our Hmac and SHA libraries don't clearly
@@ -313,9 +354,6 @@ fn get_child_key(
 
 #[test]
 fn test_secret() {
-    use crate::coin::Coin;
-    use crate::msg::Msg;
-    use crate::stdfee::StdFee;
     let private_key = PrivateKey::from_secret(b"mySecret");
     assert_eq!(
         private_key.0,
@@ -343,28 +381,8 @@ fn test_secret() {
         address.to_string(),
         "cosmos1nx7vqq8hsy8chwe27mcr4cmazdwus7zjl2ds0p"
     );
-
-    let std_sign_msg = StdSignMsg {
-        chain_id: "test-chain".to_string(),
-        account_number: 1u64,
-        sequence: 1u64,
-        fee: StdFee {
-            amount: vec![Coin {
-                denom: "stake".to_string(),
-                amount: 1u64.into(),
-            }],
-            gas: 200_000u64.into(),
-        },
-        msgs: vec![Msg::Test("foo".to_string())],
-        memo: "hello from Curiousity".to_string(),
-    };
-
-    private_key
-        .sign_std_msg(std_sign_msg, TransactionSendType::Block)
-        .unwrap();
 }
 
-#[cfg(feature = "key_import")]
 #[test]
 fn test_cosmos_key_derivation_manual() {
     let words = "purse sure leg gap above pull rescue glass circle attract erupt can sail gasp shy clarify inflict anger sketch hobby scare mad reject where";
@@ -393,7 +411,6 @@ fn test_cosmos_key_derivation_manual() {
     );
 }
 
-#[cfg(feature = "key_import")]
 #[test]
 fn test_cosmos_key_derivation_with_path_parsing() {
     let words = "purse sure leg gap above pull rescue glass circle attract erupt can sail gasp shy clarify inflict anger sketch hobby scare mad reject where";
@@ -411,7 +428,6 @@ fn test_cosmos_key_derivation_with_path_parsing() {
     );
 }
 
-#[cfg(feature = "key_import")]
 #[test]
 /// This tests deriving HD wallet keys from a given seed and i value
 fn test_vector_hardened() {
@@ -445,7 +461,6 @@ fn test_vector_hardened() {
     assert_eq!(c0_dash.to_vec(), correct_m0_dash_chaincode);
 }
 
-#[cfg(feature = "key_import")]
 #[test]
 /// This tests deriving HD wallet keys from a given seed and i value
 fn test_vector_unhardened() {

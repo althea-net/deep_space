@@ -3,30 +3,41 @@ name = "deep_space"
 version = "0.2.5"
 authors = ["Michał Papierski <michal@papierski.net>", "Justin Kilpatrick <justin@althea.net>"]
 repository = "https://github.com/althea-net/deep_space"
-description = "A highly portable and easy to use transaction generation library for Cosmos blockchains"
+description = "A highly portable, batteries included, transaction generation and key management library for Cosmos blockchains"
 license = "Apache-2.0"
 edition = "2018"
 
 [dependencies]
 num256 = "0.3"
 sha2 = "0.9"
-num-bigint = "0.3"
+num-bigint = "0.4"
 num-traits = "0.2"
-secp256k1 = "0.19"
 ripemd160 = "0.9"
-bech32 = "0.7"
+bech32 = "0.8"
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
 base64 = "0.13"
-unicode-normalization = {version = "0.1", optional = true}
-pbkdf2 = {version = "0.6", optional = true}
-hmac = {version = "0.10", optional = true}
-rand = {version = "0.7", optional = true}
+unicode-normalization = {version = "0.1"}
+prost-types = "0.7"
+prost = "0.7"
+pbkdf2 = {version = "0.7"}
+hmac = {version = "0.10"}
+rand = {version = "0.8"}
+rust_decimal = "1.9"
+secp256k1 = "0.20"
+tendermint = "0.18"
+tonic = "0.4"
+bytes = "1.0"
+cosmos-sdk-proto = {git = "https://github.com/cosmos/cosmos-rust/", branch = "jkilpatr/all-upstream-proto"}
+tendermint-proto = "0.18"
+log = "0.4"
+
+[dev-dependencies]
+rand = "0.8"
+sha3 = "0.9"
+env_logger = "0.8"
+tokio = {version = "1.4", features=["time"]}
+
 
 [features]
-default = ["all"]
-# all features, used for testing
-all = ["key_import"]
-# enable bip39 mnemonic + bip32 HD wallet
-key_import = ["unicode-normalization", "pbkdf2", "hmac", "rand"]

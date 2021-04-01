@@ -2,6 +2,7 @@ use crate::address::Address;
 use crate::utils::hex_str_to_bytes;
 use crate::utils::ByteDecodeError;
 use base64::DecodeError;
+use bech32::Variant;
 use bech32::{self, FromBase32, ToBase32};
 use ripemd160::Ripemd160;
 use serde::{ser::SerializeMap, Serialize, Serializer};
@@ -124,6 +125,10 @@ impl PublicKey {
         &self.0
     }
 
+    pub fn to_vec(&self) -> Vec<u8> {
+        self.0.to_vec()
+    }
+
     /// Create an address object using a given public key.
     pub fn to_address(&self) -> Address {
         let sha256 = Sha256::digest(&self.0);
@@ -147,7 +152,11 @@ impl PublicKey {
     /// * `hrp` - A prefix for a bech32 encoding. By a convention
     /// Cosmos Network uses `cosmospub` as a prefix for encoding public keys.
     pub fn to_bech32<T: Into<String>>(&self, hrp: T) -> Result<String, PublicKeyError> {
-        let bech32 = bech32::encode(&hrp.into(), self.to_amino_bytes().to_base32())?;
+        let bech32 = bech32::encode(
+            &hrp.into(),
+            self.to_amino_bytes().to_base32(),
+            Variant::Bech32,
+        )?;
         Ok(bech32)
     }
 
@@ -155,7 +164,7 @@ impl PublicKey {
     ///
     /// * `s` - A bech32 encoded public key
     pub fn from_bech32(s: String) -> Result<PublicKey, PublicKeyError> {
-        let (_hrp, data) = match bech32::decode(&s) {
+        let (_hrp, data, _) = match bech32::decode(&s) {
             Ok(val) => val,
             Err(_e) => return Err(PublicKeyError::Bech32InvalidEncoding),
         };
@@ -241,17 +250,6 @@ fn check_bech32() {
     let check: Result<PublicKey, PublicKeyError> =
         "cosmospub1addwnpepq2t9r2d2cnpzkfanqxdwum0hgcnxuxh8gmh8jae2de026xvwh5ruxuv5let".parse();
     assert_eq!(check.unwrap(), public_key)
-}
-
-#[test]
-fn serialize_secp256k1_pubkey() {
-    let public_key = PublicKey::default();
-    let serialized = serde_json::to_string(&public_key).unwrap();
-    let deserialized: serde_json::Value = serde_json::from_str(&serialized).unwrap();
-    assert_eq!(
-        deserialized,
-        json!({"type": "tendermint/PubKeySecp256k1", "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"})
-    );
 }
 
 #[test]

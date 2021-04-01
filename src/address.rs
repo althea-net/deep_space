@@ -1,5 +1,6 @@
 use crate::utils::hex_str_to_bytes;
 use crate::utils::ByteDecodeError;
+use bech32::Variant;
 use bech32::{self, FromBase32, ToBase32};
 use serde::Serialize;
 use serde::Serializer;
@@ -64,7 +65,7 @@ impl Address {
     /// * `hrp` - A prefix for bech32 encoding. The convention for addresses
     /// in Cosmos is `cosmos`.
     pub fn to_bech32<T: Into<String>>(&self, hrp: T) -> Result<String, AddressError> {
-        let bech32 = bech32::encode(&hrp.into(), self.0.to_base32())?;
+        let bech32 = bech32::encode(&hrp.into(), self.0.to_base32(), Variant::Bech32)?;
         Ok(bech32)
     }
 
@@ -72,7 +73,7 @@ impl Address {
     ///
     /// * `s` - A bech32 encoded address
     pub fn from_bech32(s: String) -> Result<Address, AddressError> {
-        let (_hrp, data) = match bech32::decode(&s) {
+        let (_hrp, data, _) = match bech32::decode(&s) {
             Ok(val) => val,
             Err(_e) => return Err(AddressError::Bech32InvalidEncoding),
         };
