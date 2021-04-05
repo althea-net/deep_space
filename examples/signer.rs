@@ -1,9 +1,9 @@
 extern crate deep_space;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
-use deep_space::coin::Fee;
-use deep_space::msg::Msg;
-use deep_space::private_key::PrivateKey;
-use deep_space::{coin::Coin, private_key::MessageArgs};
+use deep_space::Fee;
+use deep_space::Msg;
+use deep_space::PrivateKey;
+use deep_space::{Coin, MessageArgs};
 use std::fs::File;
 use std::io::Write;
 
