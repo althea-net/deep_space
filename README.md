@@ -6,10 +6,9 @@
 
 A lightweight, cross-compile friendly, gRPC enabled, batteries included, Cosmos client written in Rust.
 
-Deep Space is, at the moment of writing this, the most complete Rust client for post Stargate Cosmos blockchains.
-
 Designed to be both very robust and easy to use Deep Space allows for querying and transaction generation for all major
-Cosmos components and provides a straightforward structure to build your own downstream transaction generation libraries.
+Cosmos components and provides a straightforward structure to build your own downstream transaction generation libraries for
+specific modules and use cases.
 
 ## Getting Started
 
