@@ -1,73 +1,19 @@
+use crate::coin::Fee;
+use crate::error::*;
 use crate::mnemonic::Mnemonic;
 use crate::msg::Msg;
 use crate::public_key::PublicKey;
 use crate::utils::hex_str_to_bytes;
-use crate::utils::ByteDecodeError;
-use crate::{coin::Fee, mnemonic::Bip39Error};
 use cosmos_sdk_proto::cosmos::tx::v1beta1::{
     mode_info, AuthInfo, ModeInfo, SignDoc, SignerInfo, TxBody, TxRaw,
 };
 use num_bigint::BigUint;
-use prost::EncodeError;
-use secp256k1::Error as CurveError;
 use secp256k1::Secp256k1;
 use secp256k1::{constants::CURVE_ORDER as CurveN, Message};
 use secp256k1::{PublicKey as PublicKeyEC, SecretKey};
 use sha2::Sha512;
 use sha2::{Digest, Sha256};
-use std::fmt;
-use std::fmt::Result as FormatResult;
 use std::str::FromStr;
-
-#[derive(Debug)]
-pub enum PrivateKeyError {
-    HexDecodeError(ByteDecodeError),
-    HexDecodeErrorWrongLength,
-    CurveError(CurveError),
-    EncodeError(EncodeError),
-}
-
-impl fmt::Display for PrivateKeyError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> FormatResult {
-        match self {
-            PrivateKeyError::HexDecodeError(val) => write!(f, "PrivateKeyError {}", val),
-            PrivateKeyError::HexDecodeErrorWrongLength => write!(f, "PrivateKeyError Wrong Length"),
-            PrivateKeyError::CurveError(val) => write!(f, "Secp256k1 Error {}", val),
-            PrivateKeyError::EncodeError(val) => write!(f, "Could not encode message {}", val),
-        }
-    }
-}
-
-impl std::error::Error for PrivateKeyError {}
-
-impl From<CurveError> for PrivateKeyError {
-    fn from(error: CurveError) -> Self {
-        PrivateKeyError::CurveError(error)
-    }
-}
-
-impl From<EncodeError> for PrivateKeyError {
-    fn from(error: EncodeError) -> Self {
-        PrivateKeyError::EncodeError(error)
-    }
-}
-
-#[derive(Debug)]
-pub enum HdWalletError {
-    Bip39Error(Bip39Error),
-    InvalidPathSpec(String),
-}
-
-impl fmt::Display for HdWalletError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> FormatResult {
-        match self {
-            HdWalletError::Bip39Error(val) => write!(f, "{}", val),
-            HdWalletError::InvalidPathSpec(val) => write!(f, "HDWalletError invalid path {}", val),
-        }
-    }
-}
-
-impl std::error::Error for HdWalletError {}
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct MessageArgs {

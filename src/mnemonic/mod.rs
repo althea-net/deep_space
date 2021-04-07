@@ -10,6 +10,7 @@ mod language;
 
 pub use language::Language;
 
+use crate::error::*;
 use fmt::Debug;
 use hmac::Hmac;
 use pbkdf2::pbkdf2;
@@ -17,50 +18,6 @@ use ripemd160::Digest;
 use sha2::{Sha256, Sha512};
 use std::{borrow::Cow, fmt, str::FromStr};
 use unicode_normalization::UnicodeNormalization;
-
-/// A BIP39 error.
-#[derive(Clone, PartialEq, Eq)]
-pub enum Bip39Error {
-    /// Mnemonic has a word count that is not a multiple of 6.
-    BadWordCount(usize),
-    /// Mnemonic contains an unknown word.
-    UnknownWord(String),
-    /// Entropy was not a multiple of 32 bits or between 128-256n bits in length.
-    BadEntropyBitCount(usize),
-    /// The mnemonic has an invalid checksum.
-    InvalidChecksum,
-    /// The word list can be interpreted as multiple languages.
-    AmbiguousWordList(Vec<Language>),
-}
-
-impl fmt::Display for Bip39Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Bip39Error::BadWordCount(c) => write!(
-                f,
-                "mnemonic has a word count that is not a multiple of 6: {}",
-                c,
-            ),
-            Bip39Error::UnknownWord(ref w) => {
-                write!(f, "mnemonic contains an unknown word: {}", w,)
-            }
-            Bip39Error::BadEntropyBitCount(c) => write!(
-                f,
-                "entropy was not between 128-256 bits or not a multiple of 32 bits: {} bits",
-                c,
-            ),
-            Bip39Error::InvalidChecksum => write!(f, "the mnemonic has an invalid checksum"),
-            Bip39Error::AmbiguousWordList(ref langs) => {
-                write!(f, "ambiguous word list: {:?}", langs)
-            }
-        }
-    }
-}
-impl Debug for Bip39Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
-    }
-}
 
 /// A mnemonic code.
 ///

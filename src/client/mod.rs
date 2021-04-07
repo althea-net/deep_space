@@ -1,15 +1,16 @@
 use std::time::Duration;
 
-pub mod error;
 pub mod get;
 pub mod send;
 pub mod types;
+
+pub use types::ChainStatus;
 
 /// An instance of Contact Cosmos RPC Client.
 #[derive(Clone)]
 pub struct Contact {
     url: String,
-    pub timeout: Duration,
+    timeout: Duration,
 }
 
 impl Contact {
@@ -22,6 +23,14 @@ impl Contact {
             url: url.to_string(),
             timeout,
         }
+    }
+
+    pub fn get_url(&self) -> String {
+        self.url.clone()
+    }
+
+    pub fn get_timeout(&self) -> Duration {
+        self.timeout
     }
 }
 

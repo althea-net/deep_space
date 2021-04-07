@@ -5,6 +5,7 @@ use prost::Message;
 use prost_types::Any;
 
 /// Transaction messages, encoded to allow arbitrary payloads
+#[derive(Debug, Clone, PartialEq)]
 pub struct Msg(pub(crate) Any);
 
 impl Msg {

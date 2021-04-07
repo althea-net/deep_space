@@ -1,26 +1,5 @@
-use std::error::Error;
-use std::fmt::Display;
-use std::fmt::Formatter;
-use std::fmt::Result as FmtResult;
-use std::num::ParseIntError;
+use crate::error::ByteDecodeError;
 use std::str;
-
-#[derive(Debug, PartialEq)]
-pub enum ByteDecodeError {
-    DecodeError(str::Utf8Error),
-    ParseError(ParseIntError),
-}
-
-impl Display for ByteDecodeError {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        match self {
-            ByteDecodeError::DecodeError(val) => write!(f, "ByteDecodeError {}", val),
-            ByteDecodeError::ParseError(val) => write!(f, "ByteParseError {}", val),
-        }
-    }
-}
-
-impl Error for ByteDecodeError {}
 
 /// A function that takes a hexadecimal representation of bytes
 /// back into a stream of bytes.

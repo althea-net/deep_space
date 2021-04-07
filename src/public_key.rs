@@ -1,7 +1,6 @@
 use crate::address::Address;
+use crate::error::*;
 use crate::utils::hex_str_to_bytes;
-use crate::utils::ByteDecodeError;
-use base64::DecodeError;
 use bech32::Variant;
 use bech32::{self, FromBase32, ToBase32};
 use ripemd160::Ripemd160;
@@ -10,49 +9,6 @@ use sha2::{Digest, Sha256};
 use std::fmt::{self, Debug};
 use std::hash::Hash;
 use std::{hash::Hasher, str::FromStr};
-
-#[derive(Debug)]
-pub enum PublicKeyError {
-    Bech32WrongLength,
-    Bech32InvalidBase32,
-    Bech32InvalidEncoding,
-    HexDecodeError(ByteDecodeError),
-    Base64DecodeError(DecodeError),
-    HexDecodeErrorWrongLength,
-    BytesDecodeErrorWrongLength,
-}
-
-impl fmt::Display for PublicKeyError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            PublicKeyError::Bech32WrongLength => write!(f, "Bech32WrongLength"),
-            PublicKeyError::Bech32InvalidBase32 => write!(f, "Bech32InvalidBase32"),
-            PublicKeyError::Bech32InvalidEncoding => write!(f, "Bech32InvalidEncoding"),
-            PublicKeyError::HexDecodeError(val) => write!(f, "HexDecodeError {}", val),
-            PublicKeyError::Base64DecodeError(val) => write!(f, "Base64DecodeError {}", val),
-            PublicKeyError::BytesDecodeErrorWrongLength => {
-                write!(f, "BytesDecodeError Wrong Length")
-            }
-            PublicKeyError::HexDecodeErrorWrongLength => write!(f, "HexDecodeError Wrong Length"),
-        }
-    }
-}
-
-impl std::error::Error for PublicKeyError {}
-
-impl From<bech32::Error> for PublicKeyError {
-    fn from(error: bech32::Error) -> Self {
-        match error {
-            bech32::Error::InvalidLength => PublicKeyError::Bech32WrongLength,
-            bech32::Error::InvalidChar(_) => PublicKeyError::Bech32InvalidBase32,
-            bech32::Error::InvalidData(_) => PublicKeyError::Bech32InvalidEncoding,
-            bech32::Error::InvalidChecksum => PublicKeyError::Bech32InvalidEncoding,
-            bech32::Error::InvalidPadding => PublicKeyError::Bech32InvalidEncoding,
-            bech32::Error::MixedCase => PublicKeyError::Bech32InvalidEncoding,
-            bech32::Error::MissingSeparator => PublicKeyError::Bech32InvalidEncoding,
-        }
-    }
-}
 
 /// Represents a public key of a given private key in the Cosmos Network.
 ///

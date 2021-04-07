@@ -1,5 +1,5 @@
+use crate::error::AddressError;
 use crate::utils::hex_str_to_bytes;
-use crate::utils::ByteDecodeError;
 use bech32::Variant;
 use bech32::{self, FromBase32, ToBase32};
 use serde::Serialize;
@@ -8,43 +8,6 @@ use std::fmt;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::str::FromStr;
-
-#[derive(Debug)]
-pub enum AddressError {
-    Bech32WrongLength,
-    Bech32InvalidBase32,
-    Bech32InvalidEncoding,
-    HexDecodeError(ByteDecodeError),
-    HexDecodeErrorWrongLength,
-}
-
-impl fmt::Display for AddressError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            AddressError::Bech32WrongLength => write!(f, "Bech32WrongLength"),
-            AddressError::Bech32InvalidBase32 => write!(f, "Bech32InvalidBase32"),
-            AddressError::Bech32InvalidEncoding => write!(f, "Bech32InvalidEncoding"),
-            AddressError::HexDecodeError(val) => write!(f, "HexDecodeError {}", val),
-            AddressError::HexDecodeErrorWrongLength => write!(f, "HexDecodeError Wrong Length"),
-        }
-    }
-}
-
-impl std::error::Error for AddressError {}
-
-impl From<bech32::Error> for AddressError {
-    fn from(error: bech32::Error) -> Self {
-        match error {
-            bech32::Error::InvalidLength => AddressError::Bech32WrongLength,
-            bech32::Error::InvalidChar(_) => AddressError::Bech32InvalidBase32,
-            bech32::Error::InvalidData(_) => AddressError::Bech32InvalidEncoding,
-            bech32::Error::InvalidChecksum => AddressError::Bech32InvalidEncoding,
-            bech32::Error::InvalidPadding => AddressError::Bech32InvalidEncoding,
-            bech32::Error::MixedCase => AddressError::Bech32InvalidEncoding,
-            bech32::Error::MissingSeparator => AddressError::Bech32InvalidEncoding,
-        }
-    }
-}
 
 /// An address that's derived from a given PublicKey
 #[derive(Default, PartialEq, Eq, Copy, Clone, Deserialize, Hash)]

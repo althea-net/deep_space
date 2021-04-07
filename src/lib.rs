@@ -16,15 +16,16 @@ extern crate log;
 #[macro_use]
 extern crate serde_derive;
 
-mod address;
-mod client;
-mod coin;
-mod decimal;
-mod mnemonic;
-mod msg;
-mod private_key;
-mod public_key;
-mod signature;
+pub mod address;
+pub mod client;
+pub mod coin;
+pub mod decimal;
+pub mod error;
+pub mod mnemonic;
+pub mod msg;
+pub mod private_key;
+pub mod public_key;
+pub mod signature;
 pub mod utils;
 
 pub use address::Address;

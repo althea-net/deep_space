@@ -1,8 +1,10 @@
+use std::time::Duration;
+
 use crate::client::types::*;
 use crate::coin::Coin;
 use crate::coin::Fee;
 use crate::{address::Address, private_key::MessageArgs};
-use crate::{client::error::CosmosGrpcError, client::Contact};
+use crate::{client::Contact, error::CosmosGrpcError};
 use bytes::BytesMut;
 use cosmos_sdk_proto::cosmos::auth::v1beta1::{
     query_client::QueryClient as AuthQueryClient, ModuleAccount, QueryAccountRequest,
@@ -16,6 +18,8 @@ use cosmos_sdk_proto::cosmos::tx::v1beta1::service_client::ServiceClient as TxSe
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxRequest;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxResponse;
 use prost::Message;
+use std::time::Instant;
+use tokio::time::sleep;
 
 impl Contact {
     /// Gets the current chain status, returns an enum taking into account the various possible states
@@ -155,5 +159,32 @@ impl Contact {
             LatestBlock::Syncing { .. } => Err(CosmosGrpcError::NodeNotSynced),
             LatestBlock::WaitingToStart { .. } => Err(CosmosGrpcError::ChainNotRunning),
         }
+    }
+
+    /// Waits for the next block to be produced, useful if you want to wait for
+    /// an on chain event or some thing to change
+    pub async fn wait_for_next_block(&self, timeout: Duration) -> Result<(), CosmosGrpcError> {
+        let start = Instant::now();
+        let mut last_height = None;
+        while Instant::now() - start < timeout {
+            match (self.get_chain_status().await, last_height) {
+                (Ok(ChainStatus::Moving { block_height }), None) => {
+                    last_height = Some(block_height)
+                }
+                (Ok(ChainStatus::Moving { block_height }), Some(last_height)) => {
+                    if block_height > last_height {
+                        return Ok(());
+                    }
+                }
+                (Ok(ChainStatus::Syncing), _) => return Err(CosmosGrpcError::NodeNotSynced),
+                (Ok(ChainStatus::WaitingToStart), _) => {
+                    return Err(CosmosGrpcError::ChainNotRunning)
+                }
+                // we don't want a single error to exit this loop early
+                (Err(_), _) => {}
+            }
+            sleep(Duration::from_secs(1)).await;
+        }
+        Err(CosmosGrpcError::NoBlockProduced { time: timeout })
     }
 }

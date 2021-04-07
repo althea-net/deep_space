@@ -1,8 +1,8 @@
-use super::error::CosmosGrpcError;
 use crate::address::Address;
 use crate::client::Contact;
 use crate::coin::Coin;
 use crate::coin::Fee;
+use crate::error::CosmosGrpcError;
 use crate::msg::Msg;
 use crate::private_key::PrivateKey;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
@@ -37,7 +37,6 @@ impl Contact {
     /// A utility function that creates a one to one simple transaction
     /// and sends it from the provided private key, waiting the configured
     /// amount of time for the tx to enter the chain
-    #[allow(clippy::too_many_arguments)]
     pub async fn send_tokens(
         &self,
         coin: Coin,
@@ -79,20 +78,23 @@ impl Contact {
             })
             .await?;
         let response = response.into_inner();
-
-        if let Some(r) = response.tx_response {
-            let start = Instant::now();
-            if let Some(time) = wait_timeout {
-                while Instant::now() - start < time {
-                    // TODO what actually determines when the tx is in the chain?
-                    let status = self.get_tx_by_hash(r.txhash.clone()).await;
-                }
-            }
-            Ok(r)
+        if let Some(time) = wait_timeout {
+            self.wait_for_tx(response.tx_response.unwrap(), time).await
         } else {
-            Err(CosmosGrpcError::BadResponse(
-                "Did not get txid or details!".to_string(),
-            ))
+            Ok(response.tx_response.unwrap())
         }
+    }
+
+    pub async fn wait_for_tx(
+        &self,
+        response: TxResponse,
+        wait_timeout: Duration,
+    ) -> Result<TxResponse, CosmosGrpcError> {
+        let start = Instant::now();
+        while Instant::now() - start < wait_timeout {
+            // TODO what actually determines when the tx is in the chain?
+            let status = self.get_tx_by_hash(response.txhash.clone()).await;
+        }
+        Ok(response)
     }
 }
