@@ -14,6 +14,8 @@ use cosmos_sdk_proto::cosmos::{
 use serde::Serialize;
 use std::time::Instant;
 use std::{clone::Clone, time::Duration};
+use tokio::time::sleep;
+use tonic::Code as TonicCode;
 
 impl Contact {
     /// The advanced version of create_and_send transaction that expects you to
@@ -64,11 +66,12 @@ impl Contact {
             payer: None,
         };
 
-        let msg = Msg::new("cosmos-sdk/MsgSend", send);
+        let msg = Msg::new("/cosmos.bank.v1beta1.MsgSend", send);
 
         let args = self.get_message_args(our_address, fee).await?;
 
         let msg_bytes = private_key.sign_std_msg(&[msg], args, "Sent with Deep Space")?;
+        println!("{}", msg_bytes.len());
 
         let mut txrpc = TxServiceClient::connect(self.url.clone()).await?;
         let response = txrpc
@@ -78,6 +81,7 @@ impl Contact {
             })
             .await?;
         let response = response.into_inner();
+        println!("broadcasted! with response {:?}", response);
         if let Some(time) = wait_timeout {
             self.wait_for_tx(response.tx_response.unwrap(), time).await
         } else {
@@ -94,7 +98,28 @@ impl Contact {
         while Instant::now() - start < wait_timeout {
             // TODO what actually determines when the tx is in the chain?
             let status = self.get_tx_by_hash(response.txhash.clone()).await;
+            match status {
+                Ok(status) => {
+                    if let Some(res) = status.tx_response {
+                        return Ok(res);
+                    }
+                }
+                Err(CosmosGrpcError::RequestError { error }) => match error.code() {
+                    TonicCode::NotFound | TonicCode::Unknown => {}
+                    _ => {
+                        return Err(CosmosGrpcError::TransactionFailed {
+                            tx: response,
+                            time: Instant::now() - start,
+                        });
+                    }
+                },
+                Err(e) => return Err(e),
+            }
+            sleep(Duration::from_secs(1)).await;
         }
-        Ok(response)
+        Err(CosmosGrpcError::TransactionFailed {
+            tx: response,
+            time: wait_timeout,
+        })
     }
 }

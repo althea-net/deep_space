@@ -7,7 +7,7 @@ use crate::{address::Address, private_key::MessageArgs};
 use crate::{client::Contact, error::CosmosGrpcError};
 use bytes::BytesMut;
 use cosmos_sdk_proto::cosmos::auth::v1beta1::{
-    query_client::QueryClient as AuthQueryClient, ModuleAccount, QueryAccountRequest,
+    query_client::QueryClient as AuthQueryClient, BaseAccount, QueryAccountRequest,
 };
 use cosmos_sdk_proto::cosmos::bank::v1beta1::query_client::QueryClient as BankQueryClient;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::QueryAllBalancesRequest;
@@ -20,6 +20,7 @@ use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxResponse;
 use prost::Message;
 use std::time::Instant;
 use tokio::time::sleep;
+use tonic::Code as GrpcCode;
 
 impl Contact {
     /// Gets the current chain status, returns an enum taking into account the various possible states
@@ -75,7 +76,7 @@ impl Contact {
 
     /// Gets account info for the provided Cosmos account using the accounts endpoint
     /// accounts do not have any info if they have no tokens or are otherwise never seen
-    /// before an Ok(None) result indicates this
+    /// before in this case we return the special error NoToken
     pub async fn get_account_info(&self, address: Address) -> Result<BaseAccount, CosmosGrpcError> {
         let mut agrpc = AuthQueryClient::connect(self.url.clone()).await?;
         let res = agrpc
@@ -83,20 +84,20 @@ impl Contact {
             .account(QueryAccountRequest {
                 address: address.to_string(),
             })
-            .await?
-            .into_inner();
-        let account = res.account;
-        match account {
-            Some(value) => {
+            .await;
+        match res {
+            Ok(account) => {
+                // null pointer if this fails to unwrap
+                let value = account.into_inner().account.unwrap();
                 let mut buf = BytesMut::with_capacity(value.value.len());
-                buf.copy_from_slice(&value.value);
-                let decoded: ModuleAccount = Message::decode(buf)?;
-                match decoded.base_account {
-                    Some(b) => Ok(b.into()),
-                    None => Err(CosmosGrpcError::NoToken),
-                }
+                buf.extend_from_slice(&value.value);
+                let decoded: BaseAccount = BaseAccount::decode(buf)?;
+                Ok(decoded)
             }
-            None => Err(CosmosGrpcError::NoToken),
+            Err(e) => match e.code() {
+                GrpcCode::NotFound => Err(CosmosGrpcError::NoToken),
+                _ => Err(CosmosGrpcError::RequestError { error: e }),
+            },
         }
     }
 

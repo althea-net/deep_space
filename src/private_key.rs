@@ -3,13 +3,17 @@ use crate::error::*;
 use crate::mnemonic::Mnemonic;
 use crate::msg::Msg;
 use crate::public_key::PublicKey;
+use crate::utils::bytes_to_hex_str;
 use crate::utils::hex_str_to_bytes;
+use cosmos_sdk_proto::cosmos::crypto::secp256k1::PubKey as ProtoSecp256k1Pubkey;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::{
     mode_info, AuthInfo, ModeInfo, SignDoc, SignerInfo, TxBody, TxRaw,
 };
 use num_bigint::BigUint;
+use prost::Message;
+use secp256k1::constants::CURVE_ORDER as CurveN;
+use secp256k1::Message as CurveMessage;
 use secp256k1::Secp256k1;
-use secp256k1::{constants::CURVE_ORDER as CurveN, Message};
 use secp256k1::{PublicKey as PublicKeyEC, SecretKey};
 use sha2::Sha512;
 use sha2::{Digest, Sha256};
@@ -136,15 +140,17 @@ impl PrivateKey {
 
         // A protobuf serialization of a TxBody
         let mut body_buf = Vec::new();
-        prost::Message::encode(&body, &mut body_buf).unwrap();
+        body.encode(&mut body_buf).unwrap();
 
         let mut pub_key_buf = Vec::new();
-        prost::Message::encode(&our_pubkey.to_vec(), &mut pub_key_buf).unwrap();
+        let key = ProtoSecp256k1Pubkey {
+            key: our_pubkey.to_vec(),
+        };
+        key.encode(&mut pub_key_buf).unwrap();
 
-        // TODO(tarcieri): extract proper key type
         let pk_any = prost_types::Any {
             type_url: "/cosmos.crypto.secp256k1.PubKey".to_string(),
-            value: our_pubkey.to_vec(),
+            value: pub_key_buf,
         };
 
         let single = mode_info::Single { mode: 1 };
@@ -166,7 +172,7 @@ impl PrivateKey {
 
         // Protobuf serialization of `AuthInfo`
         let mut auth_buf = Vec::new();
-        prost::Message::encode(&auth_info, &mut auth_buf)?;
+        auth_info.encode(&mut auth_buf).unwrap();
 
         let sign_doc = SignDoc {
             body_bytes: body_buf.clone(),
@@ -177,11 +183,12 @@ impl PrivateKey {
 
         // Protobuf serialization of `SignDoc`
         let mut signdoc_buf = Vec::new();
-        prost::Message::encode(&sign_doc, &mut signdoc_buf)?;
+        sign_doc.encode(&mut signdoc_buf).unwrap();
 
         let secp256k1 = Secp256k1::new();
         let sk = SecretKey::from_slice(&self.0)?;
-        let msg = Message::from_slice(&signdoc_buf)?;
+        let digest = Sha256::digest(&signdoc_buf);
+        let msg = CurveMessage::from_slice(&digest)?;
         // Sign the signdoc
         let signed = secp256k1.sign(&msg, &sk);
         let compact = signed.serialize_compact().to_vec();
@@ -193,7 +200,9 @@ impl PrivateKey {
         };
 
         let mut txraw_buf = Vec::new();
-        prost::Message::encode(&tx_raw, &mut txraw_buf)?;
+        tx_raw.encode(&mut txraw_buf).unwrap();
+        let digest = Sha256::digest(&txraw_buf);
+        trace!("TXID {}", bytes_to_hex_str(&digest));
 
         Ok(txraw_buf)
     }

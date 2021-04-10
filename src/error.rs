@@ -1,5 +1,6 @@
 use crate::mnemonic::Language;
 use base64::DecodeError as Base64DecodeError;
+use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use fmt::Debug;
 use prost::DecodeError;
 use prost::EncodeError;
@@ -28,6 +29,7 @@ pub enum CosmosGrpcError {
     ChainNotRunning,
     NodeNotSynced,
     NoBlockProduced { time: Duration },
+    TransactionFailed { tx: TxResponse, time: Duration },
 }
 
 impl Display for CosmosGrpcError {
@@ -61,6 +63,14 @@ impl Display for CosmosGrpcError {
             }
             CosmosGrpcError::NoBlockProduced { time } => {
                 write!(f, "CosmosGrpc NoBlockProduced in {}ms", time.as_millis())
+            }
+            CosmosGrpcError::TransactionFailed { tx, time } => {
+                write!(
+                    f,
+                    "CosmosGrpc Transaction {:?} did not enter chain in {}ms",
+                    tx,
+                    time.as_millis()
+                )
             }
         }
     }

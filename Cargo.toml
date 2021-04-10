@@ -1,6 +1,6 @@
 [package]
 name = "deep_space"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["Michał Papierski <michal@papierski.net>", "Justin Kilpatrick <justin@althea.net>"]
 repository = "https://github.com/althea-net/deep_space"
 description = "A highly portable, batteries included, transaction generation and key management library for Cosmos blockchains"
@@ -29,7 +29,7 @@ secp256k1 = "0.20"
 tendermint-proto = "0.19"
 tonic = "0.4"
 bytes = "1.0"
-cosmos-sdk-proto = "0.4"
+cosmos-sdk-proto = "0.5"
 log = "0.4"
 tokio = {version = "1.4", features=["time"]}
 
@@ -37,7 +37,7 @@ tokio = {version = "1.4", features=["time"]}
 rand = "0.8"
 sha3 = "0.9"
 env_logger = "0.8"
-tokio = {version = "1.4", features=["time"]}
+actix-rt = "2.2"
 
 
 [features]
