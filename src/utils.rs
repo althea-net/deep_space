@@ -73,8 +73,8 @@ impl Display for ArrayString {
 pub fn contains_non_hex_chars(input: &str) -> bool {
     for char in input.chars() {
         if !char.is_ascii_hexdigit() {
-            return false;
+            return true;
         }
     }
-    true
+    false
 }

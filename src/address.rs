@@ -137,9 +137,26 @@ fn test_bech32() {
     let decoded = Address::from_bech32("cosmos1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqnrql8a".to_string())
         .expect("Unable to decode");
     assert_eq!(address, decoded);
+
+    Address::from_bech32("cosmos1vlms2r8f6x7yxjh3ynyzc7ckarqd8a96ckjvrp".to_string())
+        .expect("Failed to decode");
 }
 
 #[test]
 fn test_default_prefix() {
     Address::from_bytes([0; 20], Address::DEFAULT_PREFIX).unwrap();
+}
+
+#[test]
+fn test_parse() {
+    let address = Address::from_bytes([0; 20], "cosmos").unwrap();
+
+    let decoded = "cosmos1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqnrql8a"
+        .parse()
+        .expect("Unable to decode");
+    assert_eq!(address, decoded);
+
+    let _test: Address = "cosmos1vlms2r8f6x7yxjh3ynyzc7ckarqd8a96ckjvrp"
+        .parse()
+        .unwrap();
 }
