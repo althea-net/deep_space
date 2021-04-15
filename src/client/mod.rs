@@ -6,23 +6,34 @@ pub mod types;
 
 pub use types::ChainStatus;
 
+use crate::{error::CosmosGrpcError, utils::ArrayString};
+
 /// An instance of Contact Cosmos RPC Client.
 #[derive(Clone)]
 pub struct Contact {
+    /// The GRPC server url, we connect to this address
+    /// with a new instance for each call to ensure
+    /// proper failover
     url: String,
+    /// The maximum amount of wall time any action taken
+    /// will wait for.
     timeout: Duration,
+    /// The prefix being used by this node / chain for Addresses
+    chain_prefix: String,
 }
 
 impl Contact {
-    pub fn new(url: &str, timeout: Duration) -> Self {
+    pub fn new(url: &str, timeout: Duration, chain_prefix: &str) -> Result<Self, CosmosGrpcError> {
         let mut url = url;
         if !url.ends_with('/') {
             url = url.trim_end_matches('/');
         }
-        Self {
+        ArrayString::new(chain_prefix)?;
+        Ok(Self {
             url: url.to_string(),
             timeout,
-        }
+            chain_prefix: chain_prefix.to_string(),
+        })
     }
 
     pub fn get_url(&self) -> String {
@@ -53,9 +64,9 @@ mod tests {
     async fn test_endpoints() {
         env_logger::init();
         let key = PrivateKey::from_phrase("coral earn airport scan panel burger gown fine kitten verb advice cement inform venture glass section used spin already consider cradle library option panda", "").unwrap();
-        let our_address = key.to_public_key().unwrap().to_address();
+        let our_address = key.to_public_key("cosmospub").unwrap().to_address();
         let token_name = "footoken".to_string();
-        let contact = Contact::new("http://localhost:9090", TIMEOUT);
+        let contact = Contact::new("http://localhost:9090", TIMEOUT, "cosmos").unwrap();
         let destination = "cosmos13lgyj4jj4vs959d8y0ytu20qufaqmhqtzqa6wj"
             .parse()
             .unwrap();

@@ -112,12 +112,12 @@ impl PrivateKey {
     }
 
     /// Obtain a public key for a given private key
-    pub fn to_public_key(&self) -> Result<PublicKey, PrivateKeyError> {
+    pub fn to_public_key(&self, prefix: &str) -> Result<PublicKey, PrivateKeyError> {
         let secp256k1 = Secp256k1::new();
         let sk = SecretKey::from_slice(&self.0)?;
         let pkey = PublicKeyEC::from_secret_key(&secp256k1, &sk);
         let compressed = pkey.serialize();
-        Ok(PublicKey::from_bytes(compressed))
+        Ok(PublicKey::from_bytes(compressed, prefix)?)
     }
 
     /// Signs a transaction that contains at least one message using a single
@@ -128,7 +128,8 @@ impl PrivateKey {
         args: MessageArgs,
         memo: impl Into<String>,
     ) -> Result<Vec<u8>, PrivateKeyError> {
-        let our_pubkey = self.to_public_key()?;
+        // prefix does not matter in this case, you could use a blank string
+        let our_pubkey = self.to_public_key(PublicKey::DEFAULT_PREFIX)?;
         // Create TxBody
         let body = TxBody {
             messages: messages.iter().map(|msg| msg.0.clone()).collect(),
@@ -321,7 +322,7 @@ fn test_secret() {
     );
 
     let public_key = private_key
-        .to_public_key()
+        .to_public_key("cosmospub")
         .expect("Unable to create public key");
 
     assert_eq!(
@@ -354,7 +355,7 @@ fn test_cosmos_key_derivation_manual() {
         get_child_key(m44h_118h_0h_0, c44h_118h_0h_0, 0, false);
 
     let private_key = PrivateKey(m44h_118h_0h_0_0);
-    let public_key = private_key.to_public_key().unwrap();
+    let public_key = private_key.to_public_key("cosmospub").unwrap();
     let address = public_key.to_address();
     assert_eq!(
         address.to_bech32("cosmos").unwrap(),
@@ -371,7 +372,7 @@ fn test_cosmos_key_derivation_with_path_parsing() {
     let words = "purse sure leg gap above pull rescue glass circle attract erupt can sail gasp shy clarify inflict anger sketch hobby scare mad reject where";
     // now test with automated path parsing
     let private_key = PrivateKey::from_phrase(words, "").unwrap();
-    let public_key = private_key.to_public_key().unwrap();
+    let public_key = private_key.to_public_key("cosmospub").unwrap();
     let address = public_key.to_address();
     assert_eq!(
         address.to_bech32("cosmos").unwrap(),
@@ -495,6 +496,6 @@ fn test_many_key_generation() {
         let mut rng = rand::thread_rng();
         let secret: [u8; 32] = rng.gen();
         let cosmos_key = PrivateKey::from_secret(&secret);
-        let _cosmos_address = cosmos_key.to_public_key().unwrap().to_address();
+        let _cosmos_address = cosmos_key.to_public_key("cosmospub").unwrap().to_address();
     }
 }

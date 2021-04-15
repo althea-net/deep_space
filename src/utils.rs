@@ -1,5 +1,8 @@
-use crate::error::ByteDecodeError;
-use std::str;
+use crate::error::{ArrayStringError, ByteDecodeError};
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::fmt::Result as FmtResult;
+use std::{str, usize};
 
 /// A function that takes a hexadecimal representation of bytes
 /// back into a stream of bytes.
@@ -24,4 +27,54 @@ pub fn bytes_to_hex_str(bytes: &[u8]) -> String {
         .iter()
         .map(|b| format!("{:0>2x?}", b))
         .fold(String::new(), |acc, x| acc + &x)
+}
+
+#[derive(PartialEq, Eq, Copy, Clone, Hash, Deserialize, Serialize)]
+pub struct ArrayString {
+    chars: [Option<char>; ArrayString::MAX_LEN],
+    used: usize,
+}
+
+impl ArrayString {
+    const MAX_LEN: usize = 32;
+
+    pub fn new(input: &str) -> Result<Self, ArrayStringError> {
+        if input.len() > ArrayString::MAX_LEN {
+            Err(ArrayStringError::TooLong)
+        } else {
+            let mut ret: [Option<char>; ArrayString::MAX_LEN] = [None; ArrayString::MAX_LEN];
+            let mut counter = 0;
+            for char in input.chars() {
+                ret[counter] = Some(char);
+                counter += 1;
+            }
+            Ok(ArrayString {
+                chars: ret,
+                used: counter,
+            })
+        }
+    }
+}
+
+impl Display for ArrayString {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        let mut str = String::new();
+        for c in self.chars.iter() {
+            if let Some(v) = c {
+                str.push(*v)
+            } else {
+                break;
+            }
+        }
+        write!(f, "{}", str)
+    }
+}
+
+pub fn contains_non_hex_chars(input: &str) -> bool {
+    for char in input.chars() {
+        if !char.is_ascii_hexdigit() {
+            return false;
+        }
+    }
+    true
 }

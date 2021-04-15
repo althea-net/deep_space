@@ -28,6 +28,7 @@ pub enum CosmosGrpcError {
     BadInput(String),
     ChainNotRunning,
     NodeNotSynced,
+    InvalidPrefix,
     NoBlockProduced { time: Duration },
     TransactionFailed { tx: TxResponse, time: Duration },
 }
@@ -64,6 +65,9 @@ impl Display for CosmosGrpcError {
             CosmosGrpcError::NoBlockProduced { time } => {
                 write!(f, "CosmosGrpc NoBlockProduced in {}ms", time.as_millis())
             }
+            CosmosGrpcError::InvalidPrefix => {
+                write!(f, "CosmosGrpc InvalidPrefix")
+            }
             CosmosGrpcError::TransactionFailed { tx, time } => {
                 write!(
                     f,
@@ -90,6 +94,12 @@ impl From<Status> for CosmosGrpcError {
     }
 }
 
+impl From<ArrayStringError> for CosmosGrpcError {
+    fn from(_error: ArrayStringError) -> Self {
+        CosmosGrpcError::InvalidPrefix
+    }
+}
+
 impl From<DecodeError> for CosmosGrpcError {
     fn from(error: DecodeError) -> Self {
         CosmosGrpcError::DecodeError { error }
@@ -109,6 +119,8 @@ pub enum AddressError {
     Bech32InvalidEncoding,
     HexDecodeError(ByteDecodeError),
     HexDecodeErrorWrongLength,
+    PrefixTooLong(ArrayStringError),
+    BytesDecodeErrorWrongLength,
 }
 
 impl fmt::Display for AddressError {
@@ -119,11 +131,19 @@ impl fmt::Display for AddressError {
             AddressError::Bech32InvalidEncoding => write!(f, "Bech32InvalidEncoding"),
             AddressError::HexDecodeError(val) => write!(f, "HexDecodeError {}", val),
             AddressError::HexDecodeErrorWrongLength => write!(f, "HexDecodeError Wrong Length"),
+            AddressError::PrefixTooLong(val) => write!(f, "Prefix too long {}", val),
+            AddressError::BytesDecodeErrorWrongLength => write!(f, "BytesDecodeError Wrong Length"),
         }
     }
 }
 
 impl std::error::Error for AddressError {}
+
+impl From<ArrayStringError> for AddressError {
+    fn from(error: ArrayStringError) -> Self {
+        AddressError::PrefixTooLong(error)
+    }
+}
 
 impl From<bech32::Error> for AddressError {
     fn from(error: bech32::Error) -> Self {
@@ -165,6 +185,7 @@ pub enum PublicKeyError {
     Base64DecodeError(Base64DecodeError),
     HexDecodeErrorWrongLength,
     BytesDecodeErrorWrongLength,
+    PrefixTooLong(ArrayStringError),
 }
 
 impl fmt::Display for PublicKeyError {
@@ -179,11 +200,18 @@ impl fmt::Display for PublicKeyError {
                 write!(f, "BytesDecodeError Wrong Length")
             }
             PublicKeyError::HexDecodeErrorWrongLength => write!(f, "HexDecodeError Wrong Length"),
+            PublicKeyError::PrefixTooLong(val) => write!(f, "Prefix too long {}", val),
         }
     }
 }
 
 impl std::error::Error for PublicKeyError {}
+
+impl From<ArrayStringError> for PublicKeyError {
+    fn from(error: ArrayStringError) -> Self {
+        PublicKeyError::PrefixTooLong(error)
+    }
+}
 
 impl From<bech32::Error> for PublicKeyError {
     fn from(error: bech32::Error) -> Self {
@@ -205,6 +233,7 @@ pub enum PrivateKeyError {
     HexDecodeErrorWrongLength,
     CurveError(CurveError),
     EncodeError(EncodeError),
+    PublicKeyError(PublicKeyError),
 }
 
 impl fmt::Display for PrivateKeyError {
@@ -214,6 +243,7 @@ impl fmt::Display for PrivateKeyError {
             PrivateKeyError::HexDecodeErrorWrongLength => write!(f, "PrivateKeyError Wrong Length"),
             PrivateKeyError::CurveError(val) => write!(f, "Secp256k1 Error {}", val),
             PrivateKeyError::EncodeError(val) => write!(f, "Could not encode message {}", val),
+            PrivateKeyError::PublicKeyError(val) => write!(f, "PublicKeyError {}", val),
         }
     }
 }
@@ -223,6 +253,12 @@ impl std::error::Error for PrivateKeyError {}
 impl From<CurveError> for PrivateKeyError {
     fn from(error: CurveError) -> Self {
         PrivateKeyError::CurveError(error)
+    }
+}
+
+impl From<PublicKeyError> for PrivateKeyError {
+    fn from(error: PublicKeyError) -> Self {
+        PrivateKeyError::PublicKeyError(error)
     }
 }
 
@@ -292,3 +328,20 @@ impl Debug for Bip39Error {
         fmt::Display::fmt(self, f)
     }
 }
+
+#[derive(Debug)]
+pub enum ArrayStringError {
+    TooLong,
+}
+
+impl Display for ArrayStringError {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        match self {
+            ArrayStringError::TooLong => {
+                write!(f, "This string is too long!")
+            }
+        }
+    }
+}
+
+impl Error for ArrayStringError {}

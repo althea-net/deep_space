@@ -49,9 +49,10 @@ impl Contact {
     ) -> Result<TxResponse, CosmosGrpcError> {
         trace!("Creating transaction");
         let our_address = private_key
-            .to_public_key()
+            .to_public_key("")
             .expect("Invalid private key!")
-            .to_address();
+            .to_address_with_prefix(&self.chain_prefix)
+            .unwrap();
 
         let send = MsgSend {
             amount: vec![coin.into()],

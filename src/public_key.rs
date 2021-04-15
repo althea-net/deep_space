@@ -1,97 +1,97 @@
-use crate::address::Address;
 use crate::error::*;
 use crate::utils::hex_str_to_bytes;
+use crate::{address::Address, utils::ArrayString};
 use bech32::Variant;
 use bech32::{self, FromBase32, ToBase32};
 use ripemd160::Ripemd160;
-use serde::{ser::SerializeMap, Serialize, Serializer};
 use sha2::{Digest, Sha256};
-use std::fmt::{self, Debug};
+use std::fmt::{self, Display, Formatter};
 use std::hash::Hash;
-use std::{hash::Hasher, str::FromStr};
+use std::str::FromStr;
 
 /// Represents a public key of a given private key in the Cosmos Network.
-///
-/// Can be created from a private key only.
-#[derive(Copy, Clone)]
-pub struct PublicKey([u8; 33]);
-
-impl Default for PublicKey {
-    fn default() -> Self {
-        Self([0u8; 33])
-    }
-}
-
-impl PartialEq for PublicKey {
-    fn eq(&self, other: &Self) -> bool {
-        for (a, b) in self.0.iter().zip(other.0.iter()) {
-            if a != b {
-                return false;
-            }
-        }
-        true
-    }
-}
-impl Eq for PublicKey {}
-
-impl Hash for PublicKey {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        for byte in self.0.iter() {
-            byte.hash(state);
-        }
-    }
-}
-
-impl Serialize for PublicKey {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        // TODO: A proper enum would be easier to serialize
-        let mut map = serializer.serialize_map(Some(2))?;
-        map.serialize_entry("type", "tendermint/PubKeySecp256k1")?;
-        map.serialize_entry("value", &base64::encode(&self.0[..]))?;
-        map.end()
-    }
-}
-
-impl Debug for PublicKey {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.iter().fmt(f)
-    }
+#[derive(PartialEq, Eq, Copy, Clone, Hash)]
+pub struct PublicKey {
+    bytes: [u8; 33],
+    prefix: ArrayString,
 }
 
 impl PublicKey {
-    /// Create a public key using an array of bytes
-    pub fn from_bytes(bytes: [u8; 33]) -> Self {
-        Self(bytes)
-    }
+    /// In cases where it's impossible to know the Bech32 prefix
+    /// we fall back to this value
+    pub const DEFAULT_PREFIX: &'static str = "cosmospub";
+
     /// Create a public key using a slice of bytes
-    pub fn from_slice(bytes: &[u8]) -> Result<Self, PublicKeyError> {
+    pub fn from_slice<T: Into<String>>(bytes: &[u8], prefix: T) -> Result<Self, PublicKeyError> {
         if bytes.len() != 33 {
             return Err(PublicKeyError::BytesDecodeErrorWrongLength);
         }
         let mut result = [0u8; 33];
         result.copy_from_slice(bytes);
-        Ok(Self(result))
+        PublicKey::from_bytes(result, prefix)
+    }
+
+    /// Create a public key using an array of bytes
+    pub fn from_bytes<T: Into<String>>(
+        bytes: [u8; 33],
+        prefix: T,
+    ) -> Result<PublicKey, PublicKeyError> {
+        Ok(PublicKey {
+            bytes,
+            prefix: ArrayString::new(&prefix.into())?,
+        })
     }
 
     /// Returns bytes of a given public key as a slice of bytes
     pub fn as_bytes(&self) -> &[u8] {
-        &self.0
+        &self.bytes
     }
 
     pub fn to_vec(&self) -> Vec<u8> {
-        self.0.to_vec()
+        self.bytes.to_vec()
+    }
+
+    pub fn get_prefix(&self) -> String {
+        self.prefix.to_string()
+    }
+
+    pub fn change_prefix<T: Into<String>>(&mut self, prefix: T) -> Result<(), PublicKeyError> {
+        self.prefix = ArrayString::new(&prefix.into())?;
+        Ok(())
     }
 
     /// Create an address object using a given public key.
     pub fn to_address(&self) -> Address {
-        let sha256 = Sha256::digest(&self.0);
+        let sha256 = Sha256::digest(&self.bytes);
         let ripemd160 = Ripemd160::digest(&sha256);
         let mut bytes: [u8; 20] = Default::default();
         bytes.copy_from_slice(&ripemd160[..]);
-        Address::from_bytes(bytes)
+        let current_prefix = self.get_prefix();
+        let new_prefix;
+        // Cosmos has the format cosmospub -> cosmos which we
+        // attempt to keep the convention here, note that other
+        // conventions may come out with the wrong prefix by default
+        // that's up to the caller to fix
+        if current_prefix.ends_with("pub") {
+            new_prefix = current_prefix.trim_end_matches("pub");
+        } else {
+            new_prefix = &current_prefix;
+        }
+        // unwrap, the only failure possibility is if the Prefix is bad
+        // and our own prefix can't possibly be bad, we've already validated it
+        // and only reduced it's length since then
+        Address::from_bytes(bytes, new_prefix).unwrap()
+    }
+
+    /// Create an address object using a given public key with the given prefix
+    /// provided as a utility for one step creation and change of prefix if the conventions
+    /// in `to_address()` are incorrect
+    pub fn to_address_with_prefix(&self, prefix: &str) -> Result<Address, AddressError> {
+        let sha256 = Sha256::digest(&self.bytes);
+        let ripemd160 = Ripemd160::digest(&sha256);
+        let mut bytes: [u8; 20] = Default::default();
+        bytes.copy_from_slice(&ripemd160[..]);
+        Address::from_bytes(bytes, prefix)
     }
 
     /// Creates amino representation of a given public key.
@@ -103,7 +103,7 @@ impl PublicKey {
         key_bytes
     }
 
-    /// Create a bech32 encoded public key.
+    /// Create a bech32 encoded public key with an arbitrary prefix
     ///
     /// * `hrp` - A prefix for a bech32 encoding. By a convention
     /// Cosmos Network uses `cosmospub` as a prefix for encoding public keys.
@@ -120,7 +120,7 @@ impl PublicKey {
     ///
     /// * `s` - A bech32 encoded public key
     pub fn from_bech32(s: String) -> Result<PublicKey, PublicKeyError> {
-        let (_hrp, data, _) = match bech32::decode(&s) {
+        let (hrp, data, _) = match bech32::decode(&s) {
             Ok(val) => val,
             Err(_e) => return Err(PublicKeyError::Bech32InvalidEncoding),
         };
@@ -135,30 +135,30 @@ impl PublicKey {
         // the amnio representation prepends 5 bytes, we truncate those here
         // see to_amino_bytes()
         key.copy_from_slice(&vec[5..]);
-        Ok(PublicKey(key))
+        PublicKey::from_bytes(key, hrp)
     }
 }
 
 impl FromStr for PublicKey {
     type Err = PublicKeyError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // interpret as bech32 if prefixed, hex otherwise
-        if s.starts_with("cosmospub") {
-            PublicKey::from_bech32(s.to_string())
-        } else {
-            if let Ok(bytes) = hex_str_to_bytes(s) {
-                if bytes.len() == 33 {
-                    let mut inner = [0; 33];
-                    inner.copy_from_slice(&bytes[0..33]);
-                    return Ok(PublicKey(inner));
-                }
+        if let Ok(k) = PublicKey::from_bech32(s.to_string()) {
+            Ok(k)
+        } else if let Ok(bytes) = hex_str_to_bytes(s) {
+            if bytes.len() == 33 {
+                let mut inner = [0; 33];
+                inner.copy_from_slice(&bytes[0..33]);
+                PublicKey::from_bytes(inner, PublicKey::DEFAULT_PREFIX)
+            } else {
+                Err(PublicKeyError::HexDecodeErrorWrongLength)
             }
+        } else {
             match base64::decode(s) {
                 Ok(bytes) => {
                     if bytes.len() == 33 {
                         let mut inner = [0; 33];
                         inner.copy_from_slice(&bytes[0..33]);
-                        Ok(PublicKey(inner))
+                        Ok(PublicKey::from_bytes(inner, PublicKey::DEFAULT_PREFIX)?)
                     } else {
                         Err(PublicKeyError::BytesDecodeErrorWrongLength)
                     }
@@ -169,6 +169,20 @@ impl FromStr for PublicKey {
     }
 }
 
+impl Display for PublicKey {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let display = self.to_bech32(self.get_prefix()).unwrap();
+        write!(f, "{}", display).expect("Unable to write");
+        Ok(())
+    }
+}
+
+impl fmt::Debug for PublicKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.to_bech32(self.get_prefix()).unwrap())
+    }
+}
+
 #[test]
 fn check_bech32() {
     let raw_bytes = [
@@ -176,11 +190,10 @@ fn check_bech32() {
         0x1F, 0x09, 0x95, 0xC6, 0x2F, 0xC9, 0x5F, 0x51, 0xEA, 0xD1, 0x0A, 0x02, 0xEE, 0x0B, 0xE5,
         0x51, 0xB5, 0xDC,
     ];
-    let public_key = PublicKey::from_slice(&raw_bytes).expect("Unable to create bytes from slice");
-    assert_eq!(&public_key.0[..], &raw_bytes[..]);
-    let res = public_key
-        .to_bech32("cosmospub")
-        .expect("Unable to convert to bech32");
+    let public_key = PublicKey::from_slice(&raw_bytes, PublicKey::DEFAULT_PREFIX)
+        .expect("Unable to create bytes from slice");
+    assert_eq!(&public_key.bytes[..], &raw_bytes[..]);
+    let res = public_key.to_string();
 
     // ground truth
     assert_eq!(
@@ -193,7 +206,8 @@ fn check_bech32() {
         2, 150, 81, 169, 170, 196, 194, 43, 39, 179, 1, 154, 238, 109, 247, 70, 38, 110, 26, 231,
         70, 238, 121, 119, 42, 110, 94, 173, 25, 142, 189, 7, 195,
     ];
-    let public_key = PublicKey::from_slice(&raw_bytes).expect("Unable to create bytes from slice");
+    let public_key = PublicKey::from_slice(&raw_bytes, PublicKey::DEFAULT_PREFIX)
+        .expect("Unable to create bytes from slice");
     let res = public_key
         .to_bech32("cosmospub")
         .expect("Unable to convert to bech32");
