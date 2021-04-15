@@ -1,10 +1,10 @@
-use crate::coin::Fee;
 use crate::error::*;
 use crate::mnemonic::Mnemonic;
 use crate::msg::Msg;
 use crate::public_key::PublicKey;
 use crate::utils::bytes_to_hex_str;
 use crate::utils::hex_str_to_bytes;
+use crate::{coin::Fee, Address};
 use cosmos_sdk_proto::cosmos::crypto::secp256k1::PubKey as ProtoSecp256k1Pubkey;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::{
     mode_info, AuthInfo, ModeInfo, SignDoc, SignerInfo, TxBody, TxRaw,
@@ -118,6 +118,13 @@ impl PrivateKey {
         let pkey = PublicKeyEC::from_secret_key(&secp256k1, &sk);
         let compressed = pkey.serialize();
         Ok(PublicKey::from_bytes(compressed, prefix)?)
+    }
+
+    /// Obtain an Address for a given private key, skipping the intermediate public key
+    pub fn to_address(&self, prefix: &str) -> Result<Address, PrivateKeyError> {
+        let pubkey = self.to_public_key("")?;
+        let address = pubkey.to_address_with_prefix(prefix)?;
+        Ok(address)
     }
 
     /// Signs a transaction that contains at least one message using a single

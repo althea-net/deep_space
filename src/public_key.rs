@@ -62,10 +62,6 @@ impl PublicKey {
 
     /// Create an address object using a given public key.
     pub fn to_address(&self) -> Address {
-        let sha256 = Sha256::digest(&self.bytes);
-        let ripemd160 = Ripemd160::digest(&sha256);
-        let mut bytes: [u8; 20] = Default::default();
-        bytes.copy_from_slice(&ripemd160[..]);
         let current_prefix = self.get_prefix();
         let new_prefix;
         // Cosmos has the format cosmospub -> cosmos which we
@@ -80,7 +76,7 @@ impl PublicKey {
         // unwrap, the only failure possibility is if the Prefix is bad
         // and our own prefix can't possibly be bad, we've already validated it
         // and only reduced it's length since then
-        Address::from_bytes(bytes, new_prefix).unwrap()
+        self.to_address_with_prefix(new_prefix).unwrap()
     }
 
     /// Create an address object using a given public key with the given prefix

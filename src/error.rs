@@ -234,6 +234,7 @@ pub enum PrivateKeyError {
     CurveError(CurveError),
     EncodeError(EncodeError),
     PublicKeyError(PublicKeyError),
+    AddressError(AddressError),
 }
 
 impl fmt::Display for PrivateKeyError {
@@ -243,7 +244,8 @@ impl fmt::Display for PrivateKeyError {
             PrivateKeyError::HexDecodeErrorWrongLength => write!(f, "PrivateKeyError Wrong Length"),
             PrivateKeyError::CurveError(val) => write!(f, "Secp256k1 Error {}", val),
             PrivateKeyError::EncodeError(val) => write!(f, "Could not encode message {}", val),
-            PrivateKeyError::PublicKeyError(val) => write!(f, "PublicKeyError {}", val),
+            PrivateKeyError::PublicKeyError(val) => write!(f, "{}", val),
+            PrivateKeyError::AddressError(val) => write!(f, "{}", val),
         }
     }
 }
@@ -259,6 +261,12 @@ impl From<CurveError> for PrivateKeyError {
 impl From<PublicKeyError> for PrivateKeyError {
     fn from(error: PublicKeyError) -> Self {
         PrivateKeyError::PublicKeyError(error)
+    }
+}
+
+impl From<AddressError> for PrivateKeyError {
+    fn from(error: AddressError) -> Self {
+        PrivateKeyError::AddressError(error)
     }
 }
 
