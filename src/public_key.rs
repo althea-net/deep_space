@@ -227,3 +227,8 @@ fn parse_base64_pubkey() {
     let key = "AvDDT1xY7hXKTy5ESqckNpBbQIArTkf21CfLFDnmWUY4";
     let _key: PublicKey = key.parse().unwrap();
 }
+
+#[test]
+fn test_default_prefix() {
+    PublicKey::from_bytes([0; 33], PublicKey::DEFAULT_PREFIX).unwrap();
+}

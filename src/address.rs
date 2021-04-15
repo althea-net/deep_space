@@ -138,3 +138,8 @@ fn test_bech32() {
         .expect("Unable to decode");
     assert_eq!(address, decoded);
 }
+
+#[test]
+fn test_default_prefix() {
+    Address::from_bytes([0; 20], Address::DEFAULT_PREFIX).unwrap();
+}
