@@ -36,6 +36,10 @@ impl Contact {
         })
     }
 
+    pub fn get_prefix(&self) -> String {
+        self.chain_prefix.clone()
+    }
+
     pub fn get_url(&self) -> String {
         self.url.clone()
     }
