@@ -53,11 +53,20 @@ impl Address {
     }
 }
 
+fn contains_non_hex_chars(input: &str) -> bool {
+    for char in input.chars() {
+        if !char.is_ascii_hexdigit() {
+            return false;
+        }
+    }
+    true
+}
+
 impl FromStr for Address {
     type Err = AddressError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // interpret as bech32 if prefixed, hex otherwise
-        if s.starts_with("cosmos1") {
+        // interpret as bech32 we find any non-hex chars, hex otherwise
+        if contains_non_hex_chars(s) {
             Address::from_bech32(s.to_string())
         } else {
             match hex_str_to_bytes(s) {
