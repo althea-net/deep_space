@@ -248,7 +248,7 @@ fn master_key_from_seed(seed_bytes: &[u8]) -> ([u8; 32], [u8; 32]) {
     use hmac::Hmac;
     type HmacSha512 = Hmac<Sha512>;
 
-    let mut hasher = HmacSha512::new_varkey(b"Bitcoin seed").unwrap();
+    let mut hasher = HmacSha512::new_from_slice(b"Bitcoin seed").unwrap();
     hasher.update(&seed_bytes);
     let hash = hasher.finalize().into_bytes();
     let mut master_secret_key: [u8; 32] = [0; 32];
@@ -277,7 +277,7 @@ fn get_child_key(
     type HmacSha512 = Hmac<Sha512>;
 
     let i = if hardened { 2u32.pow(31) + i } else { i };
-    let mut hasher = HmacSha512::new_varkey(&c_parent).unwrap();
+    let mut hasher = HmacSha512::new_from_slice(&c_parent).unwrap();
     if hardened {
         hasher.update(&[0u8]);
         hasher.update(&k_parent);

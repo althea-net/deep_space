@@ -21,8 +21,8 @@ base64 = "0.13"
 unicode-normalization = {version = "0.1"}
 prost-types = "0.7"
 prost = "0.7"
-pbkdf2 = {version = "0.7"}
-hmac = {version = "0.10"}
+pbkdf2 = {version = "0.8"}
+hmac = {version = "0.11"}
 rand = {version = "0.8"}
 rust_decimal = "1.9"
 secp256k1 = "0.20"
