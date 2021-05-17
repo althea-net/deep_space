@@ -1,10 +1,10 @@
-use crate::error::*;
 use crate::mnemonic::Mnemonic;
 use crate::msg::Msg;
 use crate::public_key::PublicKey;
 use crate::utils::bytes_to_hex_str;
 use crate::utils::hex_str_to_bytes;
 use crate::{coin::Fee, Address};
+use crate::{error::*, utils::contains_non_hex_chars};
 use cosmos_sdk_proto::cosmos::crypto::secp256k1::PubKey as ProtoSecp256k1Pubkey;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::{
     mode_info, AuthInfo, ModeInfo, SignDoc, SignerInfo, TxBody, TxRaw,
@@ -69,9 +69,9 @@ impl PrivateKey {
     /// the potential key space. This function returns m/44'/118'/0'/0/0 because
     /// that's going to be the key you want essentially all the time. If you need
     /// a different path use from_hd_wallet_path()
-    pub fn from_phrase(phrase: &str, passphrase: &str) -> Result<PrivateKey, HdWalletError> {
+    pub fn from_phrase(phrase: &str, passphrase: &str) -> Result<PrivateKey, PrivateKeyError> {
         if phrase.is_empty() {
-            return Err(HdWalletError::Bip39Error(Bip39Error::BadWordCount(0)));
+            return Err(HdWalletError::Bip39Error(Bip39Error::BadWordCount(0)).into());
         }
         PrivateKey::from_hd_wallet_path("m/44'/118'/0'/0/0", phrase, passphrase)
     }
@@ -80,9 +80,9 @@ impl PrivateKey {
         path: &str,
         phrase: &str,
         passphrase: &str,
-    ) -> Result<PrivateKey, HdWalletError> {
+    ) -> Result<PrivateKey, PrivateKeyError> {
         if !path.starts_with('m') || path.contains('\\') {
-            return Err(HdWalletError::InvalidPathSpec(path.to_string()));
+            return Err(HdWalletError::InvalidPathSpec(path.to_string()).into());
         }
         let mut iterator = path.split('/');
         // discard the m
@@ -105,7 +105,7 @@ impl PrivateKey {
                 secret_key = s;
                 chain_code = c;
             } else {
-                return Err(HdWalletError::InvalidPathSpec(path.to_string()));
+                return Err(HdWalletError::InvalidPathSpec(path.to_string()).into());
             }
         }
         Ok(PrivateKey(secret_key))
@@ -229,7 +229,13 @@ impl FromStr for PrivateKey {
                     Err(PrivateKeyError::HexDecodeErrorWrongLength)
                 }
             }
-            Err(e) => Err(PrivateKeyError::HexDecodeError(e)),
+            Err(e) => {
+                if contains_non_hex_chars(s) {
+                    PrivateKey::from_phrase(s, "")
+                } else {
+                    Err(e.into())
+                }
+            }
         }
     }
 }

@@ -235,6 +235,7 @@ pub enum PrivateKeyError {
     EncodeError(EncodeError),
     PublicKeyError(PublicKeyError),
     AddressError(AddressError),
+    HdWalletError(HdWalletError),
 }
 
 impl fmt::Display for PrivateKeyError {
@@ -246,6 +247,7 @@ impl fmt::Display for PrivateKeyError {
             PrivateKeyError::EncodeError(val) => write!(f, "Could not encode message {}", val),
             PrivateKeyError::PublicKeyError(val) => write!(f, "{}", val),
             PrivateKeyError::AddressError(val) => write!(f, "{}", val),
+            PrivateKeyError::HdWalletError(val) => write!(f, "{}", val),
         }
     }
 }
@@ -255,6 +257,12 @@ impl std::error::Error for PrivateKeyError {}
 impl From<CurveError> for PrivateKeyError {
     fn from(error: CurveError) -> Self {
         PrivateKeyError::CurveError(error)
+    }
+}
+
+impl From<HdWalletError> for PrivateKeyError {
+    fn from(error: HdWalletError) -> Self {
+        PrivateKeyError::HdWalletError(error)
     }
 }
 
@@ -273,6 +281,12 @@ impl From<AddressError> for PrivateKeyError {
 impl From<EncodeError> for PrivateKeyError {
     fn from(error: EncodeError) -> Self {
         PrivateKeyError::EncodeError(error)
+    }
+}
+
+impl From<ByteDecodeError> for PrivateKeyError {
+    fn from(error: ByteDecodeError) -> Self {
+        PrivateKeyError::HexDecodeError(error)
     }
 }
 
