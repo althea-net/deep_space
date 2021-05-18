@@ -56,8 +56,8 @@ impl Contact {
 
         let send = MsgSend {
             amount: vec![coin.into()],
-            from_address: our_address.to_string(),
-            to_address: destination.to_string(),
+            from_address: our_address.to_bech32(&self.chain_prefix).unwrap(),
+            to_address: destination.to_bech32(&self.chain_prefix).unwrap(),
         };
 
         let fee = Fee {

@@ -82,7 +82,7 @@ impl Contact {
         let res = agrpc
             // todo detect chain prefix here
             .account(QueryAccountRequest {
-                address: address.to_string(),
+                address: address.to_bech32(&self.chain_prefix).unwrap(),
             })
             .await;
         match res {
@@ -115,8 +115,9 @@ impl Contact {
         let mut bankrpc = BankQueryClient::connect(self.url.clone()).await?;
         let res = bankrpc
             .all_balances(QueryAllBalancesRequest {
-                // TODO determine chain prefix and make sure we're using that prefix
-                address: address.to_string(),
+                // chain prefix is validated as part of this client, so this can't
+                // panic
+                address: address.to_bech32(&self.chain_prefix).unwrap(),
                 pagination: None,
             })
             .await?
