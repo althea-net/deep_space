@@ -2,6 +2,8 @@ use crate::address::Address;
 use cosmos_sdk_proto::cosmos::base::v1beta1::Coin as ProtoCoin;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::Fee as ProtoFee;
 use num256::Uint256;
+use std::convert::TryFrom;
+use std::str::FromStr;
 
 /// Coin holds some amount of one currency we convert from ProtoCoin to do more
 /// validation and provide a generally nicer interface
@@ -9,6 +11,42 @@ use num256::Uint256;
 pub struct Coin {
     pub amount: Uint256,
     pub denom: String,
+}
+
+impl TryFrom<&str> for Coin {
+    type Error = String;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        value.parse()
+    }
+}
+
+impl FromStr for Coin {
+    type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        let value = value.trim();
+        let mut split_idx = 0;
+        for (idx, char) in value.char_indices() {
+            if char.is_alphabetic() {
+                split_idx = idx;
+                break;
+            }
+        }
+        let (amount, denom) = value.split_at(split_idx);
+        for char in denom.chars() {
+            if !char.is_alphabetic() {
+                return Err("Invalid input string".to_string());
+            }
+        }
+        match amount.parse() {
+            Ok(v) => Ok(Coin {
+                amount: v,
+                denom: denom.to_string(),
+            }),
+            Err(e) => Err(e.to_string()),
+        }
+    }
 }
 
 impl Coin {

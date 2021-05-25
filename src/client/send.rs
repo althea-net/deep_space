@@ -5,6 +5,7 @@ use crate::coin::Fee;
 use crate::error::CosmosGrpcError;
 use crate::msg::Msg;
 use crate::private_key::PrivateKey;
+use crate::utils::determine_min_fees_and_gas;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastTxRequest;
@@ -38,11 +39,12 @@ impl Contact {
 
     /// A utility function that creates a one to one simple transaction
     /// and sends it from the provided private key, waiting the configured
-    /// amount of time for the tx to enter the chain
+    /// amount of time for the tx to enter the chain, if you do not specify
+    /// a fee the smallest working amount will be selected.
     pub async fn send_tokens(
         &self,
         coin: Coin,
-        fee: Coin,
+        fee: Option<Coin>,
         destination: Address,
         private_key: PrivateKey,
         wait_timeout: Option<Duration>,
@@ -59,34 +61,46 @@ impl Contact {
             from_address: our_address.to_bech32(&self.chain_prefix).unwrap(),
             to_address: destination.to_bech32(&self.chain_prefix).unwrap(),
         };
-
-        let fee = Fee {
-            amount: vec![fee],
-            gas_limit: 500_000,
-            granter: None,
-            payer: None,
-        };
-
         let msg = Msg::new("/cosmos.bank.v1beta1.MsgSend", send);
 
-        let args = self.get_message_args(our_address, fee).await?;
+        let mut txrpc = TxServiceClient::connect(self.url.clone()).await?;
+
+        let fee_obj = if let Some(fee) = fee {
+            Fee {
+                amount: vec![fee],
+                gas_limit: 500_000,
+                granter: None,
+                payer: None,
+            }
+        } else {
+            Fee {
+                amount: vec![],
+                gas_limit: 500_000,
+                granter: None,
+                payer: None,
+            }
+        };
+
+        let args = self.get_message_args(our_address, fee_obj).await?;
 
         let msg_bytes = private_key.sign_std_msg(&[msg], args, "Sent with Deep Space")?;
-        println!("{}", msg_bytes.len());
+        trace!("{}", msg_bytes.len());
 
-        let mut txrpc = TxServiceClient::connect(self.url.clone()).await?;
         let response = txrpc
             .broadcast_tx(BroadcastTxRequest {
                 tx_bytes: msg_bytes,
                 mode: BroadcastMode::Sync.into(),
             })
             .await?;
-        let response = response.into_inner();
-        println!("broadcasted! with response {:?}", response);
+        let response = response.into_inner().tx_response.unwrap();
+        if let Some(v) = determine_min_fees_and_gas(&response) {
+            return Err(CosmosGrpcError::InsufficientFees { fee_info: v });
+        }
+        trace!("broadcasted! with response {:?}", response);
         if let Some(time) = wait_timeout {
-            self.wait_for_tx(response.tx_response.unwrap(), time).await
+            self.wait_for_tx(response, time).await
         } else {
-            Ok(response.tx_response.unwrap())
+            Ok(response)
         }
     }
 
@@ -99,6 +113,9 @@ impl Contact {
         timeout: Duration,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let start = Instant::now();
+        if let Some(v) = determine_min_fees_and_gas(&response) {
+            return Err(CosmosGrpcError::InsufficientFees { fee_info: v });
+        }
         while Instant::now() - start < timeout {
             // TODO what actually determines when the tx is in the chain?
             let status = self.get_tx_by_hash(response.txhash.clone()).await;

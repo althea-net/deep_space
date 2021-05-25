@@ -6,6 +6,7 @@ use crate::utils::hex_str_to_bytes;
 use crate::{coin::Fee, Address};
 use crate::{error::*, utils::contains_non_hex_chars};
 use cosmos_sdk_proto::cosmos::crypto::secp256k1::PubKey as ProtoSecp256k1Pubkey;
+use cosmos_sdk_proto::cosmos::tx::v1beta1::Tx;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::{
     mode_info, AuthInfo, ModeInfo, SignDoc, SignerInfo, TxBody, TxRaw,
 };
@@ -26,6 +27,14 @@ pub struct MessageArgs {
     pub timeout_height: u64,
     pub chain_id: String,
     pub account_number: u64,
+}
+
+struct TxParts {
+    body: TxBody,
+    body_buf: Vec<u8>,
+    auth_info: AuthInfo,
+    auth_buf: Vec<u8>,
+    signatures: Vec<Vec<u8>>,
 }
 
 /// This structure represents a private key of a Cosmos Network.
@@ -127,14 +136,15 @@ impl PrivateKey {
         Ok(address)
     }
 
-    /// Signs a transaction that contains at least one message using a single
-    /// private key.
-    pub fn sign_std_msg(
+    /// Internal function that that handles building a single message to sign
+    /// returns an internal struct containing the parts of the built transaction
+    /// in a way that's easy to mix and match for various uses and output types.
+    fn build_tx(
         &self,
         messages: &[Msg],
         args: MessageArgs,
         memo: impl Into<String>,
-    ) -> Result<Vec<u8>, PrivateKeyError> {
+    ) -> Result<TxParts, PrivateKeyError> {
         // prefix does not matter in this case, you could use a blank string
         let our_pubkey = self.to_public_key(PublicKey::DEFAULT_PREFIX)?;
         // Create TxBody
@@ -201,10 +211,45 @@ impl PrivateKey {
         let signed = secp256k1.sign(&msg, &sk);
         let compact = signed.serialize_compact().to_vec();
 
-        let tx_raw = TxRaw {
-            body_bytes: body_buf,
-            auth_info_bytes: auth_buf,
+        Ok(TxParts {
+            body,
+            body_buf,
+            auth_info,
+            auth_buf,
             signatures: vec![compact],
+        })
+    }
+
+    /// Signs a transaction that contains at least one message using a single
+    /// private key, returns the standard Tx type, useful for simulations
+    pub fn get_signed_tx(
+        &self,
+        messages: &[Msg],
+        args: MessageArgs,
+        memo: impl Into<String>,
+    ) -> Result<Tx, PrivateKeyError> {
+        let parts = self.build_tx(messages, args, memo)?;
+        Ok(Tx {
+            body: Some(parts.body),
+            auth_info: Some(parts.auth_info),
+            signatures: parts.signatures,
+        })
+    }
+
+    /// Signs a transaction that contains at least one message using a single
+    /// private key.
+    pub fn sign_std_msg(
+        &self,
+        messages: &[Msg],
+        args: MessageArgs,
+        memo: impl Into<String>,
+    ) -> Result<Vec<u8>, PrivateKeyError> {
+        let parts = self.build_tx(messages, args, memo)?;
+
+        let tx_raw = TxRaw {
+            body_bytes: parts.body_buf,
+            auth_info_bytes: parts.auth_buf,
+            signatures: parts.signatures,
         };
 
         let mut txraw_buf = Vec::new();

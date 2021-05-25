@@ -103,7 +103,7 @@ mod tests {
             amount: 100u64.into(),
         };
         contact
-            .send_tokens(send.clone(), send, destination, key, Some(TIMEOUT))
+            .send_tokens(send.clone(), Some(send), destination, key, Some(TIMEOUT))
             .await
             .unwrap();
     }
