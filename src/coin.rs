@@ -3,6 +3,7 @@ use cosmos_sdk_proto::cosmos::base::v1beta1::Coin as ProtoCoin;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::Fee as ProtoFee;
 use num256::Uint256;
 use std::convert::TryFrom;
+use std::fmt;
 use std::str::FromStr;
 
 /// Coin holds some amount of one currency we convert from ProtoCoin to do more
@@ -11,6 +12,12 @@ use std::str::FromStr;
 pub struct Coin {
     pub amount: Uint256,
     pub denom: String,
+}
+
+impl fmt::Display for Coin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", self.amount, self.denom)
+    }
 }
 
 impl TryFrom<&str> for Coin {
@@ -52,6 +59,15 @@ impl FromStr for Coin {
 impl Coin {
     pub fn new(amount: Uint256, denom: String) -> Coin {
         Coin { amount, denom }
+    }
+
+    /// utility function to display a list of coins
+    pub fn display_list(input: &[Coin]) -> String {
+        let mut out = String::new();
+        for i in input {
+            out += &i.to_string()
+        }
+        out
     }
 }
 
