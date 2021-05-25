@@ -90,13 +90,16 @@ impl Contact {
         }
     }
 
+    /// Utility function that waits for a tx to enter the chain by querying
+    /// it's txid, will not exit for timeout time unless the error is known
+    /// and unrecoverable
     pub async fn wait_for_tx(
         &self,
         response: TxResponse,
-        wait_timeout: Duration,
+        timeout: Duration,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let start = Instant::now();
-        while Instant::now() - start < wait_timeout {
+        while Instant::now() - start < timeout {
             // TODO what actually determines when the tx is in the chain?
             let status = self.get_tx_by_hash(response.txhash.clone()).await;
             match status {
@@ -120,7 +123,7 @@ impl Contact {
         }
         Err(CosmosGrpcError::TransactionFailed {
             tx: response,
-            time: wait_timeout,
+            time: timeout,
         })
     }
 }
