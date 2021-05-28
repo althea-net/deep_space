@@ -41,11 +41,6 @@ impl FromStr for Coin {
             }
         }
         let (amount, denom) = value.split_at(split_idx);
-        for char in denom.chars() {
-            if !char.is_alphabetic() {
-                return Err("Invalid input string".to_string());
-            }
-        }
         match amount.parse() {
             Ok(v) => Ok(Coin {
                 amount: v,
@@ -146,5 +141,18 @@ impl From<Fee> for ProtoFee {
             payer,
             granter,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_coin_parse() {
+        let _test: Coin = "100footoken".parse().unwrap();
+        let _test2: Coin = "100000000000gravity0x7580bFE88Dd3d07947908FAE12d95872a260F2D8"
+            .parse()
+            .unwrap();
     }
 }
