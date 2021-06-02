@@ -120,10 +120,15 @@ pub fn determine_min_fees_and_gas(input: &TxResponse) -> Option<FeeInfo> {
 /// Checks a tx response raw_log for known issues returns true if tx is good, false if the tx
 /// has some known error
 pub fn check_tx_response(input: &TxResponse) -> bool {
-    if input.raw_log.contains("account sequence mismatch")
-        || input.raw_log.contains("incorrect account sequence")
-    {
-        return false;
+    let key_phrases = [
+        "account sequence mismatch",
+        "incorrect account sequence",
+        "invalid coins",
+    ];
+    for key in key_phrases.iter() {
+        if input.raw_log.contains(key) {
+            return false;
+        }
     }
 
     true
