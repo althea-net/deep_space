@@ -3,7 +3,6 @@ use crate::coin::Coin;
 use crate::coin::Fee;
 use crate::{address::Address, private_key::MessageArgs};
 use crate::{client::Contact, error::CosmosGrpcError};
-use bytes::buf::Chain;
 use bytes::BytesMut;
 use cosmos_sdk_proto::cosmos::auth::v1beta1::{
     query_client::QueryClient as AuthQueryClient, BaseAccount, QueryAccountRequest,

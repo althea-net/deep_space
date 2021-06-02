@@ -6,6 +6,7 @@ use crate::coin::Fee;
 use crate::error::CosmosGrpcError;
 use crate::msg::Msg;
 use crate::private_key::PrivateKey;
+use crate::utils::check_tx_response;
 use crate::utils::determine_min_fees_and_gas;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
@@ -112,6 +113,11 @@ impl Contact {
         let start = Instant::now();
         if let Some(v) = determine_min_fees_and_gas(&response) {
             return Err(CosmosGrpcError::InsufficientFees { fee_info: v });
+        } else if !check_tx_response(&response) {
+            return Err(CosmosGrpcError::TransactionFailed {
+                tx: response,
+                time: Instant::now() - start,
+            });
         }
         while Instant::now() - start < timeout {
             // TODO what actually determines when the tx is in the chain?

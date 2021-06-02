@@ -1,6 +1,6 @@
 [package]
 name = "deep_space"
-version = "2.3.2"
+version = "2.3.3"
 authors = ["Michał Papierski <michal@papierski.net>", "Justin Kilpatrick <justin@althea.net>"]
 repository = "https://github.com/althea-net/deep_space"
 description = "A highly portable, batteries included, transaction generation and key management library for Cosmos blockchains"
