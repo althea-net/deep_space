@@ -1,7 +1,9 @@
 use std::time::Duration;
 
 pub mod get;
+pub mod gov;
 pub mod send;
+pub mod staking;
 pub mod types;
 
 pub use types::ChainStatus;
@@ -71,7 +73,7 @@ mod tests {
         env_logger::init();
         let key = PrivateKey::from_phrase("boost casual myth skin olympic sure apology creek theme conduct view panda board pride miss turkey lonely strategy panel mad blast panda work shuffle", "").unwrap();
         let token_name = "ufootoken".to_string();
-        let contact = Contact::new("http://104.236.22.8:9090", TIMEOUT, "althea").unwrap();
+        let contact = Contact::new("http://testnet2.althea.net:9090", TIMEOUT, "althea").unwrap();
         let our_address = key.to_address(&contact.get_prefix()).unwrap();
         let destination = "althea1ezyy5y8a4pzv9jgaeh4gd2c4kmhfn4pmpjc8np"
             .parse()
