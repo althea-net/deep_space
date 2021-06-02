@@ -14,7 +14,6 @@ use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastTxRequest;
 use cosmos_sdk_proto::cosmos::{
     base::abci::v1beta1::TxResponse, tx::v1beta1::service_client::ServiceClient as TxServiceClient,
 };
-use serde::Serialize;
 use std::time::Instant;
 use std::{clone::Clone, time::Duration};
 use tokio::time::sleep;
@@ -23,7 +22,7 @@ use tonic::Code as TonicCode;
 impl Contact {
     /// The advanced version of create_and_send transaction that expects you to
     /// perform your own signing and prep first.
-    pub async fn send_transaction<M: Clone + Serialize>(
+    pub async fn send_transaction(
         &self,
         // proto serialized message for us to turn into an 'any' object
         msg: Vec<u8>,
