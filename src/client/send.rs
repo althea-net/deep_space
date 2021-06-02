@@ -1,5 +1,6 @@
 use crate::address::Address;
 use crate::client::Contact;
+use crate::client::MEMO;
 use crate::coin::Coin;
 use crate::coin::Fee;
 use crate::error::CosmosGrpcError;
@@ -27,7 +28,7 @@ impl Contact {
         msg: Vec<u8>,
         mode: BroadcastMode,
     ) -> Result<Option<TxResponse>, CosmosGrpcError> {
-        let mut txrpc = TxServiceClient::connect(self.url.clone()).await?;
+        let mut txrpc = TxServiceClient::connect(self.get_url()).await?;
         let res = txrpc
             .broadcast_tx(BroadcastTxRequest {
                 tx_bytes: msg,
@@ -50,11 +51,7 @@ impl Contact {
         wait_timeout: Option<Duration>,
     ) -> Result<TxResponse, CosmosGrpcError> {
         trace!("Creating transaction");
-        let our_address = private_key
-            .to_public_key("")
-            .expect("Invalid private key!")
-            .to_address_with_prefix(&self.chain_prefix)
-            .unwrap();
+        let our_address = private_key.to_address(&self.chain_prefix).unwrap();
 
         let send = MsgSend {
             amount: vec![coin.into()],
@@ -63,7 +60,7 @@ impl Contact {
         };
         let msg = Msg::new("/cosmos.bank.v1beta1.MsgSend", send);
 
-        let mut txrpc = TxServiceClient::connect(self.url.clone()).await?;
+        let mut txrpc = TxServiceClient::connect(self.get_url()).await?;
 
         let fee_obj = if let Some(fee) = fee {
             Fee {
@@ -83,7 +80,7 @@ impl Contact {
 
         let args = self.get_message_args(our_address, fee_obj).await?;
 
-        let msg_bytes = private_key.sign_std_msg(&[msg], args, "Sent with Deep Space")?;
+        let msg_bytes = private_key.sign_std_msg(&[msg], args, MEMO)?;
         trace!("{}", msg_bytes.len());
 
         let response = txrpc

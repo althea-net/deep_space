@@ -8,6 +8,8 @@ pub use types::ChainStatus;
 
 use crate::{error::CosmosGrpcError, utils::ArrayString};
 
+pub const MEMO: &str = "Sent with Deep Space";
+
 /// An instance of Contact Cosmos RPC Client.
 #[derive(Clone)]
 pub struct Contact {

@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::client::types::*;
 use crate::coin::Coin;
 use crate::coin::Fee;
@@ -18,6 +16,7 @@ use cosmos_sdk_proto::cosmos::tx::v1beta1::service_client::ServiceClient as TxSe
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxRequest;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxResponse;
 use prost::Message;
+use std::time::Duration;
 use std::time::Instant;
 use tokio::time::sleep;
 use tonic::Code as GrpcCode;
