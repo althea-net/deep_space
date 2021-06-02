@@ -3,6 +3,7 @@ use crate::coin::Coin;
 use crate::coin::Fee;
 use crate::{address::Address, private_key::MessageArgs};
 use crate::{client::Contact, error::CosmosGrpcError};
+use bytes::buf::Chain;
 use bytes::BytesMut;
 use cosmos_sdk_proto::cosmos::auth::v1beta1::{
     query_client::QueryClient as AuthQueryClient, BaseAccount, QueryAccountRequest,
@@ -31,20 +32,30 @@ impl Contact {
         if syncing.syncing {
             Ok(ChainStatus::Syncing)
         } else {
-            let block = grpc.get_latest_block(GetLatestBlockRequest {}).await?;
-            let block = block.into_inner().block;
+            let block = grpc.get_latest_block(GetLatestBlockRequest {}).await;
             match block {
-                Some(block) => match block.last_commit {
-                    // for some reason the block height can be negative, we cast it to a u64 for the sake
-                    // of logical bounds checking
-                    Some(commit) => Ok(ChainStatus::Moving {
-                        block_height: commit.height as u64,
-                    }),
-                    None => Err(CosmosGrpcError::BadResponse(
-                        "No commit in block?".to_string(),
-                    )),
+                Ok(block) => match block.into_inner().block {
+                    Some(block) => match block.last_commit {
+                        // for some reason the block height can be negative, we cast it to a u64 for the sake
+                        // of logical bounds checking
+                        Some(commit) => Ok(ChainStatus::Moving {
+                            block_height: commit.height as u64,
+                        }),
+                        None => Err(CosmosGrpcError::BadResponse(
+                            "No commit in block?".to_string(),
+                        )),
+                    },
+                    None => Ok(ChainStatus::WaitingToStart),
                 },
-                None => Ok(ChainStatus::WaitingToStart),
+                // if get syncing succeeded and this fails, it means there's 'no block' and
+                // we're waiting to start
+                Err(e) => {
+                    if e.message().contains("nil Block") {
+                        Ok(ChainStatus::WaitingToStart)
+                    } else {
+                        Err(e.into())
+                    }
+                }
             }
         }
     }
