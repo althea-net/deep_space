@@ -21,21 +21,34 @@ use tonic::Code as TonicCode;
 
 impl Contact {
     /// The advanced version of create_and_send transaction that expects you to
-    /// perform your own signing and prep first.
+    /// perform your own signing and prep first. This is used by all message sending
+    /// functions in deep_space and I suggest you use it that way as well. It provides
+    /// validation for various failure conditions that is non-trivial to perform correctly.
     pub async fn send_transaction(
         &self,
         // proto serialized message for us to turn into an 'any' object
         msg: Vec<u8>,
         mode: BroadcastMode,
-    ) -> Result<Option<TxResponse>, CosmosGrpcError> {
+    ) -> Result<TxResponse, CosmosGrpcError> {
         let mut txrpc = TxServiceClient::connect(self.get_url()).await?;
-        let res = txrpc
+        let response = txrpc
             .broadcast_tx(BroadcastTxRequest {
                 tx_bytes: msg,
                 mode: mode.into(),
             })
-            .await?;
-        Ok(res.into_inner().tx_response)
+            .await?
+            .into_inner()
+            .tx_response
+            .unwrap();
+        if let Some(v) = determine_min_fees_and_gas(&response) {
+            return Err(CosmosGrpcError::InsufficientFees { fee_info: v });
+        } else if !check_tx_response(&response) {
+            return Err(CosmosGrpcError::TransactionFailed {
+                tx: response,
+                time: Duration::from_secs(0),
+            });
+        }
+        Ok(response)
     }
 
     /// A utility function that creates a one to one simple transaction
@@ -60,8 +73,6 @@ impl Contact {
         };
         let msg = Msg::new("/cosmos.bank.v1beta1.MsgSend", send);
 
-        let mut txrpc = TxServiceClient::connect(self.get_url()).await?;
-
         let fee_obj = if let Some(fee) = fee {
             Fee {
                 amount: vec![fee],
@@ -83,16 +94,10 @@ impl Contact {
         let msg_bytes = private_key.sign_std_msg(&[msg], args, MEMO)?;
         trace!("{}", msg_bytes.len());
 
-        let response = txrpc
-            .broadcast_tx(BroadcastTxRequest {
-                tx_bytes: msg_bytes,
-                mode: BroadcastMode::Sync.into(),
-            })
+        let response = self
+            .send_transaction(msg_bytes, BroadcastMode::Sync)
             .await?;
-        let response = response.into_inner().tx_response.unwrap();
-        if let Some(v) = determine_min_fees_and_gas(&response) {
-            return Err(CosmosGrpcError::InsufficientFees { fee_info: v });
-        }
+
         trace!("broadcasted! with response {:?}", response);
         if let Some(time) = wait_timeout {
             self.wait_for_tx(response, time).await
@@ -110,14 +115,6 @@ impl Contact {
         timeout: Duration,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let start = Instant::now();
-        if let Some(v) = determine_min_fees_and_gas(&response) {
-            return Err(CosmosGrpcError::InsufficientFees { fee_info: v });
-        } else if !check_tx_response(&response) {
-            return Err(CosmosGrpcError::TransactionFailed {
-                tx: response,
-                time: Instant::now() - start,
-            });
-        }
         while Instant::now() - start < timeout {
             // TODO what actually determines when the tx is in the chain?
             let status = self.get_tx_by_hash(response.txhash.clone()).await;

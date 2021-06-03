@@ -4,7 +4,6 @@ use std::time::Duration;
 
 use crate::client::MEMO;
 use crate::error::CosmosGrpcError;
-use crate::utils::determine_min_fees_and_gas;
 use crate::Address;
 use crate::Coin;
 use crate::Contact;
@@ -16,9 +15,7 @@ use cosmos_sdk_proto::cosmos::staking::v1beta1::query_client::QueryClient as Sta
 use cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorsRequest;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorsResponse;
-use cosmos_sdk_proto::cosmos::tx::v1beta1::service_client::ServiceClient as TxServiceClient;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
-use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastTxRequest;
 
 impl Contact {
     /// Gets a list of validators
@@ -49,7 +46,6 @@ impl Contact {
         private_key: PrivateKey,
         wait_timeout: Option<Duration>,
     ) -> Result<TxResponse, CosmosGrpcError> {
-        let mut txrpc = TxServiceClient::connect(self.get_url()).await?;
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let vote = MsgDelegate {
             amount: Some(amount_to_delegate.into()),
@@ -71,16 +67,9 @@ impl Contact {
 
         let msg_bytes = private_key.sign_std_msg(&[msg], args, MEMO)?;
 
-        let response = txrpc
-            .broadcast_tx(BroadcastTxRequest {
-                tx_bytes: msg_bytes,
-                mode: BroadcastMode::Sync.into(),
-            })
+        let response = self
+            .send_transaction(msg_bytes, BroadcastMode::Sync)
             .await?;
-        let response = response.into_inner().tx_response.unwrap();
-        if let Some(v) = determine_min_fees_and_gas(&response) {
-            return Err(CosmosGrpcError::InsufficientFees { fee_info: v });
-        }
 
         trace!("broadcasted! with response {:?}", response);
         if let Some(time) = wait_timeout {
