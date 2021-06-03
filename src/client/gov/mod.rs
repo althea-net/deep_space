@@ -112,7 +112,7 @@ impl Contact {
             payer: None,
         };
 
-        let msg = Msg::new("/cosmos.gov.v1betav1.MsgVote", vote);
+        let msg = Msg::new("/cosmos.gov.v1beta1.MsgVote", vote);
 
         let args = self.get_message_args(our_address, fee).await?;
         trace!("got optional tx info");
@@ -154,7 +154,7 @@ impl Contact {
             payer: None,
         };
 
-        let msg = Msg::new("/cosmos.gov.v1betav1.MsgSubmitProposal", proposal);
+        let msg = Msg::new("/cosmos.gov.v1beta1.MsgSubmitProposal", proposal);
 
         let args = self.get_message_args(our_address, fee).await?;
         trace!("got optional tx info");

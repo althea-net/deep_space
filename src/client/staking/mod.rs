@@ -1,7 +1,5 @@
 //! Contains utility functions for interacting with and submitting Cosmos governance proposals
 
-use std::time::Duration;
-
 use crate::client::MEMO;
 use crate::error::CosmosGrpcError;
 use crate::Address;
@@ -16,6 +14,7 @@ use cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorsRequest;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorsResponse;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
+use std::time::Duration;
 
 impl Contact {
     /// Gets a list of validators
@@ -60,7 +59,7 @@ impl Contact {
             payer: None,
         };
 
-        let msg = Msg::new("/cosmos.staking.v1betav1.MsgDelegate", vote);
+        let msg = Msg::new("/cosmos.staking.v1beta1.MsgDelegate", vote);
 
         let args = self.get_message_args(our_address, fee).await?;
         trace!("got optional tx info");
