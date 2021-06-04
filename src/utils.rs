@@ -1,6 +1,7 @@
 use crate::error::{ArrayStringError, ByteDecodeError};
 use crate::Coin;
 use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
+use prost_types::Any;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::Result as FmtResult;
@@ -132,6 +133,13 @@ pub fn check_tx_response(input: &TxResponse) -> bool {
     }
 
     true
+}
+
+/// Helper function for encoding the the proto any type
+pub fn encode_any(input: impl prost::Message, type_url: String) -> Any {
+    let mut value = Vec::new();
+    input.encode(&mut value).unwrap();
+    Any { type_url, value }
 }
 
 #[cfg(test)]

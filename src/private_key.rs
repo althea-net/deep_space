@@ -2,6 +2,7 @@ use crate::mnemonic::Mnemonic;
 use crate::msg::Msg;
 use crate::public_key::PublicKey;
 use crate::utils::bytes_to_hex_str;
+use crate::utils::encode_any;
 use crate::utils::hex_str_to_bytes;
 use crate::{coin::Fee, Address};
 use crate::{error::*, utils::contains_non_hex_chars};
@@ -160,16 +161,11 @@ impl PrivateKey {
         let mut body_buf = Vec::new();
         body.encode(&mut body_buf).unwrap();
 
-        let mut pub_key_buf = Vec::new();
         let key = ProtoSecp256k1Pubkey {
             key: our_pubkey.to_vec(),
         };
-        key.encode(&mut pub_key_buf).unwrap();
 
-        let pk_any = prost_types::Any {
-            type_url: "/cosmos.crypto.secp256k1.PubKey".to_string(),
-            value: pub_key_buf,
-        };
+        let pk_any = encode_any(key, "/cosmos.crypto.secp256k1.PubKey".to_string());
 
         let single = mode_info::Single { mode: 1 };
 
