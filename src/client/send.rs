@@ -125,7 +125,7 @@ impl Contact {
                     }
                 }
                 Err(CosmosGrpcError::RequestError { error }) => match error.code() {
-                    TonicCode::NotFound | TonicCode::Unknown => {}
+                    TonicCode::NotFound | TonicCode::Unknown | TonicCode::InvalidArgument => {}
                     _ => {
                         return Err(CosmosGrpcError::TransactionFailed {
                             tx: response,
