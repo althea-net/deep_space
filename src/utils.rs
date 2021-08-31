@@ -18,9 +18,9 @@ pub fn hex_str_to_bytes(s: &str) -> Result<Vec<u8>, ByteDecodeError> {
         .chunks(2)
         // .into_iter()
         .map(|ch| {
-            str::from_utf8(&ch)
+            str::from_utf8(ch)
                 .map_err(ByteDecodeError::DecodeError)
-                .and_then(|res| u8::from_str_radix(&res, 16).map_err(ByteDecodeError::ParseError))
+                .and_then(|res| u8::from_str_radix(res, 16).map_err(ByteDecodeError::ParseError))
         })
         .collect()
 }

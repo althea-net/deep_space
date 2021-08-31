@@ -237,8 +237,8 @@ impl Mnemonic {
         };
         let mut seed = vec![0u8; PBKDF2_BYTES];
         pbkdf2::<Hmac<Sha512>>(
-            &normalized_mnemonic_cow.as_ref().as_bytes(),
-            &normalized_salt_cow.as_ref().as_bytes(),
+            normalized_mnemonic_cow.as_ref().as_bytes(),
+            normalized_salt_cow.as_ref().as_bytes(),
             PBKDF2_ROUNDS,
             &mut seed,
         );
@@ -444,9 +444,9 @@ mod tests {
 		];
 
         for vector in &test_vectors {
-            let entropy = hex_str_to_bytes(&vector.0).unwrap();
+            let entropy = hex_str_to_bytes(vector.0).unwrap();
             let mnemonic_str = vector.1;
-            let seed = hex_str_to_bytes(&vector.2).unwrap();
+            let seed = hex_str_to_bytes(vector.2).unwrap();
 
             let mnemonic = Mnemonic::from_entropy(&entropy).unwrap();
 
@@ -688,10 +688,10 @@ mod tests {
 		];
 
         for vector in &vectors {
-            let entropy = hex_str_to_bytes(&vector.0).unwrap();
+            let entropy = hex_str_to_bytes(vector.0).unwrap();
             let mnemonic_str = vector.1;
             let passphrase = vector.2;
-            let seed = hex_str_to_bytes(&vector.3).unwrap();
+            let seed = hex_str_to_bytes(vector.3).unwrap();
 
             let mnemonic = Mnemonic::from_entropy_in(Language::Japanese, &entropy).unwrap();
             assert_eq!(

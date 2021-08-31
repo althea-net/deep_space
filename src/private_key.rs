@@ -290,7 +290,7 @@ fn master_key_from_seed(seed_bytes: &[u8]) -> ([u8; 32], [u8; 32]) {
     type HmacSha512 = Hmac<Sha512>;
 
     let mut hasher = HmacSha512::new_from_slice(b"Bitcoin seed").unwrap();
-    hasher.update(&seed_bytes);
+    hasher.update(seed_bytes);
     let hash = hasher.finalize().into_bytes();
     let mut master_secret_key: [u8; 32] = [0; 32];
     let mut master_chain_code: [u8; 32] = [0; 32];

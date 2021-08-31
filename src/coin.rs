@@ -147,6 +147,7 @@ impl From<Fee> for ProtoFee {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::PrivateKey;
 
     #[test]
     fn test_coin_parse() {
@@ -154,5 +155,10 @@ mod tests {
         let _test2: Coin = "100000000000gravity0x7580bFE88Dd3d07947908FAE12d95872a260F2D8"
             .parse()
             .unwrap();
+        let _test3: Coin = "100000000000gravity0xD7600ae27C99988A6CD360234062b540F88ECA43"
+            .parse()
+            .unwrap();
+
+        let _res = PrivateKey::from_phrase("swim cereal address police kiwi ship safe raven other place lizard index auction mother arrive sad void real library upgrade chase frequent bike diesel", "").unwrap();
     }
 }
