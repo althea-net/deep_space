@@ -136,10 +136,13 @@ pub fn check_tx_response(input: &TxResponse) -> bool {
 }
 
 /// Helper function for encoding the the proto any type
-pub fn encode_any(input: impl prost::Message, type_url: String) -> Any {
+pub fn encode_any(input: impl prost::Message, type_url: impl Into<String>) -> Any {
     let mut value = Vec::new();
     input.encode(&mut value).unwrap();
-    Any { type_url, value }
+    Any {
+        type_url: type_url.into(),
+        value,
+    }
 }
 
 #[cfg(test)]
