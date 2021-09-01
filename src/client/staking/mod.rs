@@ -31,7 +31,7 @@ impl Contact {
     pub async fn get_active_validators(&self) -> Result<QueryValidatorsResponse, CosmosGrpcError> {
         let req = QueryValidatorsRequest {
             pagination: None,
-            status: "Bonded".to_string(),
+            status: "BOND_STATUS_BONDED".to_string(),
         };
         self.get_validators_list(req).await
     }
