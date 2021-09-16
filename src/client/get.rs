@@ -15,6 +15,9 @@ use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetSyncingRequest;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::service_client::ServiceClient as TxServiceClient;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxRequest;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxResponse;
+use cosmos_sdk_proto::cosmos::vesting::v1beta1::ContinuousVestingAccount;
+use cosmos_sdk_proto::cosmos::vesting::v1beta1::DelayedVestingAccount;
+use cosmos_sdk_proto::cosmos::vesting::v1beta1::PeriodicVestingAccount;
 use prost::Message;
 use std::time::Duration;
 use std::time::Instant;
@@ -100,15 +103,28 @@ impl Contact {
                 let value = account.into_inner().account.unwrap();
                 let mut buf = BytesMut::with_capacity(value.value.len());
                 buf.extend_from_slice(&value.value);
-                let decoded: BaseAccount = BaseAccount::decode(buf)?;
-                Ok(crate::CosmosAccount::BaseAccount(decoded))
-            }
-            Err(e) => match e.code() {
-                GrpcCode::NotFound => Err(CosmosGrpcError::NoToken),
-                _ => Err(CosmosGrpcError::RequestError { error: e }),
-            },
-        }
+                match BaseAccount::decode(buf.clone()){
+                    Ok(decoded) => Ok(crate::CosmosAccount::BaseAccount(decoded)),
+                    Err(_) => match PeriodicVestingAccount::decode(buf.clone()){
+                        Ok(decode) => return Ok(crate::CosmosAccount::PeriodicVesting(decode)),
+                        Err(_) => match ContinuousVestingAccount::decode(buf.clone()){
+                            Ok(decoded) => return Ok(crate::CosmosAccount::ContinuousVesting(decoded)),
+                            Err(_) => match DelayedVestingAccount::decode(buf.clone()){
+                                Ok(decoded) => return Ok(crate::CosmosAccount::DelayedVesting(decoded)),
+                                Err(_) => Err(CosmosGrpcError::BadResponse("Unknown account type".to_string())),
+                            } 
+                                
+                            },
+                        },
+                    }
+                },
+                Err(e) => match e.code() {
+                    GrpcCode::NotFound => return Err(CosmosGrpcError::NoToken),
+                    _ => return Err(CosmosGrpcError::RequestError { error: e }),
+                },
+            
     }
+}
 
     // Gets a transaction using it's hash value, TODO should fail if the transaction isn't found
     pub async fn get_tx_by_hash(&self, txhash: String) -> Result<GetTxResponse, CosmosGrpcError> {
