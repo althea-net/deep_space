@@ -38,3 +38,14 @@ pub use private_key::MessageArgs;
 pub use private_key::PrivateKey;
 pub use public_key::PublicKey;
 pub use signature::Signature;
+
+use cosmos_sdk_proto::cosmos::auth::v1beta1::BaseAccount;
+use cosmos_sdk_proto::cosmos::vesting::v1beta1::{PeriodicVestingAccount,DelayedVestingAccount,ContinuousVestingAccount};
+
+
+pub enum CosmosAccount{
+    BaseAccount(BaseAccount),
+    PeriodicVesting(PeriodicVestingAccount),
+    DelayedVesting(DelayedVestingAccount),
+    ContinuousVesting(ContinuousVestingAccount),
+}

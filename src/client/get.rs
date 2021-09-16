@@ -86,7 +86,7 @@ impl Contact {
     /// Gets account info for the provided Cosmos account using the accounts endpoint
     /// accounts do not have any info if they have no tokens or are otherwise never seen
     /// before in this case we return the special error NoToken
-    pub async fn get_account_info(&self, address: Address) -> Result<BaseAccount, CosmosGrpcError> {
+    pub async fn get_account_info(&self, address: Address) -> Result<crate::CosmosAccount, CosmosGrpcError> {
         let mut agrpc = AuthQueryClient::connect(self.url.clone()).await?;
         let res = agrpc
             // todo detect chain prefix here
@@ -101,7 +101,7 @@ impl Contact {
                 let mut buf = BytesMut::with_capacity(value.value.len());
                 buf.extend_from_slice(&value.value);
                 let decoded: BaseAccount = BaseAccount::decode(buf)?;
-                Ok(decoded)
+                Ok(crate::CosmosAccount::BaseAccount(decoded))
             }
             Err(e) => match e.code() {
                 GrpcCode::NotFound => Err(CosmosGrpcError::NoToken),
@@ -149,14 +149,53 @@ impl Contact {
         fee: Fee,
     ) -> Result<MessageArgs, CosmosGrpcError> {
         let account_info = self.get_account_info(our_address).await?;
+
+   let(sequence,account_number  )   = match account_info {
+            crate::CosmosAccount::BaseAccount(b) => (b.sequence,b.account_number),
+            crate::CosmosAccount::PeriodicVesting(pv) => {
+                match pv.base_vesting_account{
+                    Some(ba) => {
+                        match ba.base_account{ 
+                            Some(ba) => (ba.sequence,ba.account_number),
+                            None => return Err(CosmosGrpcError::BadResponse("No base account in periodic vesting account".to_string())),                            
+                        }
+                    }
+                    None => return Err(CosmosGrpcError::BadResponse("No base account in periodic vesting account".to_string())),
+                }
+            },
+            crate::CosmosAccount::DelayedVesting(dv) =>{
+                match dv.base_vesting_account{
+                    Some(ba) => {
+                        match ba.base_account{
+                            Some(ba) => (ba.sequence,ba.account_number),
+                            None => return Err(CosmosGrpcError::BadResponse("No base account in delayed vesting account".to_string())),
+                        }
+                    },
+                    None => return Err(CosmosGrpcError::BadResponse("No base account in delayed vesting account".to_string())),
+                }
+            },
+            crate::CosmosAccount::ContinuousVesting(cv) => {
+                match cv.base_vesting_account{
+                    Some(ba) => {
+                        match ba.base_account{
+                            Some(ba) => (ba.sequence,ba.account_number),
+                            None => return Err(CosmosGrpcError::BadResponse("No base account in continuous vesting account".to_string())),
+                        }
+                    }
+                    None => return Err(CosmosGrpcError::BadResponse("No base account in continuous vesting account".to_string())),
+                }
+            },
+
+        };
+
         let latest_block = self.get_latest_block().await?;
 
         match latest_block {
             LatestBlock::Latest { block } => {
                 if let Some(header) = block.header {
                     Ok(MessageArgs {
-                        sequence: account_info.sequence,
-                        account_number: account_info.account_number,
+                        sequence: sequence,
+                        account_number: account_number,
                         chain_id: header.chain_id,
                         fee,
                         timeout_height: header.height as u64 + 100,
