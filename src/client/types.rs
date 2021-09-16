@@ -1,5 +1,8 @@
 use crate::address::Address;
 use cosmos_sdk_proto::cosmos::auth::v1beta1::BaseAccount as ProtoBaseAccount;
+use cosmos_sdk_proto::cosmos::vesting::v1beta1::{
+    ContinuousVestingAccount, DelayedVestingAccount, PeriodicVestingAccount,
+};
 use serde::Deserialize;
 use tendermint_proto::types::Block;
 
@@ -55,6 +58,62 @@ impl From<ProtoBaseAccount> for BaseAccount {
             account_number: value.account_number,
             sequence: value.sequence,
         }
+    }
+}
+
+/// A trait for all Cosmos account types that requires
+/// all types be sized and implement Clone
+pub trait CosmosAccount {
+    fn get_base_account(&self) -> BaseAccount;
+}
+
+// note that the vesting account nested uses gogoproto's embed tag
+// https://github.com/cosmos/cosmos-sdk/blob/master/proto/cosmos/vesting/v1beta1/vesting.proto#L16
+// As noted in the gogoproto docs this enforces that the values are not null https://pkg.go.dev/github.com/gogo/protobuf/gogoproto#pkg-types
+// therefore we unwrap() the options used to represent Go pointers here
+
+impl CosmosAccount for BaseAccount {
+    fn get_base_account(&self) -> BaseAccount {
+        self.clone()
+    }
+}
+
+impl CosmosAccount for ProtoBaseAccount {
+    fn get_base_account(&self) -> BaseAccount {
+        self.clone().into()
+    }
+}
+
+impl CosmosAccount for ContinuousVestingAccount {
+    fn get_base_account(&self) -> BaseAccount {
+        self.base_vesting_account
+            .clone()
+            .unwrap()
+            .base_account
+            .unwrap()
+            .into()
+    }
+}
+
+impl CosmosAccount for DelayedVestingAccount {
+    fn get_base_account(&self) -> BaseAccount {
+        self.base_vesting_account
+            .clone()
+            .unwrap()
+            .base_account
+            .unwrap()
+            .into()
+    }
+}
+
+impl CosmosAccount for PeriodicVestingAccount {
+    fn get_base_account(&self) -> BaseAccount {
+        self.base_vesting_account
+            .clone()
+            .unwrap()
+            .base_account
+            .unwrap()
+            .into()
     }
 }
 

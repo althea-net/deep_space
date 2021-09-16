@@ -1,3 +1,5 @@
+use crate::client::types::BaseAccount;
+use crate::client::types::CosmosAccount;
 use crate::client::types::*;
 use crate::coin::Coin;
 use crate::coin::Fee;
@@ -5,7 +7,8 @@ use crate::{address::Address, private_key::MessageArgs};
 use crate::{client::Contact, error::CosmosGrpcError};
 use bytes::BytesMut;
 use cosmos_sdk_proto::cosmos::auth::v1beta1::{
-    query_client::QueryClient as AuthQueryClient, BaseAccount, QueryAccountRequest,
+    query_client::QueryClient as AuthQueryClient, BaseAccount as ProtoBaseAccount,
+    QueryAccountRequest,
 };
 use cosmos_sdk_proto::cosmos::bank::v1beta1::query_client::QueryClient as BankQueryClient;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::QueryAllBalancesRequest;
@@ -15,6 +18,9 @@ use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetSyncingRequest;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::service_client::ServiceClient as TxServiceClient;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxRequest;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxResponse;
+use cosmos_sdk_proto::cosmos::vesting::v1beta1::ContinuousVestingAccount;
+use cosmos_sdk_proto::cosmos::vesting::v1beta1::DelayedVestingAccount;
+use cosmos_sdk_proto::cosmos::vesting::v1beta1::PeriodicVestingAccount;
 use prost::Message;
 use std::time::Duration;
 use std::time::Instant;
@@ -100,8 +106,18 @@ impl Contact {
                 let value = account.into_inner().account.unwrap();
                 let mut buf = BytesMut::with_capacity(value.value.len());
                 buf.extend_from_slice(&value.value);
-                let decoded: BaseAccount = BaseAccount::decode(buf)?;
-                Ok(decoded)
+                match (
+                    ProtoBaseAccount::decode(buf.clone()),
+                    PeriodicVestingAccount::decode(buf.clone()),
+                    ContinuousVestingAccount::decode(buf.clone()),
+                    DelayedVestingAccount::decode(buf.clone()),
+                ) {
+                    (Ok(d), _, _, _) => Ok(d.get_base_account()),
+                    (_, Ok(d), _, _) => Ok(d.get_base_account()),
+                    (_, _, Ok(d), _) => Ok(d.get_base_account()),
+                    (_, _, _, Ok(d)) => Ok(d.get_base_account()),
+                    (Err(e), _, _, _) => Err(CosmosGrpcError::DecodeError { error: e }),
+                }
             }
             Err(e) => match e.code() {
                 GrpcCode::NotFound => Err(CosmosGrpcError::NoToken),
@@ -149,6 +165,7 @@ impl Contact {
         fee: Fee,
     ) -> Result<MessageArgs, CosmosGrpcError> {
         let account_info = self.get_account_info(our_address).await?;
+
         let latest_block = self.get_latest_block().await?;
 
         match latest_block {
