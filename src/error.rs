@@ -3,6 +3,7 @@ use crate::utils::FeeInfo;
 use base64::DecodeError as Base64DecodeError;
 use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use fmt::Debug;
+use num_bigint::ParseBigIntError;
 use prost::DecodeError;
 use prost::EncodeError;
 use secp256k1::Error as CurveError;
@@ -33,6 +34,7 @@ pub enum CosmosGrpcError {
     NoBlockProduced { time: Duration },
     TransactionFailed { tx: TxResponse, time: Duration },
     InsufficientFees { fee_info: FeeInfo },
+    ParseError { error: ParseBigIntError },
 }
 
 impl Display for CosmosGrpcError {
@@ -80,6 +82,9 @@ impl Display for CosmosGrpcError {
             }
             CosmosGrpcError::InsufficientFees { fee_info } => {
                 write!(f, "Insufficient fees or gas for transaction {:?}", fee_info)
+            }
+            CosmosGrpcError::ParseError { error } => {
+                write!(f, "Failed to Parse BigInt {:?}", error)
             }
         }
     }
