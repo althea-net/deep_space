@@ -11,6 +11,8 @@ use crate::utils::determine_min_fees_and_gas;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastTxRequest;
+use cosmos_sdk_proto::cosmos::tx::v1beta1::SimulateRequest;
+use cosmos_sdk_proto::cosmos::tx::v1beta1::SimulateResponse;
 use cosmos_sdk_proto::cosmos::{
     base::abci::v1beta1::TxResponse, tx::v1beta1::service_client::ServiceClient as TxServiceClient,
 };
@@ -48,6 +50,35 @@ impl Contact {
                 time: Duration::from_secs(0),
             });
         }
+        Ok(response)
+    }
+
+    pub async fn simulate_tx(
+        &self,
+        // proto serialized message for us to turn into an 'any' object
+        messages: &[Msg],
+        private_key: PrivateKey,
+    ) -> Result<SimulateResponse, CosmosGrpcError> {
+        let our_address = private_key.to_address(&self.chain_prefix).unwrap();
+        let mut txrpc = TxServiceClient::connect(self.get_url()).await?;
+
+        let fee_obj = Fee {
+            amount: vec![],
+            gas_limit: 500_000,
+            granter: None,
+            payer: None,
+        };
+
+        let args = self.get_message_args(our_address, fee_obj).await?;
+
+        let tx_bytes = private_key.sign_std_msg(messages, args, MEMO)?;
+
+        // used to avoid the deprication warning on SimulateRequest
+        #[allow(deprecated)]
+        let sim_request = SimulateRequest { tx_bytes, tx: None };
+
+        let response = txrpc.simulate(sim_request).await?.into_inner();
+
         Ok(response)
     }
 
