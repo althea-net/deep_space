@@ -178,11 +178,15 @@ impl Contact {
             .gas_info
             .unwrap();
         let gas_used = gas_info.gas_used;
+        trace!("Got {} gas used!", gas_used);
         Ok(Fee {
             amount: fee_token.to_vec(),
             granter: None,
             payer: None,
-            gas_limit: gas_used,
+            // due to this known issue, gas estimation is
+            // inaccurate, normally short about ~20% in my tests
+            // https://github.com/cosmos/cosmos-sdk/issues/4938
+            gas_limit: gas_used * 2,
         })
     }
 
