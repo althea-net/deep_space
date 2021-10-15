@@ -3,6 +3,7 @@ use cosmos_sdk_proto::cosmos::auth::v1beta1::BaseAccount as ProtoBaseAccount;
 use cosmos_sdk_proto::cosmos::vesting::v1beta1::{
     ContinuousVestingAccount, DelayedVestingAccount, PeriodicVestingAccount,
 };
+use prost_types::Any;
 use serde::Deserialize;
 use tendermint_proto::types::Block;
 
@@ -45,7 +46,8 @@ pub enum LatestBlock {
 pub struct BaseAccount {
     pub address: Address,
     /// an unprocessed proto struct containing a pubkey type
-    pub pubkey: Vec<u8>,
+    #[serde(skip_serializing, skip_deserializing)]
+    pub pubkey: Option<Any>,
     pub account_number: u64,
     pub sequence: u64,
 }
@@ -54,7 +56,7 @@ impl From<ProtoBaseAccount> for BaseAccount {
     fn from(value: ProtoBaseAccount) -> Self {
         BaseAccount {
             address: value.address.parse().unwrap(),
-            pubkey: value.pub_key.unwrap().value,
+            pubkey: value.pub_key,
             account_number: value.account_number,
             sequence: value.sequence,
         }
