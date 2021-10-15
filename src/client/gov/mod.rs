@@ -1,10 +1,8 @@
 //! Contains utility functions for interacting with and modifying Cosmos validator staking status
 
-use crate::client::MEMO;
 use crate::error::CosmosGrpcError;
 use crate::Coin;
 use crate::Contact;
-use crate::Fee;
 use crate::Msg;
 use crate::PrivateKey;
 use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
@@ -15,7 +13,6 @@ use cosmos_sdk_proto::cosmos::gov::v1beta1::ProposalStatus;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::QueryProposalsRequest;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::QueryProposalsResponse;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::VoteOption;
-use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
 use prost_types::Any;
 use std::time::Duration;
 
@@ -105,30 +102,9 @@ impl Contact {
             option: vote.into(),
         };
 
-        let fee = Fee {
-            amount: vec![fee],
-            gas_limit: 500_000u64,
-            granter: None,
-            payer: None,
-        };
-
         let msg = Msg::new("/cosmos.gov.v1beta1.MsgVote", vote);
-
-        let args = self.get_message_args(our_address, fee).await?;
-        trace!("got optional tx info");
-
-        let msg_bytes = private_key.sign_std_msg(&[msg], args, MEMO)?;
-
-        let response = self
-            .send_transaction(msg_bytes, BroadcastMode::Sync)
-            .await?;
-
-        trace!("broadcasted! with response {:?}", response);
-        if let Some(time) = wait_timeout {
-            self.wait_for_tx(response, time).await
-        } else {
-            Ok(response)
-        }
+        self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
+            .await
     }
 
     /// Provides an interface for submitting governance proposals
@@ -147,29 +123,8 @@ impl Contact {
             initial_deposit: vec![deposit.into()],
         };
 
-        let fee = Fee {
-            amount: vec![fee],
-            gas_limit: 500_000u64,
-            granter: None,
-            payer: None,
-        };
-
         let msg = Msg::new("/cosmos.gov.v1beta1.MsgSubmitProposal", proposal);
-
-        let args = self.get_message_args(our_address, fee).await?;
-        trace!("got optional tx info");
-
-        let msg_bytes = private_key.sign_std_msg(&[msg], args, MEMO)?;
-
-        let response = self
-            .send_transaction(msg_bytes, BroadcastMode::Sync)
-            .await?;
-
-        trace!("broadcasted! with response {:?}", response);
-        if let Some(time) = wait_timeout {
-            self.wait_for_tx(response, time).await
-        } else {
-            Ok(response)
-        }
+        self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
+            .await
     }
 }
