@@ -5,7 +5,7 @@ authors = ["Justin Kilpatrick <justin@althea.net>", "Michał Papierski <michal@p
 repository = "https://github.com/althea-net/deep_space"
 description = "A highly portable, batteries included, transaction generation and key management library for Cosmos blockchains"
 license = "Apache-2.0"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 num256 = "0.3"
