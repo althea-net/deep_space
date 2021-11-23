@@ -3,9 +3,8 @@ use cosmos_sdk_proto::cosmos::auth::v1beta1::BaseAccount as ProtoBaseAccount;
 use cosmos_sdk_proto::cosmos::vesting::v1beta1::{
     ContinuousVestingAccount, DelayedVestingAccount, PeriodicVestingAccount,
 };
+use cosmos_sdk_proto::tendermint::types::Block;
 use prost_types::Any;
-use serde::Deserialize;
-use tendermint_proto::types::Block;
 
 /// This struct represents the status of a Cosmos chain, instead of just getting the
 /// latest block height we mandate that chain status is used, this allows callers to
