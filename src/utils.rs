@@ -1,10 +1,11 @@
-use crate::error::{ArrayStringError, ByteDecodeError};
+use crate::error::{ArrayStringError, ByteDecodeError, CosmosGrpcError, SdkErrorCode};
 use crate::Coin;
 use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use prost_types::Any;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::Result as FmtResult;
+use std::time::Duration;
 use std::{str, usize};
 
 /// A function that takes a hexadecimal representation of bytes
@@ -95,44 +96,65 @@ pub enum FeeInfo {
 /// This is more brittle than it needs to be because the simulate endpoint (A) returns only one
 /// problem at a time and (B) returns insufficient fee messages as a memo, not an error type
 pub fn determine_min_fees_and_gas(input: &TxResponse) -> Option<FeeInfo> {
-    if input.raw_log.contains("insufficient_fees") || input.raw_log.contains("insufficient fee") {
-        let parts = input.raw_log.split(':').nth(2);
-        if let Some(amounts) = parts {
-            let mut coins = Vec::new();
-            for item in amounts.split(',') {
-                if let Ok(coin) = item.parse() {
-                    coins.push(coin);
+    // obvious gas problem
+    if input.gas_used > input.gas_wanted {
+        return Some(FeeInfo::InsufficientGas {
+            amount: input.gas_used as u64,
+        });
+    }
+    // now we interpret the error and see if we can't figure out more
+    // is this an sdk error? If it's not we won't have a gas error
+    if input.codespace == "sdk" {
+        if let Some(err) = SdkErrorCode::from_code(input.code) {
+            if err == SdkErrorCode::ErrInsufficientFee {
+                let parts = input.raw_log.split(':').nth(2);
+                if let Some(amounts) = parts {
+                    let mut coins = Vec::new();
+                    for item in amounts.split(',') {
+                        if let Ok(coin) = item.parse() {
+                            coins.push(coin);
+                        }
+                    }
+                    Some(FeeInfo::InsufficientFees { min_fees: coins })
+                } else {
+                    error!("Failed parsing insufficient fee error, probably changed gRPC error message response");
+                    None
                 }
+            } else {
+                // some error other than fees
+                None
             }
-            Some(FeeInfo::InsufficientFees { min_fees: coins })
         } else {
-            error!("Failed parsing insufficient fee error, probably changed gRPC error message response");
+            // no error, nothing to do!
             None
         }
-    } else if input.gas_used > input.gas_wanted {
-        Some(FeeInfo::InsufficientGas {
-            amount: input.gas_used as u64,
-        })
     } else {
+        // some non-sdk error
         None
     }
 }
 
-/// Checks a tx response raw_log for known issues returns true if tx is good, false if the tx
+/// Checks a tx response code for known issues returns true if tx is good, false if the tx
 /// has some known error
-pub fn check_tx_response(input: &TxResponse) -> bool {
-    let key_phrases = [
-        "account sequence mismatch",
-        "incorrect account sequence",
-        "invalid coins",
-    ];
-    for key in key_phrases.iter() {
-        if input.raw_log.contains(key) {
-            return false;
+pub fn check_for_sdk_error(input: &TxResponse) -> Result<(), CosmosGrpcError> {
+    // check for gas errors
+    if let Some(v) = determine_min_fees_and_gas(input) {
+        return Err(CosmosGrpcError::InsufficientFees { fee_info: v });
+    }
+
+    // check for known errors in the sdk codespace, if the error is module
+    // specific we will not detect it and the error will go un-noticed
+    if input.codespace == "sdk" {
+        if let Some(e) = SdkErrorCode::from_code(input.code) {
+            return Err(CosmosGrpcError::TransactionFailed {
+                tx: input.clone(),
+                time: Duration::from_secs(0),
+                sdk_error: Some(e),
+            });
         }
     }
 
-    true
+    Ok(())
 }
 
 /// Helper function for encoding the the proto any type

@@ -6,8 +6,7 @@ use crate::coin::Fee;
 use crate::error::CosmosGrpcError;
 use crate::msg::Msg;
 use crate::private_key::PrivateKey;
-use crate::utils::check_tx_response;
-use crate::utils::determine_min_fees_and_gas;
+use crate::utils::check_for_sdk_error;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastTxRequest;
@@ -87,14 +86,8 @@ impl Contact {
             .into_inner()
             .tx_response
             .unwrap();
-        if let Some(v) = determine_min_fees_and_gas(&response) {
-            return Err(CosmosGrpcError::InsufficientFees { fee_info: v });
-        } else if !check_tx_response(&response) {
-            return Err(CosmosGrpcError::TransactionFailed {
-                tx: response,
-                time: Duration::from_secs(0),
-            });
-        }
+        // checks only for sdk errors, other types will not be handled
+        check_for_sdk_error(&response)?;
         Ok(response)
     }
 
@@ -301,6 +294,7 @@ impl Contact {
                         return Err(CosmosGrpcError::TransactionFailed {
                             tx: response,
                             time: Instant::now() - start,
+                            sdk_error: None,
                         });
                     }
                 },
@@ -311,6 +305,7 @@ impl Contact {
         Err(CosmosGrpcError::TransactionFailed {
             tx: response,
             time: timeout,
+            sdk_error: None,
         })
     }
 }

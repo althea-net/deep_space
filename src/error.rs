@@ -23,18 +23,36 @@ pub enum CosmosGrpcError {
     NoToken,
     BadResponse(String),
     BadStruct(String),
-    SigningError { error: PrivateKeyError },
-    ConnectionError { error: TonicError },
-    RequestError { error: Status },
-    DecodeError { error: DecodeError },
+    SigningError {
+        error: PrivateKeyError,
+    },
+    ConnectionError {
+        error: TonicError,
+    },
+    RequestError {
+        error: Status,
+    },
+    DecodeError {
+        error: DecodeError,
+    },
     BadInput(String),
     ChainNotRunning,
     NodeNotSynced,
     InvalidPrefix,
-    NoBlockProduced { time: Duration },
-    TransactionFailed { tx: TxResponse, time: Duration },
-    InsufficientFees { fee_info: FeeInfo },
-    ParseError { error: ParseBigIntError },
+    NoBlockProduced {
+        time: Duration,
+    },
+    TransactionFailed {
+        tx: TxResponse,
+        time: Duration,
+        sdk_error: Option<SdkErrorCode>,
+    },
+    InsufficientFees {
+        fee_info: FeeInfo,
+    },
+    ParseError {
+        error: ParseBigIntError,
+    },
 }
 
 impl Display for CosmosGrpcError {
@@ -72,11 +90,16 @@ impl Display for CosmosGrpcError {
             CosmosGrpcError::InvalidPrefix => {
                 write!(f, "CosmosGrpc InvalidPrefix")
             }
-            CosmosGrpcError::TransactionFailed { tx, time } => {
+            CosmosGrpcError::TransactionFailed {
+                tx,
+                time,
+                sdk_error,
+            } => {
                 write!(
                     f,
-                    "CosmosGrpc Transaction {:?} did not enter chain in {}ms",
+                    "CosmosGrpc Transaction {:?} {:?} did not enter chain in {}ms",
                     tx,
+                    sdk_error,
                     time.as_millis()
                 )
             }
@@ -377,3 +400,146 @@ impl Display for ArrayStringError {
 }
 
 impl Error for ArrayStringError {}
+
+/// An enum representing Cosmos sdk errors
+/// from the 'sdk' codespace. Each of these errors
+/// maps to a code that we use to identify it in the TxResponse
+/// https://github.com/cosmos/cosmos-sdk/blob/ed01c21584ab63efe0e505cd281cbc680f7623da/types/errors/errors.go
+#[derive(Clone, PartialEq, Eq, Copy, Debug)]
+pub enum SdkErrorCode {
+    ErrInternal,
+    ErrTxDecode,
+    ErrInvalidSequence,
+    ErrUnauthorized,
+    ErrInsufficientFunds,
+    ErrUnknownRequest,
+    ErrInvalidAddress,
+    ErrInvalidPubKey,
+    ErrUnknownAddress,
+    ErrInvalidCoins,
+    ErrOutOfGas,
+    ErrMemoTooLarge,
+    ErrInsufficientFee,
+    ErrTooManySignatures,
+    ErrNoSignatures,
+    ErrJsonMarshal,
+    ErrJsonUnmarshal,
+    ErrInvalidRequest,
+    ErrTxInMempoolCache,
+    ErrMempoolIsFull,
+    ErrTxTooLarge,
+    ErrKeyNotFound,
+    ErrWrongPassword,
+    ErrInvalidSigner,
+    ErrInvalidGasAdjustment,
+    ErrInvalidHeight,
+    ErrInvalidVersion,
+    ErrInvalidChainId,
+    ErrInvalidType,
+    ErrTxTimeoutHeight,
+    ErrUnknownExtensionOptions,
+    ErrWrongSequence,
+    ErrPackAny,
+    ErrUnpackAny,
+    ErrLogic,
+    ErrConflict,
+    ErrNotSupported,
+    ErrNotFound,
+    ErrIo,
+    ErrPanic,
+    ErrAppConfig,
+}
+
+impl SdkErrorCode {
+    pub fn get_code(&self) -> u32 {
+        match self {
+            SdkErrorCode::ErrInternal => 1,
+            SdkErrorCode::ErrTxDecode => 2,
+            SdkErrorCode::ErrInvalidSequence => 3,
+            SdkErrorCode::ErrUnauthorized => 4,
+            SdkErrorCode::ErrInsufficientFunds => 5,
+            SdkErrorCode::ErrUnknownRequest => 6,
+            SdkErrorCode::ErrInvalidAddress => 7,
+            SdkErrorCode::ErrInvalidPubKey => 8,
+            SdkErrorCode::ErrUnknownAddress => 9,
+            SdkErrorCode::ErrInvalidCoins => 10,
+            SdkErrorCode::ErrOutOfGas => 11,
+            SdkErrorCode::ErrMemoTooLarge => 12,
+            SdkErrorCode::ErrInsufficientFee => 13,
+            SdkErrorCode::ErrTooManySignatures => 14,
+            SdkErrorCode::ErrNoSignatures => 15,
+            SdkErrorCode::ErrJsonMarshal => 16,
+            SdkErrorCode::ErrJsonUnmarshal => 17,
+            SdkErrorCode::ErrInvalidRequest => 18,
+            SdkErrorCode::ErrTxInMempoolCache => 19,
+            SdkErrorCode::ErrMempoolIsFull => 20,
+            SdkErrorCode::ErrTxTooLarge => 21,
+            SdkErrorCode::ErrKeyNotFound => 22,
+            SdkErrorCode::ErrWrongPassword => 23,
+            SdkErrorCode::ErrInvalidSigner => 24,
+            SdkErrorCode::ErrInvalidGasAdjustment => 25,
+            SdkErrorCode::ErrInvalidHeight => 26,
+            SdkErrorCode::ErrInvalidVersion => 27,
+            SdkErrorCode::ErrInvalidChainId => 28,
+            SdkErrorCode::ErrInvalidType => 29,
+            SdkErrorCode::ErrTxTimeoutHeight => 30,
+            SdkErrorCode::ErrUnknownExtensionOptions => 31,
+            SdkErrorCode::ErrWrongSequence => 32,
+            SdkErrorCode::ErrPackAny => 33,
+            SdkErrorCode::ErrUnpackAny => 34,
+            SdkErrorCode::ErrLogic => 35,
+            SdkErrorCode::ErrConflict => 36,
+            SdkErrorCode::ErrNotSupported => 37,
+            SdkErrorCode::ErrNotFound => 38,
+            SdkErrorCode::ErrIo => 39,
+            SdkErrorCode::ErrPanic => 111222,
+            SdkErrorCode::ErrAppConfig => 40,
+        }
+    }
+    pub fn from_code(code: u32) -> Option<SdkErrorCode> {
+        match code {
+            1 => Some(SdkErrorCode::ErrInternal),
+            2 => Some(SdkErrorCode::ErrTxDecode),
+            3 => Some(SdkErrorCode::ErrInvalidSequence),
+            4 => Some(SdkErrorCode::ErrUnauthorized),
+            5 => Some(SdkErrorCode::ErrInsufficientFunds),
+            6 => Some(SdkErrorCode::ErrUnknownRequest),
+            7 => Some(SdkErrorCode::ErrInvalidAddress),
+            8 => Some(SdkErrorCode::ErrInvalidPubKey),
+            9 => Some(SdkErrorCode::ErrUnknownAddress),
+            10 => Some(SdkErrorCode::ErrInvalidCoins),
+            11 => Some(SdkErrorCode::ErrOutOfGas),
+            12 => Some(SdkErrorCode::ErrMemoTooLarge),
+            13 => Some(SdkErrorCode::ErrInsufficientFee),
+            14 => Some(SdkErrorCode::ErrTooManySignatures),
+            15 => Some(SdkErrorCode::ErrNoSignatures),
+            16 => Some(SdkErrorCode::ErrJsonMarshal),
+            17 => Some(SdkErrorCode::ErrJsonUnmarshal),
+            18 => Some(SdkErrorCode::ErrInvalidRequest),
+            19 => Some(SdkErrorCode::ErrTxInMempoolCache),
+            20 => Some(SdkErrorCode::ErrMempoolIsFull),
+            21 => Some(SdkErrorCode::ErrTxTooLarge),
+            22 => Some(SdkErrorCode::ErrKeyNotFound),
+            23 => Some(SdkErrorCode::ErrWrongPassword),
+            24 => Some(SdkErrorCode::ErrInvalidSigner),
+            25 => Some(SdkErrorCode::ErrInvalidGasAdjustment),
+            26 => Some(SdkErrorCode::ErrInvalidHeight),
+            27 => Some(SdkErrorCode::ErrInvalidVersion),
+            28 => Some(SdkErrorCode::ErrInvalidChainId),
+            29 => Some(SdkErrorCode::ErrInvalidType),
+            30 => Some(SdkErrorCode::ErrTxTimeoutHeight),
+            31 => Some(SdkErrorCode::ErrUnknownExtensionOptions),
+            32 => Some(SdkErrorCode::ErrWrongSequence),
+            33 => Some(SdkErrorCode::ErrPackAny),
+            34 => Some(SdkErrorCode::ErrUnpackAny),
+            35 => Some(SdkErrorCode::ErrLogic),
+            36 => Some(SdkErrorCode::ErrConflict),
+            37 => Some(SdkErrorCode::ErrNotSupported),
+            38 => Some(SdkErrorCode::ErrNotFound),
+            39 => Some(SdkErrorCode::ErrIo),
+            111222 => Some(SdkErrorCode::ErrPanic),
+            40 => Some(SdkErrorCode::ErrAppConfig),
+            _ => None,
+        }
+    }
+}
