@@ -74,7 +74,10 @@ impl Address {
     pub fn from_bech32(s: String) -> Result<Address, AddressError> {
         let (hrp, data, _) = match bech32::decode(&s) {
             Ok(val) => val,
-            Err(_e) => return Err(AddressError::Bech32InvalidEncoding),
+            Err(e) => {
+                println!("{:?}", e);
+                return Err(AddressError::Bech32InvalidEncoding);
+            }
         };
         let vec: Vec<u8> = match FromBase32::from_base32(&data) {
             Ok(val) => val,
