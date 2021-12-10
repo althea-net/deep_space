@@ -14,8 +14,7 @@ use crate::error::*;
 use fmt::Debug;
 use hmac::Hmac;
 use pbkdf2::pbkdf2;
-use ripemd160::Digest;
-use sha2::{Sha256, Sha512};
+use sha2::{Digest, Sha256, Sha512};
 use std::{borrow::Cow, fmt, str::FromStr};
 use unicode_normalization::UnicodeNormalization;
 

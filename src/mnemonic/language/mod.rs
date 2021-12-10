@@ -121,7 +121,7 @@ impl fmt::Display for Language {
 mod tests {
     use super::*;
 
-    use ripemd160::Digest;
+    use sha2::Digest;
     use sha2::Sha256;
 
     use crate::utils::bytes_to_hex_str;
