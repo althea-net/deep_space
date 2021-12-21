@@ -10,6 +10,7 @@ use prost_types::Any;
 /// latest block height we mandate that chain status is used, this allows callers to
 /// handle the possibility of a halted chain explicitly since essentially all requests
 /// about block height come with assumptions about the chains status
+#[derive(Debug, Clone)]
 pub enum ChainStatus {
     /// The chain is operating correctly and blocks are being produced
     Moving { block_height: u64 },
@@ -26,6 +27,7 @@ pub enum ChainStatus {
 /// we can either be syncing, waiting for the chain to start, or have the the
 /// actual latest block to the best of the nodes knowledge, which isn't at all
 /// a guarantee
+#[derive(Debug, Clone)]
 pub enum LatestBlock {
     /// The chain is operating correctly and blocks are being produced, this is
     /// the latest one this node has access to
