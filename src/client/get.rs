@@ -13,6 +13,7 @@ use cosmos_sdk_proto::cosmos::auth::v1beta1::{
 use cosmos_sdk_proto::cosmos::bank::v1beta1::query_client::QueryClient as BankQueryClient;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::QueryAllBalancesRequest;
 use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::service_client::ServiceClient as TendermintServiceClient;
+use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetBlockByHeightRequest;
 use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetLatestBlockRequest;
 use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetSyncingRequest;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::service_client::ServiceClient as TxServiceClient;
@@ -21,6 +22,7 @@ use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxResponse;
 use cosmos_sdk_proto::cosmos::vesting::v1beta1::ContinuousVestingAccount;
 use cosmos_sdk_proto::cosmos::vesting::v1beta1::DelayedVestingAccount;
 use cosmos_sdk_proto::cosmos::vesting::v1beta1::PeriodicVestingAccount;
+use cosmos_sdk_proto::tendermint::types::Block;
 use prost::Message;
 use std::time::Duration;
 use std::time::Instant;
@@ -91,6 +93,46 @@ impl Contact {
             }
             None => Ok(LatestBlock::WaitingToStart),
         }
+    }
+
+    /// Gets the specified block from the node, returns none if no block is available
+    pub async fn get_block(&self, block: u64) -> Result<Option<Block>, CosmosGrpcError> {
+        let mut grpc = TendermintServiceClient::connect(self.url.clone())
+            .await?
+            .accept_gzip();
+
+        let block = grpc
+            .get_block_by_height(GetBlockByHeightRequest {
+                height: block as i64,
+            })
+            .await?
+            .into_inner();
+        Ok(block.block)
+    }
+
+    /// Gets the specified block range from the node, returning None if no block is available
+    /// this is more efficient than querying individually since it uses a single grpc session
+    /// this could be made more efficient by distributing requests over several grpc sessions
+    /// once some minimum range requirement was met
+    pub async fn get_block_range(
+        &self,
+        start: u64,
+        end: u64,
+    ) -> Result<Vec<Option<Block>>, CosmosGrpcError> {
+        let mut grpc = TendermintServiceClient::connect(self.url.clone())
+            .await?
+            .accept_gzip();
+
+        let mut result = Vec::new();
+        for i in start..end {
+            let block = grpc
+                .get_block_by_height(GetBlockByHeightRequest { height: i as i64 })
+                .await?
+                .into_inner();
+            result.push(block.block);
+        }
+
+        Ok(result)
     }
 
     /// Gets account info for the provided Cosmos account using the accounts endpoint
