@@ -28,7 +28,9 @@ impl Contact {
     /// are in DecCoins for precision, for the sake of ease of use this endpoint converts them
     /// into their normal form, for easy comparison against any other coin or amount.
     pub async fn query_community_pool(&self) -> Result<Vec<Coin>, CosmosGrpcError> {
-        let mut grpc = DistQueryClient::connect(self.url.clone()).await?;
+        let mut grpc = DistQueryClient::connect(self.url.clone())
+            .await?
+            .accept_gzip();
         let res = grpc.community_pool(QueryCommunityPoolRequest {}).await?;
         let val = res.into_inner().pool;
         let mut res = Vec::new();
@@ -50,7 +52,9 @@ impl Contact {
         &self,
         validator_address: impl ToString,
     ) -> Result<Vec<ValidatorSlashEvent>, CosmosGrpcError> {
-        let mut grpc = DistQueryClient::connect(self.url.clone()).await?;
+        let mut grpc = DistQueryClient::connect(self.url.clone())
+            .await?
+            .accept_gzip();
         let current_block = self.get_chain_status().await?;
         let current_block = match current_block {
             ChainStatus::Moving { block_height } => block_height,
@@ -96,7 +100,9 @@ impl Contact {
         &self,
         delegator_address: Address,
     ) -> Result<Vec<String>, CosmosGrpcError> {
-        let mut grpc = DistQueryClient::connect(self.url.clone()).await?;
+        let mut grpc = DistQueryClient::connect(self.url.clone())
+            .await?
+            .accept_gzip();
         let res = grpc
             .delegator_validators(QueryDelegatorValidatorsRequest {
                 delegator_address: delegator_address.to_string(),

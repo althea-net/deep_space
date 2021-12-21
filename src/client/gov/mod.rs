@@ -22,7 +22,9 @@ impl Contact {
         &self,
         filters: QueryProposalsRequest,
     ) -> Result<QueryProposalsResponse, CosmosGrpcError> {
-        let mut grpc = GovQueryClient::connect(self.url.clone()).await?;
+        let mut grpc = GovQueryClient::connect(self.url.clone())
+            .await?
+            .accept_gzip();
         let res = grpc.proposals(filters).await?.into_inner();
         Ok(res)
     }

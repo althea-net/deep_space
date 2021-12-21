@@ -31,7 +31,9 @@ impl Contact {
     /// Gets the current chain status, returns an enum taking into account the various possible states
     /// of the chain and the requesting full node. In the common case this provides the block number
     pub async fn get_chain_status(&self) -> Result<ChainStatus, CosmosGrpcError> {
-        let mut grpc = TendermintServiceClient::connect(self.url.clone()).await?;
+        let mut grpc = TendermintServiceClient::connect(self.url.clone())
+            .await?
+            .accept_gzip();
         let syncing = grpc.get_syncing(GetSyncingRequest {}).await?.into_inner();
 
         if syncing.syncing {
@@ -68,7 +70,9 @@ impl Contact {
     /// Gets the latest block from the node, taking into account the possibility that the chain is halted
     /// and also the possibility that the node is syncing
     pub async fn get_latest_block(&self) -> Result<LatestBlock, CosmosGrpcError> {
-        let mut grpc = TendermintServiceClient::connect(self.url.clone()).await?;
+        let mut grpc = TendermintServiceClient::connect(self.url.clone())
+            .await?
+            .accept_gzip();
         let syncing = grpc
             .get_syncing(GetSyncingRequest {})
             .await?
@@ -93,7 +97,9 @@ impl Contact {
     /// accounts do not have any info if they have no tokens or are otherwise never seen
     /// before in this case we return the special error NoToken
     pub async fn get_account_info(&self, address: Address) -> Result<BaseAccount, CosmosGrpcError> {
-        let mut agrpc = AuthQueryClient::connect(self.url.clone()).await?;
+        let mut agrpc = AuthQueryClient::connect(self.url.clone())
+            .await?
+            .accept_gzip();
         let res = agrpc
             // todo detect chain prefix here
             .account(QueryAccountRequest {
@@ -128,7 +134,9 @@ impl Contact {
 
     // Gets a transaction using it's hash value, TODO should fail if the transaction isn't found
     pub async fn get_tx_by_hash(&self, txhash: String) -> Result<GetTxResponse, CosmosGrpcError> {
-        let mut txrpc = TxServiceClient::connect(self.url.clone()).await?;
+        let mut txrpc = TxServiceClient::connect(self.url.clone())
+            .await?
+            .accept_gzip();
         let res = txrpc
             .get_tx(GetTxRequest { hash: txhash })
             .await?
@@ -137,7 +145,9 @@ impl Contact {
     }
 
     pub async fn get_balances(&self, address: Address) -> Result<Vec<Coin>, CosmosGrpcError> {
-        let mut bankrpc = BankQueryClient::connect(self.url.clone()).await?;
+        let mut bankrpc = BankQueryClient::connect(self.url.clone())
+            .await?
+            .accept_gzip();
         let res = bankrpc
             .all_balances(QueryAllBalancesRequest {
                 // chain prefix is validated as part of this client, so this can't

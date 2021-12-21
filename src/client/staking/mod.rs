@@ -19,7 +19,10 @@ impl Contact {
         &self,
         filters: QueryValidatorsRequest,
     ) -> Result<QueryValidatorsResponse, CosmosGrpcError> {
-        let mut grpc = StakingQueryClient::connect(self.url.clone()).await?;
+        let mut grpc = StakingQueryClient::connect(self.url.clone())
+            .await?
+            .accept_gzip();
+
         let res = grpc.validators(filters).await?.into_inner();
         Ok(res)
     }
