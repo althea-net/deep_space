@@ -4,15 +4,22 @@
 use crate::error::CosmosGrpcError;
 use crate::{Address, Coin, Contact, Msg, PrivateKey};
 use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
+use cosmos_sdk_proto::cosmos::base::v1beta1::DecCoin;
 use cosmos_sdk_proto::cosmos::distribution::v1beta1::query_client::QueryClient as DistQueryClient;
-use cosmos_sdk_proto::cosmos::distribution::v1beta1::MsgWithdrawValidatorCommission;
-use cosmos_sdk_proto::cosmos::distribution::v1beta1::QueryCommunityPoolRequest;
-use cosmos_sdk_proto::cosmos::distribution::v1beta1::QueryDelegatorValidatorsRequest;
 use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
     MsgFundCommunityPool, QueryValidatorSlashesRequest,
 };
 use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
     MsgWithdrawDelegatorReward, ValidatorSlashEvent,
+};
+use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
+    MsgWithdrawValidatorCommission, QueryDelegationRewardsRequest,
+};
+use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
+    QueryCommunityPoolRequest, QueryDelegationTotalRewardsRequest,
+};
+use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
+    QueryDelegationTotalRewardsResponse, QueryDelegatorValidatorsRequest,
 };
 use num256::Uint256;
 use num_bigint::ParseBigIntError;
@@ -110,6 +117,43 @@ impl Contact {
             .await?
             .into_inner();
         Ok(res.validators)
+    }
+
+    /// gets the rewards for a specific delegation between a single delegator and validator
+    pub async fn query_delegation_rewards(
+        &self,
+        delegator_address: Address,
+        validator_address: Address,
+    ) -> Result<Vec<DecCoin>, CosmosGrpcError> {
+        let mut grpc = DistQueryClient::connect(self.url.clone())
+            .await?
+            .accept_gzip();
+        let res = grpc
+            .delegation_rewards(QueryDelegationRewardsRequest {
+                delegator_address: delegator_address.to_string(),
+                validator_address: validator_address.to_string(),
+            })
+            .await?
+            .into_inner()
+            .rewards;
+        Ok(res)
+    }
+
+    /// gets the rewards for a specific delegation between a single delegator and validator
+    pub async fn query_all_delegation_rewards(
+        &self,
+        delegator_address: Address,
+    ) -> Result<QueryDelegationTotalRewardsResponse, CosmosGrpcError> {
+        let mut grpc = DistQueryClient::connect(self.url.clone())
+            .await?
+            .accept_gzip();
+        let res = grpc
+            .delegation_total_rewards(QueryDelegationTotalRewardsRequest {
+                delegator_address: delegator_address.to_string(),
+            })
+            .await?
+            .into_inner();
+        Ok(res)
     }
 
     /// Withdraws all rewards for the specified delegator across all validators they have
