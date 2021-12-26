@@ -9,7 +9,9 @@ use crate::PrivateKey;
 use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::query_client::QueryClient as StakingQueryClient;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::DelegationResponse;
+use cosmos_sdk_proto::cosmos::staking::v1beta1::MsgBeginRedelegate;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate;
+use cosmos_sdk_proto::cosmos::staking::v1beta1::MsgUndelegate;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::QueryDelegationRequest;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorDelegationsRequest;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorsRequest;
@@ -98,6 +100,55 @@ impl Contact {
         };
 
         let msg = Msg::new("/cosmos.staking.v1beta1.MsgDelegate", vote);
+        self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
+            .await
+    }
+
+    /// Redelegates existing tokens without unbonding them, this operation is instant
+    /// in the happy path case, but if any edge behavior is hit this will take the full
+    /// unbonding time to go into effect. Examples of edge cases include redelegating twice
+    /// within the unbonding period, or if many small redelegations are made in the same period
+    pub async fn redelegate(
+        &self,
+        validator_address: Address,
+        new_validator_address: Address,
+        amount_to_redelegate: Coin,
+        fee: Coin,
+        private_key: PrivateKey,
+        wait_timeout: Option<Duration>,
+    ) -> Result<TxResponse, CosmosGrpcError> {
+        let our_address = private_key.to_address(&self.chain_prefix).unwrap();
+        let redelegate = MsgBeginRedelegate {
+            amount: Some(amount_to_redelegate.into()),
+            delegator_address: our_address.to_string(),
+            validator_src_address: validator_address.to_string(),
+            validator_dst_address: new_validator_address.to_string(),
+        };
+
+        let msg = Msg::new("/cosmos.staking.v1beta1.MsgBeginRedelegate", redelegate);
+        self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
+            .await
+    }
+
+    /// This message will start the unbonding process for the specified validator, after
+    /// the unbonding period has passed these tokens will be liquid and available in the users
+    /// account
+    pub async fn undelegate(
+        &self,
+        validator_address: Address,
+        amount_to_undelegate: Coin,
+        fee: Coin,
+        private_key: PrivateKey,
+        wait_timeout: Option<Duration>,
+    ) -> Result<TxResponse, CosmosGrpcError> {
+        let our_address = private_key.to_address(&self.chain_prefix).unwrap();
+        let undelegate = MsgUndelegate {
+            amount: Some(amount_to_undelegate.into()),
+            delegator_address: our_address.to_string(),
+            validator_address: validator_address.to_string(),
+        };
+
+        let msg = Msg::new("/cosmos.staking.v1beta1.MsgUndelegate", undelegate);
         self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
             .await
     }
