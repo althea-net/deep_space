@@ -1,5 +1,6 @@
 //! Contains utility functions for interacting with and submitting Cosmos governance proposals
 
+use super::PAGE;
 use crate::error::CosmosGrpcError;
 use crate::Address;
 use crate::Coin;
@@ -35,7 +36,7 @@ impl Contact {
     /// Gets a list of bonded validators
     pub async fn get_active_validators(&self) -> Result<Vec<Validator>, CosmosGrpcError> {
         let req = QueryValidatorsRequest {
-            pagination: None,
+            pagination: PAGE,
             status: "BOND_STATUS_BONDED".to_string(),
         };
         self.get_validators_list(req).await
@@ -53,7 +54,7 @@ impl Contact {
         let res = grpc
             .validator_delegations(QueryValidatorDelegationsRequest {
                 validator_addr: validator.to_string(),
-                pagination: None,
+                pagination: PAGE,
             })
             .await?
             .into_inner()

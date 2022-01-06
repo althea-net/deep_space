@@ -28,6 +28,7 @@ use std::time::Duration;
 use std::time::Instant;
 use tokio::time::sleep;
 use tonic::Code as GrpcCode;
+use super::PAGE;
 
 impl Contact {
     /// Gets the current chain status, returns an enum taking into account the various possible states
@@ -195,7 +196,7 @@ impl Contact {
                 // chain prefix is validated as part of this client, so this can't
                 // panic
                 address: address.to_bech32(&self.chain_prefix).unwrap(),
-                pagination: None,
+                pagination: PAGE,
             })
             .await?
             .into_inner();

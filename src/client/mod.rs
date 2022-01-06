@@ -7,11 +7,25 @@ pub mod send;
 pub mod staking;
 pub mod types;
 
+use cosmos_sdk_proto::cosmos::base::query::v1beta1::PageRequest;
 pub use types::ChainStatus;
 
 use crate::{error::CosmosGrpcError, utils::ArrayString};
 
 pub const MEMO: &str = "Sent with Deep Space";
+
+/// The maximum number of items in a single request this is used as a stock
+/// value for all pagination requests since handling pages adds complexity it's
+/// simply a very large request size. So far this has not knocked anything over
+pub const PAGE_SIZE: u64 = 500_000;
+/// Defines a stock pagination request object for us to use in requests, comes
+/// with a very large limit defined by the PAGE_SIZE constant
+pub const PAGE: Option<PageRequest> = Some(PageRequest {
+    key: Vec::new(),
+    offset: 0,
+    limit: PAGE_SIZE,
+    count_total: false,
+});
 
 /// An instance of Contact Cosmos RPC Client.
 #[derive(Clone)]

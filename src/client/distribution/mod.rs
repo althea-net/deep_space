@@ -1,6 +1,7 @@
 //! Contains utility functions for interacting with and modifying the Cosmos sdk distribution module
 //! including the community pool
 
+use super::{ChainStatus, PAGE};
 use crate::error::CosmosGrpcError;
 use crate::{Address, Coin, Contact, Msg, PrivateKey};
 use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
@@ -24,8 +25,6 @@ use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
 use num256::Uint256;
 use num_bigint::ParseBigIntError;
 use std::time::Duration;
-
-use super::ChainStatus;
 
 // required because dec coins are multiplied by 1*10^18
 const ONE_ETH: u128 = 10u128.pow(18);
@@ -73,7 +72,7 @@ impl Contact {
                 validator_address: validator_address.to_string(),
                 starting_height: 0,
                 ending_height: current_block,
-                pagination: None,
+                pagination: PAGE,
             })
             .await?
             .into_inner();

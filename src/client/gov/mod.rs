@@ -1,5 +1,6 @@
 //! Contains utility functions for interacting with and modifying Cosmos validator staking status
 
+use super::PAGE;
 use crate::error::CosmosGrpcError;
 use crate::Coin;
 use crate::Contact;
@@ -39,7 +40,7 @@ impl Contact {
             depositor: String::new(),
             proposal_status: ProposalStatus::VotingPeriod.into(),
             voter: String::new(),
-            pagination: None,
+            pagination: PAGE,
         };
         self.get_governance_proposals(req).await
     }
@@ -54,7 +55,7 @@ impl Contact {
             depositor: String::new(),
             proposal_status: ProposalStatus::Passed.into(),
             voter: String::new(),
-            pagination: None,
+            pagination: PAGE,
         };
         self.get_governance_proposals(req).await
     }
@@ -69,7 +70,7 @@ impl Contact {
             depositor: String::new(),
             proposal_status: ProposalStatus::Failed.into(),
             voter: String::new(),
-            pagination: None,
+            pagination: PAGE,
         };
         self.get_governance_proposals(req).await
     }
@@ -84,7 +85,7 @@ impl Contact {
             depositor: String::new(),
             proposal_status: ProposalStatus::Rejected.into(),
             voter: String::new(),
-            pagination: None,
+            pagination: PAGE,
         };
         self.get_governance_proposals(req).await
     }
