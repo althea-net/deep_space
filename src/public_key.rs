@@ -3,7 +3,7 @@ use crate::utils::hex_str_to_bytes;
 use crate::{address::Address, utils::ArrayString};
 use bech32::Variant;
 use bech32::{self, FromBase32, ToBase32};
-use ripemd160::{Digest, Ripemd160};
+use ripemd::Ripemd160 as Ripemd;
 use sha2::Digest as Sha2Digest;
 use sha2::Sha256;
 use std::fmt::{self, Display, Formatter};
@@ -85,7 +85,7 @@ impl PublicKey {
     /// in `to_address()` are incorrect
     pub fn to_address_with_prefix(&self, prefix: &str) -> Result<Address, AddressError> {
         let sha256 = Sha256::digest(&self.bytes);
-        let ripemd160 = Ripemd160::digest(&sha256);
+        let ripemd160 = Ripemd::digest(&sha256);
         let mut bytes: [u8; 20] = Default::default();
         bytes.copy_from_slice(&ripemd160[..]);
         Address::from_bytes(bytes, prefix)

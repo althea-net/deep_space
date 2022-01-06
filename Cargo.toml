@@ -1,6 +1,6 @@
 [package]
 name = "deep_space"
-version = "2.8.1"
+version = "2.8.2"
 authors = ["Justin Kilpatrick <justin@althea.net>", "Michał Papierski <michal@papierski.net>"]
 repository = "https://github.com/althea-net/deep_space"
 description = "A highly portable, batteries included, transaction generation and key management library for Cosmos blockchains"
@@ -12,7 +12,7 @@ num256 = "0.3"
 sha2 = "0.10"
 num-bigint = "0.4"
 num-traits = "0.2"
-ripemd160 = "0.9"
+ripemd = "0.1"
 bech32 = "0.8"
 serde = "1.0"
 serde_json = "1.0"
@@ -25,7 +25,7 @@ pbkdf2 = {version = "0.10"}
 hmac = {version = "0.12"}
 rand = {version = "0.8"}
 rust_decimal = "1.9"
-secp256k1 = "0.20"
+secp256k1 = "0.21"
 tonic = {version = "0.6", features = ["compression"]}
 bytes = "1.0"
 cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "0.9"}

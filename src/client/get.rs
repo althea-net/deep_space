@@ -1,3 +1,4 @@
+use super::PAGE;
 use crate::client::types::BaseAccount;
 use crate::client::types::CosmosAccount;
 use crate::client::types::*;
@@ -28,7 +29,6 @@ use std::time::Duration;
 use std::time::Instant;
 use tokio::time::sleep;
 use tonic::Code as GrpcCode;
-use super::PAGE;
 
 impl Contact {
     /// Gets the current chain status, returns an enum taking into account the various possible states

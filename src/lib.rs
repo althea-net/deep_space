@@ -7,7 +7,7 @@ extern crate bech32;
 extern crate num256;
 extern crate num_bigint;
 extern crate num_traits;
-extern crate ripemd160;
+extern crate ripemd;
 extern crate serde;
 extern crate sha2;
 

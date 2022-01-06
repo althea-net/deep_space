@@ -204,7 +204,7 @@ impl PrivateKey {
         let digest = Sha256::digest(&signdoc_buf);
         let msg = CurveMessage::from_slice(&digest)?;
         // Sign the signdoc
-        let signed = secp256k1.sign(&msg, &sk);
+        let signed = secp256k1.sign_ecdsa(&msg, &sk);
         let compact = signed.serialize_compact().to_vec();
 
         Ok(TxParts {
@@ -354,7 +354,8 @@ fn get_child_key(
     let child_key = parse_i_l;
 
     let mut child_key_res: [u8; 32] = [0; 32];
-    child_key_res.copy_from_slice(&hex_str_to_bytes(&format!("{:x}", child_key)).unwrap());
+    child_key_res
+        .copy_from_slice(&hex_str_to_bytes(&child_key.display_secret().to_string()).unwrap());
     let mut chain_code_res: [u8; 32] = [0; 32];
     chain_code_res.copy_from_slice(&l_param[32..64]);
     (child_key_res, chain_code_res)
