@@ -1,8 +1,6 @@
-use super::PAGE;
 use crate::client::types::BaseAccount;
 use crate::client::types::CosmosAccount;
 use crate::client::types::*;
-use crate::coin::Coin;
 use crate::coin::Fee;
 use crate::{address::Address, private_key::MessageArgs};
 use crate::{client::Contact, error::CosmosGrpcError};
@@ -11,8 +9,6 @@ use cosmos_sdk_proto::cosmos::auth::v1beta1::{
     query_client::QueryClient as AuthQueryClient, BaseAccount as ProtoBaseAccount,
     QueryAccountRequest,
 };
-use cosmos_sdk_proto::cosmos::bank::v1beta1::query_client::QueryClient as BankQueryClient;
-use cosmos_sdk_proto::cosmos::bank::v1beta1::QueryAllBalancesRequest;
 use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::service_client::ServiceClient as TendermintServiceClient;
 use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetBlockByHeightRequest;
 use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetLatestBlockRequest;
@@ -185,27 +181,6 @@ impl Contact {
             .await?
             .into_inner();
         Ok(res)
-    }
-
-    pub async fn get_balances(&self, address: Address) -> Result<Vec<Coin>, CosmosGrpcError> {
-        let mut bankrpc = BankQueryClient::connect(self.url.clone())
-            .await?
-            .accept_gzip();
-        let res = bankrpc
-            .all_balances(QueryAllBalancesRequest {
-                // chain prefix is validated as part of this client, so this can't
-                // panic
-                address: address.to_bech32(&self.chain_prefix).unwrap(),
-                pagination: PAGE,
-            })
-            .await?
-            .into_inner();
-        let balances = res.balances;
-        let mut ret = Vec::new();
-        for value in balances {
-            ret.push(value.into());
-        }
-        Ok(ret)
     }
 
     /// Grabs an up to date MessageArgs structure for an address,

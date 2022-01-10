@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+pub mod bank;
 pub mod distribution;
 pub mod get;
 pub mod gov;
