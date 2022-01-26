@@ -98,7 +98,7 @@ impl PrivateKey {
         // discard the m
         let _ = iterator.next();
 
-        let key_import = Mnemonic::from_str(phrase).unwrap();
+        let key_import = Mnemonic::from_str(phrase)?;
         let seed_bytes = key_import.to_seed(passphrase);
         let (master_secret_key, master_chain_code) = master_key_from_seed(&seed_bytes);
         let mut secret_key = master_secret_key;
@@ -551,4 +551,11 @@ fn test_many_key_generation() {
         let cosmos_key = PrivateKey::from_secret(&secret);
         let _cosmos_address = cosmos_key.to_public_key("cosmospub").unwrap().to_address();
     }
+}
+
+#[test]
+// this tests that a bad phrase provides an error
+fn test_bad_phrase() {
+    let cosmos_key = PrivateKey::from_phrase("bad phrase", "");
+    assert!(cosmos_key.is_err())
 }

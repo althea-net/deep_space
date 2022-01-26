@@ -269,6 +269,7 @@ pub enum PrivateKeyError {
     PublicKeyError(PublicKeyError),
     AddressError(AddressError),
     HdWalletError(HdWalletError),
+    InvalidMnemonic { error: Bip39Error },
 }
 
 impl fmt::Display for PrivateKeyError {
@@ -281,6 +282,9 @@ impl fmt::Display for PrivateKeyError {
             PrivateKeyError::PublicKeyError(val) => write!(f, "{}", val),
             PrivateKeyError::AddressError(val) => write!(f, "{}", val),
             PrivateKeyError::HdWalletError(val) => write!(f, "{}", val),
+            PrivateKeyError::InvalidMnemonic { error } => {
+                write!(f, "Failed to process mnemonic {:?}", error)
+            }
         }
     }
 }
@@ -320,6 +324,12 @@ impl From<EncodeError> for PrivateKeyError {
 impl From<ByteDecodeError> for PrivateKeyError {
     fn from(error: ByteDecodeError) -> Self {
         PrivateKeyError::HexDecodeError(error)
+    }
+}
+
+impl From<Bip39Error> for PrivateKeyError {
+    fn from(error: Bip39Error) -> Self {
+        PrivateKeyError::InvalidMnemonic { error }
     }
 }
 
