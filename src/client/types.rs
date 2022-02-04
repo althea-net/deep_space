@@ -120,5 +120,13 @@ impl CosmosAccount for PeriodicVestingAccount {
     }
 }
 
+/// A mirror of the BlockParams struct represents the maximum gas and bytes a block is allowed in the chain
+/// None represents unlimited
+#[derive(Debug, Clone)]
+pub struct BlockParams {
+    pub max_bytes: u64,
+    pub max_gas: Option<u64>,
+}
+
 #[cfg(test)]
 mod tests {}

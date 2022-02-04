@@ -174,6 +174,18 @@ impl Contact {
             .unwrap();
         let gas_used = gas_info.gas_used;
         trace!("Got {} gas used!", gas_used);
+
+        let block_params = self.get_block_params().await?;
+        if let Some(max_gas) = block_params.max_gas {
+            info!("Detected max gas {} and gas used {}", max_gas, gas_used);
+            if gas_used > max_gas {
+                return Err(CosmosGrpcError::GasRequiredExceedsBlockMaximum {
+                    max: max_gas,
+                    required: gas_used,
+                });
+            }
+        }
+
         Ok(Fee {
             amount: fee_token.to_vec(),
             granter: None,
