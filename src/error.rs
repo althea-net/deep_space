@@ -53,6 +53,10 @@ pub enum CosmosGrpcError {
     ParseError {
         error: ParseBigIntError,
     },
+    GasRequiredExceedsBlockMaximum {
+        max: u64,
+        required: u64,
+    },
 }
 
 impl Display for CosmosGrpcError {
@@ -108,6 +112,13 @@ impl Display for CosmosGrpcError {
             }
             CosmosGrpcError::ParseError { error } => {
                 write!(f, "Failed to Parse BigInt {:?}", error)
+            }
+            CosmosGrpcError::GasRequiredExceedsBlockMaximum { max, required } => {
+                write!(
+                    f,
+                    "The required gas for this operation {} exceeds the maximum gas per block {}. This tx is impossible to execute",
+                    required, max
+                )
             }
         }
     }

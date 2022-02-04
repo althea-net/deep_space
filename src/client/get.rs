@@ -1,4 +1,5 @@
 use crate::client::types::BaseAccount;
+use crate::client::types::BlockParams;
 use crate::client::types::CosmosAccount;
 use crate::client::types::*;
 use crate::coin::Fee;
@@ -13,6 +14,9 @@ use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::service_client::Service
 use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetBlockByHeightRequest;
 use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetLatestBlockRequest;
 use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetSyncingRequest;
+use cosmos_sdk_proto::cosmos::params::v1beta1::query_client::QueryClient as ParamsQueryClient;
+use cosmos_sdk_proto::cosmos::params::v1beta1::QueryParamsRequest;
+use cosmos_sdk_proto::cosmos::params::v1beta1::QueryParamsResponse;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::service_client::ServiceClient as TxServiceClient;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxRequest;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxResponse;
@@ -132,6 +136,48 @@ impl Contact {
         Ok(result)
     }
 
+    /// Queries the block params, including max block tx size and gas from the chain, useful for
+    /// determining just how big a transaction can be before it will be rejected.
+    /// This is extra useful because cosmos-sdk behaves very strangely when
+    /// a transaction above the max allowed gas is submitted.
+    pub async fn get_block_params(&self) -> Result<BlockParams, CosmosGrpcError> {
+        let res = self.get_param("baseapp", "BlockParams").await?;
+        if let Some(v) = res.param {
+            match serde_json::from_str(&v.value) {
+                Ok(v) => {
+                    let v: BlockParamsJson = v;
+                    Ok(v.into())
+                }
+                Err(e) => Err(CosmosGrpcError::BadResponse(e.to_string())),
+            }
+        } else {
+            // if we hit this error the value has been moved and we're probably
+            // woefully out of date.
+            Err(CosmosGrpcError::BadResponse(
+                "No BlockParams? Deep Space probably needs to be upgraded".to_string(),
+            ))
+        }
+    }
+
+    /// Queries a registered parameter given it's subspace and key, this should work
+    /// for any module so long as it has registered the parameter
+    pub async fn get_param(
+        &self,
+        subspace: impl ToString,
+        key: impl ToString,
+    ) -> Result<QueryParamsResponse, CosmosGrpcError> {
+        let mut grpc = ParamsQueryClient::connect(self.url.clone())
+            .await?
+            .accept_gzip();
+        Ok(grpc
+            .params(QueryParamsRequest {
+                subspace: subspace.to_string(),
+                key: key.to_string(),
+            })
+            .await?
+            .into_inner())
+    }
+
     /// Gets account info for the provided Cosmos account using the accounts endpoint
     /// accounts do not have any info if they have no tokens or are otherwise never seen
     /// before in this case we return the special error NoToken
@@ -242,5 +288,22 @@ impl Contact {
             sleep(Duration::from_secs(1)).await;
         }
         Err(CosmosGrpcError::NoBlockProduced { time: timeout })
+    }
+}
+
+/// One off struct for deserialization of the BlockParams struct
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct BlockParamsJson {
+    max_bytes: String,
+    max_gas: String,
+}
+impl From<BlockParamsJson> for BlockParams {
+    fn from(input: BlockParamsJson) -> Self {
+        let max_gas = match input.max_gas.parse() {
+            Ok(v) => Some(v),
+            Err(_) => None,
+        };
+        let max_bytes = input.max_bytes.parse().unwrap_or(0u64);
+        BlockParams { max_bytes, max_gas }
     }
 }

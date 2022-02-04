@@ -174,6 +174,32 @@ impl Contact {
             .unwrap();
         let gas_used = gas_info.gas_used;
         trace!("Got {} gas used!", gas_used);
+
+        let block_params = self.get_block_params().await?;
+        if let Some(max_gas) = block_params.max_gas {
+            if gas_used > max_gas {
+                return Err(CosmosGrpcError::GasRequiredExceedsBlockMaximum {
+                    max: max_gas,
+                    required: gas_used,
+                });
+            }
+
+            // check if max gas and gas used are close by seeing
+            // if we can divide max_gas by gas used, a value of zero
+            // indicates that it's more than half
+            if let Some(m) = max_gas.checked_div(gas_used) {
+                if m == 0 {
+                    warn!(
+                        "Tx simulation has gas usage {} which is close to max_gas {}. \n
+                        Gas estimation is known to be inaccurate! When you submit a tx that \n
+                        requires more than the block max gas, you will not get an error message! \n
+                        Just an unexplained timeout. Watch for this.",
+                        gas_used, max_gas
+                    )
+                }
+            }
+        }
+
         Ok(Fee {
             amount: fee_token.to_vec(),
             granter: None,
