@@ -185,10 +185,10 @@ impl Contact {
             }
 
             // check if max gas and gas used are close by seeing
-            // if we can divide max_gas by gas used, a value of zero
+            // if we can divide max_gas by gas used, a value of one
             // indicates that it's more than half
             if let Some(m) = max_gas.checked_div(gas_used) {
-                if m == 0 {
+                if m == 1 {
                     warn!(
                         "Tx simulation has gas usage {} which is close to max_gas {}. \n
                         Gas estimation is known to be inaccurate! When you submit a tx that \n
