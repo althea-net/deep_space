@@ -4,6 +4,7 @@ pub mod bank;
 pub mod distribution;
 pub mod get;
 pub mod gov;
+pub mod invariant;
 pub mod send;
 pub mod staking;
 pub mod types;
