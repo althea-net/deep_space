@@ -187,7 +187,7 @@ mod tests {
                 hasher.update(format!("{}\n", word));
             }
             assert_eq!(
-                bytes_to_hex_str(&hasher.finalize().to_vec()),
+                bytes_to_hex_str(&hasher.finalize()),
                 sum,
                 "word list for language {} failed checksum check",
                 lang,

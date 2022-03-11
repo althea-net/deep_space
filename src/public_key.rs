@@ -64,16 +64,16 @@ impl PublicKey {
     /// Create an address object using a given public key.
     pub fn to_address(&self) -> Address {
         let current_prefix = self.get_prefix();
-        let new_prefix;
+
         // Cosmos has the format cosmospub -> cosmos which we
         // attempt to keep the convention here, note that other
         // conventions may come out with the wrong prefix by default
         // that's up to the caller to fix
-        if current_prefix.ends_with("pub") {
-            new_prefix = current_prefix.trim_end_matches("pub");
+        let new_prefix = if current_prefix.ends_with("pub") {
+            current_prefix.trim_end_matches("pub")
         } else {
-            new_prefix = &current_prefix;
-        }
+            &current_prefix
+        };
         // unwrap, the only failure possibility is if the Prefix is bad
         // and our own prefix can't possibly be bad, we've already validated it
         // and only reduced it's length since then

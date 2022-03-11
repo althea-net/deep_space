@@ -27,6 +27,7 @@ pub const PAGE: Option<PageRequest> = Some(PageRequest {
     offset: 0,
     limit: PAGE_SIZE,
     count_total: false,
+    reverse: false,
 });
 
 /// An instance of Contact Cosmos RPC Client.

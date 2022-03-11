@@ -187,6 +187,7 @@ mod tests {
             gas_wanted: 0,
             tx: None,
             timestamp: String::new(),
+            events: Vec::new(),
         };
         let correct_output = Some(FeeInfo::InsufficientFees {
             min_fees: vec![
