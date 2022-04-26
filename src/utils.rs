@@ -1,6 +1,8 @@
 use crate::error::{ArrayStringError, ByteDecodeError, CosmosGrpcError, SdkErrorCode};
 use crate::Coin;
+use bytes::BytesMut;
 use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
+use prost::{DecodeError, Message};
 use prost_types::Any;
 use std::fmt::Display;
 use std::fmt::Formatter;
@@ -166,6 +168,22 @@ pub fn encode_any(input: impl prost::Message, type_url: impl Into<String>) -> An
         value,
     }
 }
+
+pub fn decode_any<T: Message + Default>(any: Any) -> Result<T, DecodeError> {
+    let bytes = any.value;
+
+    decode_bytes(bytes)
+}
+
+pub fn decode_bytes<T: Message + Default>(bytes: Vec<u8>) -> Result<T, DecodeError> {
+    let mut buf = BytesMut::with_capacity(bytes.len());
+    buf.extend_from_slice(&bytes);
+
+    // Here we use the `T` type to decode whatever type of message this attestation holds
+    // for use in the `f` function
+    T::decode(buf)
+}
+
 
 #[cfg(test)]
 mod tests {
