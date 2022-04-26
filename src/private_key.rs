@@ -21,6 +21,8 @@ use sha2::Sha512;
 use sha2::{Digest, Sha256};
 use std::str::FromStr;
 
+pub const DEFAULT_COSMOS_HD_PATH: &str = "m/44'/118'/0'/0/0";
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct MessageArgs {
     pub sequence: u64,
