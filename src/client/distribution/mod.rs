@@ -2,6 +2,10 @@
 //! including the community pool
 
 use super::{ChainStatus, PAGE};
+use crate::client::msgs::{
+    MSG_FUND_COMMUNITY_POOL_TYPE_URL, MSG_WITHDRAW_DELEGATOR_REWARD_TYPE_URL,
+    MSG_WITHDRAW_VALIDATOR_COMMISSION_TYPE_URL,
+};
 use crate::error::CosmosGrpcError;
 use crate::{Address, Coin, Contact, Msg, PrivateKey};
 use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
@@ -93,10 +97,7 @@ impl Contact {
             validator_address: validator_address.to_string(),
         };
 
-        let msg = Msg::new(
-            "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward",
-            msg,
-        );
+        let msg = Msg::new(MSG_WITHDRAW_DELEGATOR_REWARD_TYPE_URL, msg);
         self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
             .await
     }
@@ -174,10 +175,7 @@ impl Contact {
                 delegator_address: our_address.to_string(),
                 validator_address: val,
             };
-            let msg = Msg::new(
-                "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward",
-                msg,
-            );
+            let msg = Msg::new(MSG_WITHDRAW_DELEGATOR_REWARD_TYPE_URL, msg);
             msgs.push(msg);
         }
 
@@ -197,10 +195,7 @@ impl Contact {
             validator_address: validator_address.to_string(),
         };
 
-        let msg = Msg::new(
-            "/cosmos.distribution.v1beta1.MsgWithdrawValidatorCommission",
-            msg,
-        );
+        let msg = Msg::new(MSG_WITHDRAW_VALIDATOR_COMMISSION_TYPE_URL, msg);
         self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
             .await
     }
@@ -219,7 +214,7 @@ impl Contact {
             depositor: our_address.to_string(),
         };
 
-        let msg = Msg::new("/cosmos.distribution.v1beta1.MsgFundCommunityPool", msg);
+        let msg = Msg::new(MSG_FUND_COMMUNITY_POOL_TYPE_URL, msg);
         self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
             .await
     }

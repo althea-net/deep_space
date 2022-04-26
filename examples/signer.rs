@@ -1,5 +1,6 @@
 extern crate deep_space;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
+use deep_space::client::msgs::SECP256K1_PUBKEY_TYPE_URL;
 use deep_space::Fee;
 use deep_space::Msg;
 use deep_space::PrivateKey;
@@ -36,7 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         granter: None,
         payer: None,
     };
-    let msg = Msg::new("/cosmos.crypto.secp256k1.PubKey", send);
+    let msg = Msg::new(SECP256K1_PUBKEY_TYPE_URL, send);
 
     let args = MessageArgs {
         sequence: 0,

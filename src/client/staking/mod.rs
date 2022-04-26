@@ -1,6 +1,9 @@
 //! Contains utility functions for interacting with and submitting Cosmos governance proposals
 
 use super::PAGE;
+use crate::client::msgs::{
+    MSG_BEGIN_REDELEGATE_TYPE_URL, MSG_DELEGATE_TYPE_URL, MSG_UNDELEGATE_TYPE_URL,
+};
 use crate::error::CosmosGrpcError;
 use crate::Address;
 use crate::Coin;
@@ -100,7 +103,7 @@ impl Contact {
             validator_address: validator_address.to_string(),
         };
 
-        let msg = Msg::new("/cosmos.staking.v1beta1.MsgDelegate", vote);
+        let msg = Msg::new(MSG_DELEGATE_TYPE_URL, vote);
         self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
             .await
     }
@@ -126,7 +129,7 @@ impl Contact {
             validator_dst_address: new_validator_address.to_string(),
         };
 
-        let msg = Msg::new("/cosmos.staking.v1beta1.MsgBeginRedelegate", redelegate);
+        let msg = Msg::new(MSG_BEGIN_REDELEGATE_TYPE_URL, redelegate);
         self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
             .await
     }
@@ -149,7 +152,7 @@ impl Contact {
             validator_address: validator_address.to_string(),
         };
 
-        let msg = Msg::new("/cosmos.staking.v1beta1.MsgUndelegate", undelegate);
+        let msg = Msg::new(MSG_UNDELEGATE_TYPE_URL, undelegate);
         self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
             .await
     }

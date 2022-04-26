@@ -1,6 +1,7 @@
 //! Contains utility functions for interacting with and modifying Cosmos validator staking status
 
 use super::PAGE;
+use crate::client::msgs::{MSG_SUBMIT_PROPOSAL_TYPE_URL, MSG_VOTE_TYPE_URL};
 use crate::error::CosmosGrpcError;
 use crate::Coin;
 use crate::Contact;
@@ -105,7 +106,7 @@ impl Contact {
             option: vote.into(),
         };
 
-        let msg = Msg::new("/cosmos.gov.v1beta1.MsgVote", vote);
+        let msg = Msg::new(MSG_VOTE_TYPE_URL, vote);
         self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
             .await
     }
@@ -126,7 +127,7 @@ impl Contact {
             initial_deposit: vec![deposit.into()],
         };
 
-        let msg = Msg::new("/cosmos.gov.v1beta1.MsgSubmitProposal", proposal);
+        let msg = Msg::new(MSG_SUBMIT_PROPOSAL_TYPE_URL, proposal);
         self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
             .await
     }
