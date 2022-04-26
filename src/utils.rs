@@ -184,7 +184,6 @@ pub fn decode_bytes<T: Message + Default>(bytes: Vec<u8>) -> Result<T, DecodeErr
     T::decode(buf)
 }
 
-
 #[cfg(test)]
 mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.

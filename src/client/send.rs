@@ -1,4 +1,5 @@
 use crate::address::Address;
+use crate::client::msgs::MSG_SEND_TYPE_URL;
 use crate::client::Contact;
 use crate::client::MEMO;
 use crate::coin::Coin;
@@ -38,6 +39,7 @@ impl Contact {
     /// use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
     /// use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
     /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, PrivateKey};
+    /// use deep_space::client::msgs::SECP256K1_PUBKEY_TYPE_URL;
     /// use std::time::Duration;
     /// let private_key = PrivateKey::from_secret("mySecret".as_bytes());
     /// let public_key = private_key.to_public_key("cosmospub").unwrap();
@@ -57,7 +59,7 @@ impl Contact {
     ///     granter: None,
     ///     payer: None,
     /// };
-    /// let msg = Msg::new("/cosmos.crypto.secp256k1.PubKey", send);
+    /// let msg = Msg::new(SECP256K1_PUBKEY_TYPE_URL, send);
     /// let args = MessageArgs {
     ///     sequence: 0,
     ///     account_number: 0,
@@ -112,6 +114,7 @@ impl Contact {
     /// use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
     /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, PrivateKey};
     /// use std::time::Duration;
+    /// use deep_space::client::msgs::SECP256K1_PUBKEY_TYPE_URL;
     /// let private_key = PrivateKey::from_secret("mySecret".as_bytes());
     /// let public_key = private_key.to_public_key("cosmospub").unwrap();
     /// let address = public_key.to_address();
@@ -124,7 +127,7 @@ impl Contact {
     ///     from_address: address.to_string(),
     ///     to_address: "cosmos1pr2n6tfymnn2tk6rkxlu9q5q2zq5ka3wtu7sdj".to_string(),
     /// };
-    /// let msg = Msg::new("/cosmos.crypto.secp256k1.PubKey", send);
+    /// let msg = Msg::new(SECP256K1_PUBKEY_TYPE_URL, send);
     /// let contact = Contact::new("https:://your-grpc-server", Duration::from_secs(5), "prefix").unwrap();
     /// // future must be awaited in tokio runtime
     /// contact.send_message(&vec![msg], None, &[coin], None, private_key);
@@ -289,7 +292,7 @@ impl Contact {
             from_address: our_address.to_bech32(&self.chain_prefix).unwrap(),
             to_address: destination.to_bech32(&self.chain_prefix).unwrap(),
         };
-        let msg = Msg::new("/cosmos.bank.v1beta1.MsgSend", send);
+        let msg = Msg::new(MSG_SEND_TYPE_URL, send);
         self.send_message(
             &[msg],
             None,
