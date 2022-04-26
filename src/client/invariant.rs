@@ -1,11 +1,10 @@
+use crate::client::msgs::MSG_VERIFY_INVARIANT_TYPE_URL;
 use crate::error::CosmosGrpcError;
 use crate::{Coin, Contact, Msg, PrivateKey};
 use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use cosmos_sdk_proto::cosmos::crisis::v1beta1::MsgVerifyInvariant;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::SimulateResponse;
 use std::time::Duration;
-
-pub const MSG_VERIFY_INVARIANT_TYPE: &str = "/cosmos.crisis.v1beta1.MsgVerifyInvariant";
 
 impl Contact {
     /// A utility function which simulates the specified invariant and returns the given SimulationResponse
@@ -40,7 +39,7 @@ impl Contact {
             invariant_module_name: module_name.to_string(),
             invariant_route: invariant_name.to_string(),
         };
-        let msg = Msg::new(MSG_VERIFY_INVARIANT_TYPE, verify);
+        let msg = Msg::new(MSG_VERIFY_INVARIANT_TYPE_URL, verify);
         trace!("Submitting simulation");
         self.simulate_tx(&[msg], private_key).await
     }
@@ -87,7 +86,7 @@ impl Contact {
             invariant_module_name: module_name.to_string(),
             invariant_route: invariant_name.to_string(),
         };
-        let msg = Msg::new(MSG_VERIFY_INVARIANT_TYPE, verify);
+        let msg = Msg::new(MSG_VERIFY_INVARIANT_TYPE_URL, verify);
         trace!("Submitting chain-halting invariant");
         self.send_message(
             &[msg],
