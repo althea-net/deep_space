@@ -3,7 +3,7 @@ use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
 use deep_space::client::msgs::SECP256K1_PUBKEY_TYPE_URL;
 use deep_space::Fee;
 use deep_space::Msg;
-use deep_space::PrivateKey;
+use deep_space::{CosmosPrivateKey, PrivateKey, PublicKey};
 use deep_space::{Coin, MessageArgs};
 use std::fs::File;
 use std::io::Write;
@@ -13,7 +13,7 @@ const SECRET: &str = "mySecret";
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Prepare keys
     println!(r#"Private key secret="{}""#, SECRET);
-    let private_key = PrivateKey::from_secret(SECRET.as_bytes());
+    let private_key = CosmosPrivateKey::from_secret(SECRET.as_bytes());
     let public_key = private_key.to_public_key("cosmospub")?;
     let address = public_key.to_address();
     // Print some diagnostics

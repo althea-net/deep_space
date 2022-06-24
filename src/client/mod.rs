@@ -9,6 +9,8 @@ pub mod msgs;
 pub mod send;
 pub mod staking;
 pub mod types;
+mod old_get;
+mod old_send;
 
 use cosmos_sdk_proto::cosmos::base::query::v1beta1::PageRequest;
 pub use types::ChainStatus;
@@ -75,7 +77,7 @@ impl Contact {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::private_key::PrivateKey;
+    use crate::private_key::{CosmosPrivateKey, PrivateKey};
     use crate::Coin;
 
     const TIMEOUT: Duration = Duration::from_secs(60);
@@ -90,7 +92,7 @@ mod tests {
     #[ignore]
     async fn test_endpoints() {
         env_logger::init();
-        let key = PrivateKey::from_phrase("boost casual myth skin olympic sure apology creek theme conduct view panda board pride miss turkey lonely strategy panel mad blast panda work shuffle", "").unwrap();
+        let key = CosmosPrivateKey::from_phrase("boost casual myth skin olympic sure apology creek theme conduct view panda board pride miss turkey lonely strategy panel mad blast panda work shuffle", "").unwrap();
         let token_name = "ufootoken".to_string();
         let contact = Contact::new("http://testnet2.althea.net:9090", TIMEOUT, "althea").unwrap();
         let our_address = key.to_address(&contact.get_prefix()).unwrap();

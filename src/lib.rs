@@ -27,6 +27,8 @@ pub mod private_key;
 pub mod public_key;
 pub mod signature;
 pub mod utils;
+mod old_private_key;
+mod old_public_key;
 
 pub use address::Address;
 pub use client::Contact;
@@ -35,6 +37,8 @@ pub use coin::Fee;
 pub use mnemonic::Mnemonic;
 pub use msg::Msg;
 pub use private_key::MessageArgs;
-pub use private_key::PrivateKey;
+pub use private_key::{CosmosPrivateKey, PrivateKey};
+#[cfg(feature = "ethermint")]
+pub use private_key::EthermintPrivateKey;
 pub use public_key::PublicKey;
 pub use signature::Signature;

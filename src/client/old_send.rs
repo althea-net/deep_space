@@ -6,7 +6,7 @@ use crate::coin::Coin;
 use crate::coin::Fee;
 use crate::error::CosmosGrpcError;
 use crate::msg::Msg;
-use crate::private_key::PrivateKey;
+use crate::old_private_key::OldPrivateKey;
 use crate::utils::check_for_sdk_error;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
@@ -24,7 +24,7 @@ use tonic::Code as TonicCode;
 impl Contact {
     /// Sends an already serialized and signed transaction, checking for various errors in the
     /// transaction response. This is the lowest level transaction sending function and you
-    /// probably shouldn't use it unless you have specific needs. `send_message` is more
+    /// probably shouldn't use it unless you have specific needs. `old_send_message` is more
     /// appropriate for general use.
     ///
     /// # Arguments
@@ -38,10 +38,10 @@ impl Contact {
     /// ```rust
     /// use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
     /// use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
-    /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, CosmosPrivateKey, PrivateKey, PublicKey};
+    /// use deep_space::{Coin, client::Contact, Fee, OldMessageArgs, Msg, OldPrivateKey};
     /// use deep_space::client::msgs::SECP256K1_PUBKEY_TYPE_URL;
     /// use std::time::Duration;
-    /// let private_key = Box::new(CosmosPrivateKey::from_secret("mySecret".as_bytes()));
+    /// let private_key = OldPrivateKey::from_secret("mySecret".as_bytes());
     /// let public_key = private_key.to_public_key("cosmospub").unwrap();
     /// let address = public_key.to_address();
     /// let coin = Coin {
@@ -60,7 +60,7 @@ impl Contact {
     ///     payer: None,
     /// };
     /// let msg = Msg::new(SECP256K1_PUBKEY_TYPE_URL, send);
-    /// let args = MessageArgs {
+    /// let args = OldMessageArgs {
     ///     sequence: 0,
     ///     account_number: 0,
     ///     chain_id: "mychainid".to_string(),
@@ -70,9 +70,9 @@ impl Contact {
     /// let tx = private_key.sign_std_msg(&[msg], args, "").unwrap();
     /// let contact = Contact::new("https:://your-grpc-server", Duration::from_secs(5), "prefix").unwrap();
     /// // future must be awaited in tokio runtime
-    /// contact.send_transaction(tx, BroadcastMode::Sync);
+    /// contact.old_send_transaction(tx, BroadcastMode::Sync);
     /// ```
-    pub async fn send_transaction(
+    pub async fn old_send_transaction(
         &self,
         // proto serialized message for us to turn into an 'any' object
         msg: Vec<u8>,
@@ -112,10 +112,10 @@ impl Contact {
     /// ```rust
     /// use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
     /// use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
-    /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, CosmosPrivateKey, PrivateKey, PublicKey};
+    /// use deep_space::{Coin, client::Contact, Fee, OldMessageArgs, Msg, OldPrivateKey};
     /// use std::time::Duration;
     /// use deep_space::client::msgs::SECP256K1_PUBKEY_TYPE_URL;
-    /// let private_key = Box::new(CosmosPrivateKey::from_secret("mySecret".as_bytes()));
+    /// let private_key = OldPrivateKey::from_secret("mySecret".as_bytes());
     /// let public_key = private_key.to_public_key("cosmospub").unwrap();
     /// let address = public_key.to_address();
     /// let coin = Coin {
@@ -130,33 +130,33 @@ impl Contact {
     /// let msg = Msg::new(SECP256K1_PUBKEY_TYPE_URL, send);
     /// let contact = Contact::new("https:://your-grpc-server", Duration::from_secs(5), "prefix").unwrap();
     /// // future must be awaited in tokio runtime
-    /// contact.send_message(&vec![msg], None, &[coin], None, private_key);
+    /// contact.old_send_message(&vec![msg], None, &[coin], None, private_key);
     /// ```
-    pub async fn send_message(
+    pub async fn old_send_message(
         &self,
         messages: &[Msg],
         memo: Option<String>,
         fee_coin: &[Coin],
         wait_timeout: Option<Duration>,
-        private_key: impl PrivateKey,
+        private_key: OldPrivateKey,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let memo = memo.unwrap_or_else(|| MEMO.to_string());
 
-        let fee = self.get_fee_info(messages, fee_coin, private_key.clone()).await?;
+        let fee = self.old_get_fee_info(messages, fee_coin, private_key).await?;
 
-        let args = self.get_message_args(our_address, fee).await?;
+        let args = self.old_get_message_args(our_address, fee).await?;
         trace!("got optional tx info");
 
-        let msg_bytes = private_key.sign_std_msg(messages, args, &memo)?;
+        let msg_bytes = private_key.sign_std_msg(messages, args, memo)?;
 
         let response = self
-            .send_transaction(msg_bytes, BroadcastMode::Sync)
+            .old_send_transaction(msg_bytes, BroadcastMode::Sync)
             .await?;
 
         trace!("broadcasted! with response {:?}", response);
         if let Some(time) = wait_timeout {
-            self.wait_for_tx(response, time).await
+            self.old_wait_for_tx(response, time).await
         } else {
             Ok(response)
         }
@@ -164,14 +164,14 @@ impl Contact {
 
     /// Simulates the provided array of messages and returns
     /// a fee object with the gas amount actually used
-    pub async fn get_fee_info(
+    pub async fn old_get_fee_info(
         &self,
         messages: &[Msg],
         fee_token: &[Coin],
-        private_key: impl PrivateKey,
+        private_key: OldPrivateKey,
     ) -> Result<Fee, CosmosGrpcError> {
         let gas_info = self
-            .simulate_tx(messages, private_key.clone())
+            .old_simulate_tx(messages, private_key)
             .await?
             .gas_info
             .unwrap();
@@ -216,10 +216,10 @@ impl Contact {
 
     /// Simulates the provided array of messages and returns
     /// the simulation result
-    pub async fn simulate_tx(
+    pub async fn old_simulate_tx(
         &self,
         messages: &[Msg],
-        private_key: impl PrivateKey,
+        private_key: OldPrivateKey,
     ) -> Result<SimulateResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let mut txrpc = TxServiceClient::connect(self.get_url())
@@ -234,7 +234,7 @@ impl Contact {
             payer: None,
         };
 
-        let args = self.get_message_args(our_address, fee_obj).await?;
+        let args = self.old_get_message_args(our_address, fee_obj).await?;
 
         let tx_bytes = private_key.sign_std_msg(messages, args, MEMO)?;
 
@@ -263,9 +263,9 @@ impl Contact {
     /// ```rust
     /// use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
     /// use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
-    /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, CosmosPrivateKey, PrivateKey, PublicKey};
+    /// use deep_space::{Coin, client::Contact, Fee, OldMessageArgs, Msg, OldPrivateKey};
     /// use std::time::Duration;
-    /// let private_key = Box::new(CosmosPrivateKey::from_secret("mySecret".as_bytes()));
+    /// let private_key = OldPrivateKey::from_secret("mySecret".as_bytes());
     /// let public_key = private_key.to_public_key("cosmospub").unwrap();
     /// let address = public_key.to_address();
     /// let coin = Coin {
@@ -274,15 +274,15 @@ impl Contact {
     /// };
     /// let contact = Contact::new("https:://your-grpc-server", Duration::from_secs(5), "prefix").unwrap();
     /// // future must be awaited in tokio runtime
-    /// contact.send_coins(coin.clone(), Some(coin), address, None, private_key);
+    /// contact.old_send_coins(coin.clone(), Some(coin), address, None, private_key);
     /// ```
-    pub async fn send_coins(
+    pub async fn old_send_coins(
         &self,
         coin: Coin,
         fee_coin: Option<Coin>,
         destination: Address,
         wait_timeout: Option<Duration>,
-        private_key: impl PrivateKey,
+        private_key: OldPrivateKey,
     ) -> Result<TxResponse, CosmosGrpcError> {
         trace!("Creating transaction");
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
@@ -293,7 +293,7 @@ impl Contact {
             to_address: destination.to_bech32(&self.chain_prefix).unwrap(),
         };
         let msg = Msg::new(MSG_SEND_TYPE_URL, send);
-        self.send_message(
+        self.old_send_message(
             &[msg],
             None,
             &[fee_coin.unwrap_or_default()],
@@ -306,7 +306,7 @@ impl Contact {
     /// Utility function that waits for a tx to enter the chain by querying
     /// it's txid, will not exit for timeout time unless the error is known
     /// and unrecoverable
-    pub async fn wait_for_tx(
+    pub async fn old_wait_for_tx(
         &self,
         response: TxResponse,
         timeout: Duration,

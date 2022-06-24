@@ -281,6 +281,7 @@ pub enum PrivateKeyError {
     AddressError(AddressError),
     HdWalletError(HdWalletError),
     InvalidMnemonic { error: Bip39Error },
+    ZeroPrivateKey,
 }
 
 impl fmt::Display for PrivateKeyError {
@@ -295,7 +296,8 @@ impl fmt::Display for PrivateKeyError {
             PrivateKeyError::HdWalletError(val) => write!(f, "{}", val),
             PrivateKeyError::InvalidMnemonic { error } => {
                 write!(f, "Failed to process mnemonic {:?}", error)
-            }
+            },
+            PrivateKeyError::ZeroPrivateKey => write!(f, "PrivateKeyError Zero Private Key"),
         }
     }
 }

@@ -18,9 +18,9 @@ impl Contact {
     /// ```rust
     /// use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
     /// use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
-    /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, PrivateKey};
+    /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, PrivateKey, CosmosPrivateKey};
     /// use std::time::Duration;
-    /// let private_key = PrivateKey::from_secret("mySecret".as_bytes());
+    /// let private_key = CosmosPrivateKey::from_secret("mySecret".as_bytes());
     /// let contact = Contact::new("https:://your-grpc-server", Duration::from_secs(5), "prefix").unwrap();
     /// // future must be awaited in tokio runtime
     /// contact.invariant_check("gravity", "module-balance", private_key);
@@ -29,7 +29,7 @@ impl Contact {
         &self,
         module_name: &str,
         invariant_name: &str,
-        private_key: PrivateKey,
+        private_key: impl PrivateKey,
     ) -> Result<SimulateResponse, CosmosGrpcError> {
         trace!("Creating simulated invariant transaction");
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
@@ -57,9 +57,9 @@ impl Contact {
     /// ```rust
     /// use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
     /// use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
-    /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, PrivateKey};
+    /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, PrivateKey, PublicKey, CosmosPrivateKey};
     /// use std::time::Duration;
-    /// let private_key = PrivateKey::from_secret("mySecret".as_bytes());
+    /// let private_key = CosmosPrivateKey::from_secret("mySecret".as_bytes());
     /// let public_key = private_key.to_public_key("cosmospub").unwrap();
     /// let address = public_key.to_address();
     /// let coin = Coin {
@@ -76,7 +76,7 @@ impl Contact {
         invariant_name: &str,
         fee_coin: Option<Coin>,
         wait_timeout: Duration,
-        private_key: PrivateKey,
+        private_key: impl PrivateKey,
     ) -> Result<TxResponse, CosmosGrpcError> {
         trace!("Creating chain-halting invariant transaction");
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();

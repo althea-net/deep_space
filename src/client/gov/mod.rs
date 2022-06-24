@@ -96,7 +96,7 @@ impl Contact {
         proposal_id: u64,
         vote: VoteOption,
         fee: Coin,
-        private_key: PrivateKey,
+        private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
@@ -117,7 +117,7 @@ impl Contact {
         content: Any,
         deposit: Coin,
         fee: Coin,
-        private_key: PrivateKey,
+        private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
