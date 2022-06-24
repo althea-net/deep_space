@@ -147,7 +147,7 @@ impl From<Fee> for ProtoFee {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::PrivateKey;
+    use crate::{CosmosPrivateKey, PrivateKey};
 
     #[test]
     fn test_coin_parse() {
@@ -159,6 +159,6 @@ mod tests {
             .parse()
             .unwrap();
 
-        let _res = PrivateKey::from_phrase("swim cereal address police kiwi ship safe raven other place lizard index auction mother arrive sad void real library upgrade chase frequent bike diesel", "").unwrap();
+        let _res = CosmosPrivateKey::from_phrase("swim cereal address police kiwi ship safe raven other place lizard index auction mother arrive sad void real library upgrade chase frequent bike diesel", "").unwrap();
     }
 }

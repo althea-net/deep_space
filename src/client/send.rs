@@ -38,10 +38,10 @@ impl Contact {
     /// ```rust
     /// use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
     /// use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
-    /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, PrivateKey};
+    /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, CosmosPrivateKey, PrivateKey, PublicKey};
     /// use deep_space::client::msgs::SECP256K1_PUBKEY_TYPE_URL;
     /// use std::time::Duration;
-    /// let private_key = PrivateKey::from_secret("mySecret".as_bytes());
+    /// let private_key = CosmosPrivateKey::from_secret("mySecret".as_bytes());
     /// let public_key = private_key.to_public_key("cosmospub").unwrap();
     /// let address = public_key.to_address();
     /// let coin = Coin {
@@ -112,10 +112,10 @@ impl Contact {
     /// ```rust
     /// use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
     /// use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
-    /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, PrivateKey};
+    /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, CosmosPrivateKey, PrivateKey, PublicKey};
     /// use std::time::Duration;
     /// use deep_space::client::msgs::SECP256K1_PUBKEY_TYPE_URL;
-    /// let private_key = PrivateKey::from_secret("mySecret".as_bytes());
+    /// let private_key = CosmosPrivateKey::from_secret("mySecret".as_bytes());
     /// let public_key = private_key.to_public_key("cosmospub").unwrap();
     /// let address = public_key.to_address();
     /// let coin = Coin {
@@ -138,17 +138,17 @@ impl Contact {
         memo: Option<String>,
         fee_coin: &[Coin],
         wait_timeout: Option<Duration>,
-        private_key: PrivateKey,
+        private_key: impl PrivateKey,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let memo = memo.unwrap_or_else(|| MEMO.to_string());
 
-        let fee = self.get_fee_info(messages, fee_coin, private_key).await?;
+        let fee = self.get_fee_info(messages, fee_coin, private_key.clone()).await?;
 
         let args = self.get_message_args(our_address, fee).await?;
         trace!("got optional tx info");
 
-        let msg_bytes = private_key.sign_std_msg(messages, args, memo)?;
+        let msg_bytes = private_key.sign_std_msg(messages, args, &memo)?;
 
         let response = self
             .send_transaction(msg_bytes, BroadcastMode::Sync)
@@ -168,10 +168,10 @@ impl Contact {
         &self,
         messages: &[Msg],
         fee_token: &[Coin],
-        private_key: PrivateKey,
+        private_key: impl PrivateKey,
     ) -> Result<Fee, CosmosGrpcError> {
         let gas_info = self
-            .simulate_tx(messages, private_key)
+            .simulate_tx(messages, private_key.clone())
             .await?
             .gas_info
             .unwrap();
@@ -219,7 +219,7 @@ impl Contact {
     pub async fn simulate_tx(
         &self,
         messages: &[Msg],
-        private_key: PrivateKey,
+        private_key: impl PrivateKey,
     ) -> Result<SimulateResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let mut txrpc = TxServiceClient::connect(self.get_url())
@@ -263,9 +263,9 @@ impl Contact {
     /// ```rust
     /// use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
     /// use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
-    /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, PrivateKey};
+    /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, CosmosPrivateKey, PrivateKey, PublicKey};
     /// use std::time::Duration;
-    /// let private_key = PrivateKey::from_secret("mySecret".as_bytes());
+    /// let private_key = CosmosPrivateKey::from_secret("mySecret".as_bytes());
     /// let public_key = private_key.to_public_key("cosmospub").unwrap();
     /// let address = public_key.to_address();
     /// let coin = Coin {
@@ -282,7 +282,7 @@ impl Contact {
         fee_coin: Option<Coin>,
         destination: Address,
         wait_timeout: Option<Duration>,
-        private_key: PrivateKey,
+        private_key: impl PrivateKey,
     ) -> Result<TxResponse, CosmosGrpcError> {
         trace!("Creating transaction");
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();

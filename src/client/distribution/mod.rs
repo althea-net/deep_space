@@ -88,7 +88,7 @@ impl Contact {
         &self,
         validator_address: Address,
         fee: Coin,
-        private_key: PrivateKey,
+        private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
@@ -161,7 +161,7 @@ impl Contact {
     pub async fn withdraw_all_delegator_rewards(
         &self,
         fee: Coin,
-        private_key: PrivateKey,
+        private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
@@ -188,7 +188,7 @@ impl Contact {
         &self,
         validator_address: Address,
         fee: Coin,
-        private_key: PrivateKey,
+        private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let msg = MsgWithdrawValidatorCommission {
@@ -205,7 +205,7 @@ impl Contact {
         &self,
         amount: Vec<Coin>,
         fee: Coin,
-        private_key: PrivateKey,
+        private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();

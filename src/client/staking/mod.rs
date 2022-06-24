@@ -93,7 +93,7 @@ impl Contact {
         validator_address: Address,
         amount_to_delegate: Coin,
         fee: Coin,
-        private_key: PrivateKey,
+        private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
@@ -118,7 +118,7 @@ impl Contact {
         new_validator_address: Address,
         amount_to_redelegate: Coin,
         fee: Coin,
-        private_key: PrivateKey,
+        private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
@@ -142,7 +142,7 @@ impl Contact {
         validator_address: Address,
         amount_to_undelegate: Coin,
         fee: Coin,
-        private_key: PrivateKey,
+        private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();

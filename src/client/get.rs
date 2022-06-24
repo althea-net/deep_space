@@ -185,11 +185,12 @@ impl Contact {
         let mut agrpc = AuthQueryClient::connect(self.url.clone())
             .await?
             .accept_gzip();
+        let query = QueryAccountRequest {
+            address: address.to_bech32(&self.chain_prefix).unwrap(),
+        };
         let res = agrpc
             // todo detect chain prefix here
-            .account(QueryAccountRequest {
-                address: address.to_bech32(&self.chain_prefix).unwrap(),
-            })
+            .account(query)
             .await;
         match res {
             Ok(account) => {
