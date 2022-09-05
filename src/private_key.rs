@@ -13,6 +13,7 @@ use cosmos_sdk_proto::cosmos::tx::v1beta1::{
 };
 use num_bigint::BigUint;
 use prost::Message;
+use secp256k1::Scalar;
 use secp256k1::constants::CURVE_ORDER as CurveN;
 use secp256k1::Message as CurveMessage;
 use secp256k1::Secp256k1;
@@ -351,8 +352,10 @@ fn get_child_key(
     //     panic!("child key not in curve space!")
     // }
 
+    let k_parent = Scalar::from_be_bytes(k_parent).unwrap();
+
     let mut parse_i_l = SecretKey::from_slice(&l_param[0..32]).unwrap();
-    parse_i_l.add_assign(&k_parent).unwrap();
+    parse_i_l = parse_i_l.add_tweak(&k_parent).unwrap();
     let child_key = parse_i_l;
 
     let mut child_key_res: [u8; 32] = [0; 32];
