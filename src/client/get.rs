@@ -1,15 +1,8 @@
-use crate::client::types::BaseAccount;
 use crate::client::types::BlockParams;
-use crate::client::types::CosmosAccount;
 use crate::client::types::*;
 use crate::coin::Fee;
 use crate::{address::Address, private_key::MessageArgs};
 use crate::{client::Contact, error::CosmosGrpcError};
-use bytes::BytesMut;
-use cosmos_sdk_proto::cosmos::auth::v1beta1::{
-    query_client::QueryClient as AuthQueryClient, BaseAccount as ProtoBaseAccount,
-    QueryAccountRequest,
-};
 use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::service_client::ServiceClient as TendermintServiceClient;
 use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetBlockByHeightRequest;
 use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetLatestBlockRequest;
@@ -20,15 +13,10 @@ use cosmos_sdk_proto::cosmos::params::v1beta1::QueryParamsResponse;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::service_client::ServiceClient as TxServiceClient;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxRequest;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxResponse;
-use cosmos_sdk_proto::cosmos::vesting::v1beta1::ContinuousVestingAccount;
-use cosmos_sdk_proto::cosmos::vesting::v1beta1::DelayedVestingAccount;
-use cosmos_sdk_proto::cosmos::vesting::v1beta1::PeriodicVestingAccount;
 use cosmos_sdk_proto::tendermint::types::Block;
-use prost::Message;
 use std::time::Duration;
 use std::time::Instant;
 use tokio::time::sleep;
-use tonic::Code as GrpcCode;
 
 impl Contact {
     /// Gets the current chain status, returns an enum taking into account the various possible states
@@ -176,46 +164,6 @@ impl Contact {
             })
             .await?
             .into_inner())
-    }
-
-    /// Gets account info for the provided Cosmos account using the accounts endpoint
-    /// accounts do not have any info if they have no tokens or are otherwise never seen
-    /// before in this case we return the special error NoToken
-    pub async fn get_account_info(&self, address: Address) -> Result<BaseAccount, CosmosGrpcError> {
-        let mut agrpc = AuthQueryClient::connect(self.url.clone())
-            .await?
-            .accept_gzip();
-        let query = QueryAccountRequest {
-            address: address.to_bech32(&self.chain_prefix).unwrap(),
-        };
-        let res = agrpc
-            // todo detect chain prefix here
-            .account(query)
-            .await;
-        match res {
-            Ok(account) => {
-                // null pointer if this fails to unwrap
-                let value = account.into_inner().account.unwrap();
-                let mut buf = BytesMut::with_capacity(value.value.len());
-                buf.extend_from_slice(&value.value);
-                match (
-                    ProtoBaseAccount::decode(buf.clone()),
-                    PeriodicVestingAccount::decode(buf.clone()),
-                    ContinuousVestingAccount::decode(buf.clone()),
-                    DelayedVestingAccount::decode(buf.clone()),
-                ) {
-                    (Ok(d), _, _, _) => Ok(d.get_base_account()),
-                    (_, Ok(d), _, _) => Ok(d.get_base_account()),
-                    (_, _, Ok(d), _) => Ok(d.get_base_account()),
-                    (_, _, _, Ok(d)) => Ok(d.get_base_account()),
-                    (Err(e), _, _, _) => Err(CosmosGrpcError::DecodeError { error: e }),
-                }
-            }
-            Err(e) => match e.code() {
-                GrpcCode::NotFound => Err(CosmosGrpcError::NoToken),
-                _ => Err(CosmosGrpcError::RequestError { error: e }),
-            },
-        }
     }
 
     // Gets a transaction using it's hash value, TODO should fail if the transaction isn't found

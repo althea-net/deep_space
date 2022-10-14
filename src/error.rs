@@ -203,7 +203,7 @@ impl From<bech32::Error> for AddressError {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ByteDecodeError {
     DecodeError(Utf8Error),
     ParseError(ParseIntError),
@@ -296,7 +296,7 @@ impl fmt::Display for PrivateKeyError {
             PrivateKeyError::HdWalletError(val) => write!(f, "{}", val),
             PrivateKeyError::InvalidMnemonic { error } => {
                 write!(f, "Failed to process mnemonic {:?}", error)
-            },
+            }
             PrivateKeyError::ZeroPrivateKey => write!(f, "PrivateKeyError Zero Private Key"),
         }
     }

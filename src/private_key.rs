@@ -13,24 +13,24 @@ use cosmos_sdk_proto::cosmos::tx::v1beta1::{
 };
 use num_bigint::BigUint;
 use prost::Message;
-use secp256k1::Scalar;
 use secp256k1::constants::CURVE_ORDER as CurveN;
 use secp256k1::Message as CurveMessage;
+use secp256k1::Scalar;
 use secp256k1::{All, Secp256k1};
-use std::cell::RefCell;
-use secp256k1::{SecretKey, PublicKey as PublicKeyEC};
+use secp256k1::{PublicKey as PublicKeyEC, SecretKey};
 use sha2::Sha512;
 use sha2::{Digest, Sha256};
+use std::cell::RefCell;
 use std::str::FromStr;
 
-thread_local!{
+thread_local! {
     pub(crate) static SECP256K1: RefCell<Secp256k1<All>> = RefCell::new(Secp256k1::new());
 }
 
 pub const DEFAULT_COSMOS_HD_PATH: &str = "m/44'/118'/0'/0/0";
 pub const DEFAULT_ETHEREUM_HD_PATH: &str = "m/44'/60'/0'/0/0";
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct MessageArgs {
     pub sequence: u64,
     pub fee: Fee,
@@ -48,17 +48,37 @@ struct TxParts {
 }
 
 pub trait PrivateKey: Clone + Sized {
-    fn from_secret(secret: &[u8]) -> Self where Self: Sized;
+    fn from_secret(secret: &[u8]) -> Self
+    where
+        Self: Sized;
 
-    fn from_phrase(phrase: &str, passphrase: &str) -> Result<Self, PrivateKeyError> where Self: Sized;
+    fn from_phrase(phrase: &str, passphrase: &str) -> Result<Self, PrivateKeyError>
+    where
+        Self: Sized;
 
-    fn from_hd_wallet_path(path: &str, phrase: &str, passphrase: &str) -> Result<Self, PrivateKeyError> where Self: Sized;
+    fn from_hd_wallet_path(
+        path: &str,
+        phrase: &str,
+        passphrase: &str,
+    ) -> Result<Self, PrivateKeyError>
+    where
+        Self: Sized;
 
     fn to_address(&self, prefix: &str) -> Result<Address, PrivateKeyError>;
 
-    fn get_signed_tx(&self, messages: &[Msg], args: MessageArgs, memo: &str) -> Result<Tx, PrivateKeyError>;
+    fn get_signed_tx(
+        &self,
+        messages: &[Msg],
+        args: MessageArgs,
+        memo: &str,
+    ) -> Result<Tx, PrivateKeyError>;
 
-    fn sign_std_msg(&self, messages: &[Msg], args: MessageArgs, memo: &str) -> Result<Vec<u8>, PrivateKeyError>;
+    fn sign_std_msg(
+        &self,
+        messages: &[Msg],
+        args: MessageArgs,
+        memo: &str,
+    ) -> Result<Vec<u8>, PrivateKeyError>;
 }
 
 /// This structure represents a private key of a Cosmos Network.
@@ -152,7 +172,6 @@ impl PrivateKey for CosmosPrivateKey {
     }
 }
 
-
 impl CosmosPrivateKey {
     /// Obtain a public key for a given private key
     pub fn to_public_key(&self, prefix: &str) -> Result<CosmosPublicKey, PrivateKeyError> {
@@ -179,7 +198,13 @@ impl CosmosPrivateKey {
             key: our_pubkey.to_vec(),
         };
 
-        let mut unfinished = build_unfinished_tx(key, "/cosmos.crypto.secp256k1.PubKey", messages, args.clone(), memo);
+        let mut unfinished = build_unfinished_tx(
+            key,
+            "/cosmos.crypto.secp256k1.PubKey",
+            messages,
+            args.clone(),
+            memo,
+        );
 
         let sign_doc = SignDoc {
             body_bytes: unfinished.body_buf.clone(),
@@ -278,7 +303,12 @@ impl PrivateKey for EthermintPrivateKey {
         Ok(address)
     }
 
-    fn get_signed_tx(&self, messages: &[Msg], args: MessageArgs, memo: &str) -> Result<Tx, PrivateKeyError> {
+    fn get_signed_tx(
+        &self,
+        messages: &[Msg],
+        args: MessageArgs,
+        memo: &str,
+    ) -> Result<Tx, PrivateKeyError> {
         let parts = self.build_tx(messages, args, memo)?;
         Ok(Tx {
             body: Some(parts.body),
@@ -287,7 +317,12 @@ impl PrivateKey for EthermintPrivateKey {
         })
     }
 
-    fn sign_std_msg(&self, messages: &[Msg], args: MessageArgs, memo: &str) -> Result<Vec<u8>, PrivateKeyError> {
+    fn sign_std_msg(
+        &self,
+        messages: &[Msg],
+        args: MessageArgs,
+        memo: &str,
+    ) -> Result<Vec<u8>, PrivateKeyError> {
         let parts = self.build_tx(messages, args, memo)?;
 
         let tx_raw = TxRaw {
@@ -307,7 +342,10 @@ impl PrivateKey for EthermintPrivateKey {
 
 #[cfg(feature = "ethermint")]
 impl EthermintPrivateKey {
-    fn to_public_key(&self, prefix: &str) -> Result<crate::public_key::EthermintPublicKey, PrivateKeyError> {
+    fn to_public_key(
+        &self,
+        prefix: &str,
+    ) -> Result<crate::public_key::EthermintPublicKey, PrivateKeyError> {
         let sk = SecretKey::from_slice(&self.0)?;
         let pkey = SECP256K1.with(move |object| -> Result<_, PrivateKeyError> {
             let secp256k1 = object.borrow();
@@ -335,10 +373,16 @@ impl EthermintPrivateKey {
 
         // TODO: Use the ethermint proto here, not the cosmos-sdk one
         let pubkey_proto = ProtoSecp256k1Pubkey {
-            key:  our_pubkey.to_vec(),
+            key: our_pubkey.to_vec(),
         };
 
-        let mut unfinished = build_unfinished_tx(pubkey_proto, "/ethermint.crypto.v1.ethsecp256k1.PubKey", messages, args.clone(), memo);
+        let mut unfinished = build_unfinished_tx(
+            pubkey_proto,
+            "/ethermint.crypto.v1.ethsecp256k1.PubKey",
+            messages,
+            args.clone(),
+            memo,
+        );
 
         let sign_doc = SignDoc {
             body_bytes: unfinished.body_buf.clone(),
@@ -414,7 +458,6 @@ fn from_hd_wallet_path(
     let (master_secret_key, master_chain_code) = master_key_from_seed(&seed_bytes);
     let mut secret_key = master_secret_key;
     let mut chain_code = master_chain_code;
-
 
     for mut val in iterator {
         let mut hardened = false;
@@ -567,7 +610,7 @@ fn build_unfinished_tx<P: prost::Message>(
     }
 }
 
-    #[test]
+#[test]
 fn test_secret() {
     let private_key = CosmosPrivateKey::from_secret(b"mySecret");
     assert_eq!(
@@ -798,7 +841,10 @@ fn test_ethermint_signatures() {
     let v = signature.v;
     sigbytes[64] = (v.to_u8().unwrap()) - 27u8; // Fix some weirdness in the clarity implementation
 
-    assert_eq!(sigbytes.to_vec(), hex_str_to_bytes(expected_hello_sig).unwrap());
+    assert_eq!(
+        sigbytes.to_vec(),
+        hex_str_to_bytes(expected_hello_sig).unwrap()
+    );
 
     /* Sample message to sign
     {
@@ -850,22 +896,25 @@ fn test_ethermint_signatures() {
 
     // The above signature entry converted to hex bytes in Go [fmt.Printf("%s", ([]byte)("3qEDrYCnLjIdlH8N2+8rvt9M/k8fLzWa+CdpWB9b0AsK3uZO12UAm/62uilyeiAeBroBAJ+vPDzFDjC9j963KQE="))]
     // let expected_msg_sig = "337145447259436e4c6a49646c48384e322b38727674394d2f6b38664c7a57612b436470574239623041734b33755a4f313255416d2f363275696c796569416542726f42414a2b7650447a46446a43396a3936334b51453d";
-    let msg_send = MsgSend{
+    let msg_send = MsgSend {
         from_address: address.clone(),
         to_address: address.clone(),
-        amount: vec![Coin{ denom: "uatom".to_string(), amount: "1".to_string() }]
+        amount: vec![Coin {
+            denom: "uatom".to_string(),
+            amount: "1".to_string(),
+        }],
     };
-    let msg_args = MessageArgs{
+    let msg_args = MessageArgs {
         sequence: 0,
-        fee: Fee{
+        fee: Fee {
             amount: vec![],
             gas_limit: 200000,
             payer: None,
-            granter: None
+            granter: None,
         },
         timeout_height: 0,
         chain_id: "chain-0".to_string(),
-        account_number: 0
+        account_number: 0,
     };
     let msg = Msg(encode_any(msg_send, "/cosmos.bank.v1beta1.MsgSend"));
 

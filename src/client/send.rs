@@ -143,7 +143,9 @@ impl Contact {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let memo = memo.unwrap_or_else(|| MEMO.to_string());
 
-        let fee = self.get_fee_info(messages, fee_coin, private_key.clone()).await?;
+        let fee = self
+            .get_fee_info(messages, fee_coin, private_key.clone())
+            .await?;
 
         let args = self.get_message_args(our_address, fee).await?;
         trace!("got optional tx info");

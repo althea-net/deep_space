@@ -3,8 +3,8 @@ use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
 use deep_space::client::msgs::SECP256K1_PUBKEY_TYPE_URL;
 use deep_space::Fee;
 use deep_space::Msg;
-use deep_space::{CosmosPrivateKey, PrivateKey, PublicKey};
 use deep_space::{Coin, MessageArgs};
+use deep_space::{CosmosPrivateKey, PrivateKey, PublicKey};
 use std::fs::File;
 use std::io::Write;
 

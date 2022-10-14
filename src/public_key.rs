@@ -13,9 +13,13 @@ use std::str::FromStr;
 pub trait PublicKey {
     const DEFAULT_PREFIX: &'static str;
 
-    fn from_slice<T: Into<String>>(bytes: &[u8], prefix: T) -> Result<Self, PublicKeyError> where Self: Sized;
+    fn from_slice<T: Into<String>>(bytes: &[u8], prefix: T) -> Result<Self, PublicKeyError>
+    where
+        Self: Sized;
 
-    fn from_bytes<T: Into<String>>(bytes: [u8; 33], prefix: T) -> Result<Self, PublicKeyError> where Self: Sized;
+    fn from_bytes<T: Into<String>>(bytes: [u8; 33], prefix: T) -> Result<Self, PublicKeyError>
+    where
+        Self: Sized;
 
     fn as_bytes(&self) -> &[u8];
 
@@ -33,7 +37,9 @@ pub trait PublicKey {
 
     fn to_bech32<T: Into<String>>(&self, hrp: T) -> Result<String, PublicKeyError>;
 
-    fn from_bech32(s: String) -> Result<Self, PublicKeyError> where Self: Sized;
+    fn from_bech32(s: String) -> Result<Self, PublicKeyError>
+    where
+        Self: Sized;
 }
 /// Represents a public key of a given private key in the Cosmos Network.
 #[derive(PartialEq, Eq, Copy, Clone, Hash)]
@@ -54,10 +60,7 @@ impl PublicKey for CosmosPublicKey {
     }
 
     /// Create a public key using an array of bytes
-    fn from_bytes<T: Into<String>>(
-        bytes: [u8; 33],
-        prefix: T,
-    ) -> Result<Self, PublicKeyError> {
+    fn from_bytes<T: Into<String>>(bytes: [u8; 33], prefix: T) -> Result<Self, PublicKeyError> {
         Ok(CosmosPublicKey {
             bytes,
             prefix: ArrayString::new(&prefix.into())?,
@@ -159,10 +162,7 @@ impl PublicKey for EthermintPublicKey {
     }
 
     /// Create a public key using an array of bytes
-    fn from_bytes<T: Into<String>>(
-        bytes: [u8; 33],
-        prefix: T,
-    ) -> Result<Self, PublicKeyError> {
+    fn from_bytes<T: Into<String>>(bytes: [u8; 33], prefix: T) -> Result<Self, PublicKeyError> {
         Ok(EthermintPublicKey {
             bytes,
             prefix: ArrayString::new(&prefix.into())?,
@@ -187,7 +187,8 @@ impl PublicKey for EthermintPublicKey {
     }
 
     fn to_address(&self) -> Address {
-        self.to_address_with_prefix(&self.prefix.to_string()).unwrap()
+        self.to_address_with_prefix(&self.prefix.to_string())
+            .unwrap()
     }
 
     fn to_address_with_prefix(&self, prefix: &str) -> Result<Address, AddressError> {
@@ -227,7 +228,10 @@ impl PublicKey for EthermintPublicKey {
 }
 
 /// Create a public key using a slice of bytes
-fn from_slice<T: Into<String>, PK: PublicKey + Sized>(bytes: &[u8], prefix: T) -> Result<PK, PublicKeyError> {
+fn from_slice<T: Into<String>, PK: PublicKey + Sized>(
+    bytes: &[u8],
+    prefix: T,
+) -> Result<PK, PublicKeyError> {
     if bytes.len() != 33 {
         return Err(PublicKeyError::BytesDecodeErrorWrongLength);
     }
@@ -274,7 +278,10 @@ impl FromStr for CosmosPublicKey {
                     if bytes.len() == 33 {
                         let mut inner = [0; 33];
                         inner.copy_from_slice(&bytes[0..33]);
-                        Ok(PublicKey::from_bytes(inner, CosmosPublicKey::DEFAULT_PREFIX)?)
+                        Ok(PublicKey::from_bytes(
+                            inner,
+                            CosmosPublicKey::DEFAULT_PREFIX,
+                        )?)
                     } else {
                         Err(PublicKeyError::BytesDecodeErrorWrongLength)
                     }

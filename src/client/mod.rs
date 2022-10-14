@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+pub mod auth;
 pub mod bank;
 pub mod distribution;
 pub mod get;
@@ -75,8 +76,6 @@ impl Contact {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::private_key::{CosmosPrivateKey, PrivateKey};
-    use crate::Coin;
 
     const TIMEOUT: Duration = Duration::from_secs(60);
 
@@ -86,48 +85,19 @@ mod tests {
     /// to run the following command and copy a phrase so that you actually
     /// have some coins to send funds
     /// docker exec -it gravity_test_instance cat /validator-phrases
-    #[actix_rt::test]
     #[ignore]
+    #[actix_rt::test]
     async fn test_endpoints() {
         env_logger::init();
-        let key = CosmosPrivateKey::from_phrase("boost casual myth skin olympic sure apology creek theme conduct view panda board pride miss turkey lonely strategy panel mad blast panda work shuffle", "").unwrap();
-        let token_name = "ufootoken".to_string();
-        let contact = Contact::new("http://testnet2.althea.net:9090", TIMEOUT, "althea").unwrap();
-        let our_address = key.to_address(&contact.get_prefix()).unwrap();
-        let destination = "althea1ezyy5y8a4pzv9jgaeh4gd2c4kmhfn4pmpjc8np"
-            .parse()
-            .unwrap();
+        let contact = Contact::new("http://gravitychain.io:9090", TIMEOUT, "gravity").unwrap();
 
         let chain_status = contact.get_chain_status().await.unwrap();
         match chain_status {
             ChainStatus::Moving { block_height: _ } => {}
             ChainStatus::Syncing | ChainStatus::WaitingToStart => panic!("Chain not running"),
         }
-
         let _latest_block = contact.get_latest_block().await.unwrap();
-        let _account_info = contact.get_account_info(our_address).await.unwrap();
 
-        let balances = contact.get_balances(our_address).await.unwrap();
-        let mut ok = false;
-        for coin in balances {
-            if coin.denom == token_name {
-                ok = true
-            }
-        }
-        if !ok {
-            panic!(
-                "Could not find {} in the account of {}",
-                token_name, our_address
-            );
-        }
-
-        let send = Coin {
-            denom: token_name,
-            amount: 100u64.into(),
-        };
-        contact
-            .send_coins(send.clone(), Some(send), destination, Some(TIMEOUT), key)
-            .await
-            .unwrap();
+        let _ = contact.get_all_accounts().await.unwrap();
     }
 }

@@ -1,9 +1,12 @@
 use crate::address::Address;
-use cosmos_sdk_proto::cosmos::auth::v1beta1::BaseAccount as ProtoBaseAccount;
+use crate::error::CosmosGrpcError;
+use bytes::BytesMut;
+use cosmos_sdk_proto::cosmos::auth::v1beta1::{BaseAccount as ProtoBaseAccount, ModuleAccount};
 use cosmos_sdk_proto::cosmos::vesting::v1beta1::{
-    ContinuousVestingAccount, DelayedVestingAccount, PeriodicVestingAccount,
+    ContinuousVestingAccount, DelayedVestingAccount, PeriodicVestingAccount, PermanentLockedAccount,
 };
 use cosmos_sdk_proto::tendermint::types::Block;
+use prost::Message;
 use prost_types::Any;
 
 /// This struct represents the status of a Cosmos chain, instead of just getting the
@@ -39,6 +42,60 @@ pub enum LatestBlock {
     /// The chain is halted, this node is waiting for the chain to start again
     /// the caller should take appropriate action to await the chain start
     WaitingToStart,
+}
+
+/// Wrapper representing the various account types and their metadata data, easier to use than traits
+/// when you want to pass data around
+#[derive(Debug, Clone)]
+pub enum AccountType {
+    ProtoBaseAccount(ProtoBaseAccount),
+    PeriodicVestingAccount(PeriodicVestingAccount),
+    ContinuousVestingAccount(ContinuousVestingAccount),
+    DelayedVestingAccount(DelayedVestingAccount),
+    ModuleAccount(ModuleAccount),
+    PermenantLockedAccount(PermanentLockedAccount),
+}
+
+impl AccountType {
+    pub fn get_base_account(&self) -> BaseAccount {
+        match self {
+            AccountType::ProtoBaseAccount(a) => a.get_base_account(),
+            AccountType::PeriodicVestingAccount(a) => a.get_base_account(),
+            AccountType::ContinuousVestingAccount(a) => a.get_base_account(),
+            AccountType::DelayedVestingAccount(a) => a.get_base_account(),
+            AccountType::ModuleAccount(a) => a.get_base_account(),
+            AccountType::PermenantLockedAccount(a) => a.get_base_account(),
+        }
+    }
+
+    pub fn decode_from_any(value: prost_types::Any) -> Result<Self, CosmosGrpcError> {
+        let mut buf = BytesMut::with_capacity(value.value.len());
+        buf.extend_from_slice(&value.value);
+        match (
+            ProtoBaseAccount::decode(buf.clone()),
+            ContinuousVestingAccount::decode(buf.clone()),
+            PeriodicVestingAccount::decode(buf.clone()),
+            DelayedVestingAccount::decode(buf.clone()),
+            ModuleAccount::decode(buf.clone()),
+            PermanentLockedAccount::decode(buf.clone()),
+        ) {
+            (Ok(d), _, _, _, _, _) => Ok(AccountType::ProtoBaseAccount(d)),
+            // delayed and continuous can be parsed incorrectly
+            (_, Ok(c), Ok(p), _, _, _) => {
+                if value.type_url.contains("Continuous") {
+                    Ok(AccountType::ContinuousVestingAccount(c))
+                } else {
+                    Ok(AccountType::PeriodicVestingAccount(p))
+                }
+            }
+            (_, Ok(d), _, _, _, _) => Ok(AccountType::ContinuousVestingAccount(d)),
+            (_, _, Ok(d), _, _, _) => Ok(AccountType::PeriodicVestingAccount(d)),
+            (_, _, _, Ok(d), _, _) => Ok(AccountType::DelayedVestingAccount(d)),
+            (_, _, _, _, Ok(d), _) => Ok(AccountType::ModuleAccount(d)),
+            (_, _, _, _, _, Ok(d)) => Ok(AccountType::PermenantLockedAccount(d)),
+            (Err(e), _, _, _, _, _) => Err(CosmosGrpcError::DecodeError { error: e }),
+        }
+    }
 }
 
 /// This is a parsed and validated version of the Cosmos base account proto
@@ -110,6 +167,23 @@ impl CosmosAccount for DelayedVestingAccount {
 }
 
 impl CosmosAccount for PeriodicVestingAccount {
+    fn get_base_account(&self) -> BaseAccount {
+        self.base_vesting_account
+            .clone()
+            .unwrap()
+            .base_account
+            .unwrap()
+            .into()
+    }
+}
+
+impl CosmosAccount for ModuleAccount {
+    fn get_base_account(&self) -> BaseAccount {
+        self.base_account.clone().unwrap().into()
+    }
+}
+
+impl CosmosAccount for PermanentLockedAccount {
     fn get_base_account(&self) -> BaseAccount {
         self.base_vesting_account
             .clone()
