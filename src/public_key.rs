@@ -112,7 +112,7 @@ impl PublicKey for CosmosPublicKey {
         let ripemd160 = Ripemd::digest(&sha256);
         let mut bytes: [u8; 20] = Default::default();
         bytes.copy_from_slice(&ripemd160[..]);
-        Address::from_bytes(bytes, prefix)
+        Address::from_slice(&bytes, prefix)
     }
 
     /// Creates amino representation of a given public key.
