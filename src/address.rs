@@ -4,10 +4,14 @@ use crate::utils::hex_str_to_bytes;
 use crate::utils::ArrayString;
 use bech32::{self, FromBase32};
 use bech32::{ToBase32, Variant};
+use serde::Deserializer;
 use core::fmt::Display;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::str::FromStr;
+use serde::Deserialize;
+use serde::Serialize;
+use serde::Serializer;
 
 /// In cases where it's impossible to know the Bech32 prefix
 /// we fall back to this value
@@ -18,12 +22,35 @@ pub const DEFAULT_PREFIX: &str = "cosmos";
 /// while for Protobuf transport they are encoded as Base64 byte strings.
 ///
 /// Addresses have variable length depending on their purpose, the Base variant is the most common
-#[derive(PartialEq, Eq, Copy, Clone, Hash, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Copy, Clone, Hash)]
 pub enum Address {
     /// A regular account derived from a PrivateKey, or a plain Module account. Has a 20 byte buffer.
     Base(BaseAddress),
     /// An account derived from a Module account and a key. Has a 32 byte buffer.
     Derived(DerivedAddress),
+}
+
+impl Serialize for Address {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for Address {
+    fn deserialize<D>(deserializer: D) -> Result<Address, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let decoded = Address::from_bech32(s);
+        match decoded {
+            Ok(d) => Ok(d),
+            Err(e) => Err(serde::de::Error::custom(e.to_string()))
+        }
+    }
 }
 
 /// An address that's derived from a given PublicKey, has the typical 20 bytes of data
