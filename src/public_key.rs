@@ -108,8 +108,8 @@ impl PublicKey for CosmosPublicKey {
     /// provided as a utility for one step creation and change of prefix if the conventions
     /// in `to_address()` are incorrect
     fn to_address_with_prefix(&self, prefix: &str) -> Result<Address, AddressError> {
-        let sha256 = Sha256::digest(&self.bytes);
-        let ripemd160 = Ripemd::digest(&sha256);
+        let sha256 = Sha256::digest(self.bytes);
+        let ripemd160 = Ripemd::digest(sha256);
         let mut bytes: [u8; 20] = Default::default();
         bytes.copy_from_slice(&ripemd160[..]);
         Address::from_slice(&bytes, prefix)

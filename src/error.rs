@@ -18,6 +18,7 @@ use std::{fmt, time::Duration};
 use tonic::transport::Error as TonicError;
 use tonic::Status;
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 pub enum CosmosGrpcError {
     NoToken,

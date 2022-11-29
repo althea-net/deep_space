@@ -4,14 +4,14 @@ use crate::utils::hex_str_to_bytes;
 use crate::utils::ArrayString;
 use bech32::{self, FromBase32};
 use bech32::{ToBase32, Variant};
-use serde::Deserializer;
 use core::fmt::Display;
+use serde::Deserialize;
+use serde::Deserializer;
+use serde::Serialize;
+use serde::Serializer;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::str::FromStr;
-use serde::Deserialize;
-use serde::Serialize;
-use serde::Serializer;
 
 /// In cases where it's impossible to know the Bech32 prefix
 /// we fall back to this value
@@ -48,7 +48,7 @@ impl<'de> Deserialize<'de> for Address {
         let decoded = Address::from_bech32(s);
         match decoded {
             Ok(d) => Ok(d),
-            Err(e) => Err(serde::de::Error::custom(e.to_string()))
+            Err(e) => Err(serde::de::Error::custom(e.to_string())),
         }
     }
 }

@@ -54,7 +54,7 @@ impl Mnemonic {
         }
 
         let mut hasher = Sha256::new();
-        hasher.update(&entropy);
+        hasher.update(entropy);
         let check = hasher.finalize();
         let mut bits = vec![false; entropy.len() * 8 + entropy.len() / 4];
         for i in 0..entropy.len() {
