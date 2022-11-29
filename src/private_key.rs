@@ -254,6 +254,7 @@ impl FromStr for CosmosPrivateKey {
         }
     }
 }
+
 /// This structure represents a private key of an EVM Network.
 #[cfg(feature = "ethermint")]
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
@@ -403,6 +404,31 @@ impl EthermintPrivateKey {
         // Finish the TxParts and return
         unfinished.signatures = vec![signed.to_bytes().to_vec()];
         Ok(unfinished)
+    }
+}
+
+#[cfg(feature = "ethermint")]
+impl FromStr for EthermintPrivateKey {
+    type Err = PrivateKeyError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match hex_str_to_bytes(s) {
+            Ok(bytes) => {
+                if bytes.len() == 32 {
+                    let mut inner = [0; 32];
+                    inner.copy_from_slice(&bytes[0..32]);
+                    Ok(EthermintPrivateKey(inner))
+                } else {
+                    Err(PrivateKeyError::HexDecodeErrorWrongLength)
+                }
+            }
+            Err(e) => {
+                if contains_non_hex_chars(s) {
+                    EthermintPrivateKey::from_phrase(s, "")
+                } else {
+                    Err(e.into())
+                }
+            }
+        }
     }
 }
 
