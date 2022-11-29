@@ -343,7 +343,7 @@ impl PrivateKey for EthermintPrivateKey {
 #[cfg(feature = "ethermint")]
 impl EthermintPrivateKey {
     fn to_public_key(
-        &self,
+        self,
         prefix: &str,
     ) -> Result<crate::public_key::EthermintPublicKey, PrivateKeyError> {
         let sk = SecretKey::from_slice(&self.0)?;
@@ -837,7 +837,7 @@ fn test_ethermint_signatures() {
     let msg = "hello world".to_string();
     let clarity_sk = clarity::private_key::PrivateKey::from_slice(&sk.0).unwrap();
     let signature = clarity_sk.sign_insecure_msg(msg.as_bytes());
-    let mut sigbytes = signature.clone().to_bytes();
+    let mut sigbytes = signature.to_bytes();
     let v = signature.v;
     sigbytes[64] = (v.to_u8().unwrap()) - 27u8; // Fix some weirdness in the clarity implementation
 
@@ -898,7 +898,7 @@ fn test_ethermint_signatures() {
     // let expected_msg_sig = "337145447259436e4c6a49646c48384e322b38727674394d2f6b38664c7a57612b436470574239623041734b33755a4f313255416d2f363275696c796569416542726f42414a2b7650447a46446a43396a3936334b51453d";
     let msg_send = MsgSend {
         from_address: address.clone(),
-        to_address: address.clone(),
+        to_address: address,
         amount: vec![Coin {
             denom: "uatom".to_string(),
             amount: "1".to_string(),
@@ -927,35 +927,25 @@ fn test_ethermint_signatures() {
 #[cfg(feature = "ethermint")]
 #[test]
 fn test_bank_send_msg() {
+    use crate::{Coin, Contact};
     use actix_rt::System;
+    use std::time::Duration;
     let runner = System::new();
     runner.block_on(async move {
         let validator_mnemonic = "story check aunt clown fence fine safe harbor transfer talent topic swing original rookie wrap movie speak message drop lava any ask soul angry";
         let user_mnemonic = "express language around erase away okay brass enough mind slogan aisle pen dignity strike roof palace inmate art sponsor exact almost cricket basket topic";
-        let ovk = crate::old_private_key::OldPrivateKey::from_phrase(validator_mnemonic.clone(), "").unwrap();
-        let ouk = crate::old_private_key::OldPrivateKey::from_phrase(user_mnemonic.clone(), "").unwrap();
-
-        let addr = "gravity1uhqzd23elyvpw3qqnathw7zdwhxfnep6svl52n";
         let receiver = "gravity1secgjkfe900uef3xg3d5kvmvqrxr4yphyc2fel";
 
         let contact = Contact::new("http://localhost:26657", Duration::from_secs(30), "gravity").unwrap();
-        use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
         let destination = Address::from_bech32(receiver.to_string()).unwrap();
 
-        let output = contact.old_send_coins(Coin { amount: 100u8.into(), denom: "ugraviton".to_string() }, None, destination.clone(), Some(Duration::from_secs(30)), ovk).await;
-        println!("old output is {:?}", output);
+        let vk = CosmosPrivateKey::from_phrase(validator_mnemonic, "").unwrap();
+        let uk = EthermintPrivateKey::from_phrase(user_mnemonic, "").unwrap();
 
-        let nvk = CosmosPrivateKey::from_phrase(validator_mnemonic, "").unwrap();
-        let nuk = EthermintPrivateKey::from_phrase(user_mnemonic, "").unwrap();
-
-        // use cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
-        // use cosmos_sdk_proto::cosmos::bank::v1beta1::msg_client::MsgClient as BankMC;
-        // let msg_cli = BankMC::connect("http://localhost:26657").await.unwrap();
-
-        let output = contact.send_coins(Coin { amount: 100u8.into(), denom: "ugraviton".to_string() }, None, destination.clone(), Some(Duration::from_secs(30)), nvk).await;
+        let output = contact.send_coins(Coin { amount: 100u8.into(), denom: "ugraviton".to_string() }, None, destination, Some(Duration::from_secs(30)), vk).await;
         println!("output is {:?}", output);
 
-        let output = contact.send_coins(Coin { amount: 100u8.into(), denom: "ugraviton".to_string() }, None, destination, Some(Duration::from_secs(30)), nuk).await;
+        let output = contact.send_coins(Coin { amount: 100u8.into(), denom: "ugraviton".to_string() }, None, destination, Some(Duration::from_secs(30)), uk).await;
         println!("output is {:?}", output)
     });
 }
