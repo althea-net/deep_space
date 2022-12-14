@@ -8,6 +8,7 @@ use crate::error::CosmosGrpcError;
 use crate::msg::Msg;
 use crate::private_key::PrivateKey;
 use crate::utils::check_for_sdk_error;
+use crate::MessageArgs;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastTxRequest;
@@ -141,7 +142,6 @@ impl Contact {
         private_key: impl PrivateKey,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
-        let memo = memo.unwrap_or_else(|| MEMO.to_string());
 
         let fee = self
             .get_fee_info(messages, fee_coin, private_key.clone())
@@ -150,6 +150,23 @@ impl Contact {
         let args = self.get_message_args(our_address, fee).await?;
         trace!("got optional tx info");
 
+        self.send_message_with_args(messages, memo, args, wait_timeout, private_key)
+            .await
+    }
+
+    /// Performs Tx generation, signing, and submission for send_message()
+    /// See send_message() for more information
+    ///
+    /// This method is particularly useful for queuing messages for sequential submission
+    pub async fn send_message_with_args(
+        &self,
+        messages: &[Msg],
+        memo: Option<String>,
+        args: MessageArgs,
+        wait_timeout: Option<Duration>,
+        private_key: impl PrivateKey,
+    ) -> Result<TxResponse, CosmosGrpcError> {
+        let memo = memo.unwrap_or_else(|| MEMO.to_string());
         let msg_bytes = private_key.sign_std_msg(messages, args, &memo)?;
 
         let response = self
