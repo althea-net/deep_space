@@ -166,6 +166,11 @@ impl Contact {
         wait_timeout: Option<Duration>,
         private_key: impl PrivateKey,
     ) -> Result<TxResponse, CosmosGrpcError> {
+        trace!(
+            "send_message: sending Msgs {:?} with args {:?}",
+            messages,
+            args
+        );
         let memo = memo.unwrap_or_else(|| MEMO.to_string());
         let msg_bytes = private_key.sign_std_msg(messages, args, &memo)?;
 
