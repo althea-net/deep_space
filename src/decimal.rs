@@ -27,7 +27,7 @@ impl fmt::Display for DecimalError {
                 write!(f, "Decimal is using an invalid precision must be 0 or 18")
             }
             DecimalError::DecimalError(v) => {
-                write!(f, "{:?}", v)
+                write!(f, "{v:?}")
             }
         }
     }

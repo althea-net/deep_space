@@ -31,7 +31,7 @@ pub fn hex_str_to_bytes(s: &str) -> Result<Vec<u8>, ByteDecodeError> {
 pub fn bytes_to_hex_str(bytes: &[u8]) -> String {
     bytes
         .iter()
-        .map(|b| format!("{:0>2x?}", b))
+        .map(|b| format!("{b:0>2x?}"))
         .fold(String::new(), |acc, x| acc + &x)
 }
 
@@ -72,7 +72,7 @@ impl Display for ArrayString {
                 break;
             }
         }
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }
 

@@ -184,13 +184,12 @@ mod tests {
             let mut hasher = Sha256::new();
             for (_idx, word) in lang.word_list().iter().enumerate() {
                 assert!(::unicode_normalization::is_nfkd(word));
-                hasher.update(format!("{}\n", word));
+                hasher.update(format!("{word}\n"));
             }
             assert_eq!(
                 bytes_to_hex_str(&hasher.finalize()),
                 sum,
-                "word list for language {} failed checksum check",
-                lang,
+                "word list for language {lang} failed checksum check",
             );
         }
     }
@@ -230,7 +229,7 @@ mod tests {
                 continue;
             }
             if langs.iter().any(|l| l.unique_words()) {
-                println!("Word {} is not unique: {:?}", word, langs);
+                println!("Word {word} is not unique: {langs:?}");
                 ok = false;
             }
         }

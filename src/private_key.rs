@@ -963,9 +963,9 @@ fn test_bank_send_msg() {
         let uk = EthermintPrivateKey::from_phrase(user_mnemonic, "").unwrap();
 
         let output = contact.send_coins(Coin { amount: 100u8.into(), denom: "ugraviton".to_string() }, None, destination, Some(Duration::from_secs(30)), vk).await;
-        println!("output is {:?}", output);
+        println!("output is {output:?}");
 
         let output = contact.send_coins(Coin { amount: 100u8.into(), denom: "ugraviton".to_string() }, None, destination, Some(Duration::from_secs(30)), uk).await;
-        println!("output is {:?}", output)
+        println!("output is {output:?}")
     });
 }

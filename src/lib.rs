@@ -1,5 +1,7 @@
 #![warn(clippy::all)]
 #![allow(clippy::pedantic)]
+#![allow(clippy::large_enum_variant)]
+#![allow(clippy::result_large_err)]
 #![forbid(unsafe_code)]
 
 extern crate base64;

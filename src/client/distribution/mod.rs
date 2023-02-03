@@ -26,9 +26,9 @@ use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
 use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
     QueryDelegationTotalRewardsResponse, QueryDelegatorValidatorsRequest,
 };
+use num256::error::ParseError;
 use num256::Uint256;
 use std::time::Duration;
-use num256::error::ParseError;
 
 // required because dec coins are multiplied by 1*10^18
 const ONE_ETH: u128 = 10u128.pow(18);

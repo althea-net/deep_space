@@ -12,13 +12,13 @@ const SECRET: &str = "mySecret";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Prepare keys
-    println!(r#"Private key secret="{}""#, SECRET);
+    println!(r#"Private key secret="{SECRET}""#);
     let private_key = CosmosPrivateKey::from_secret(SECRET.as_bytes());
     let public_key = private_key.to_public_key("cosmospub")?;
     let address = public_key.to_address();
     // Print some diagnostics
-    println!("Address: {}", address);
-    println!("Public key: {}", public_key);
+    println!("Address: {address}");
+    println!("Public key: {public_key}");
 
     let coin = Coin {
         denom: "validatortoken".to_string(),
@@ -48,14 +48,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let tx = private_key.sign_std_msg(&[msg], args, "")?;
-    println!("TX {:?}", tx);
+    println!("TX {tx:?}");
 
     let mut file = File::create("signed_msg.json")?;
 
     let s = serde_json::to_string_pretty(&tx)?;
     file.write_all(s.as_bytes())?;
 
-    println!("{}", s);
+    println!("{s}");
 
     Ok(())
 }

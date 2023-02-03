@@ -226,7 +226,7 @@ impl Mnemonic {
         const PBKDF2_BYTES: usize = 64;
 
         let normalized_salt_cow = {
-            let mut cow = Cow::Owned(format!("mnemonic{}", passphrase));
+            let mut cow = Cow::Owned(format!("mnemonic{passphrase}"));
             Mnemonic::normalize_utf8_cow(&mut cow);
             cow
         };
@@ -453,32 +453,27 @@ mod tests {
             assert_eq!(
                 &mnemonic.to_string(),
                 mnemonic_str,
-                "failed vector: {}",
-                mnemonic_str
+                "failed vector: {mnemonic_str}"
             );
             assert_eq!(
                 mnemonic,
                 Mnemonic::parse_in(Language::English, mnemonic_str).unwrap(),
-                "failed vector: {}",
-                mnemonic_str
+                "failed vector: {mnemonic_str}"
             );
             assert_eq!(
                 mnemonic,
                 Mnemonic::parse(mnemonic_str).unwrap(),
-                "failed vector: {}",
-                mnemonic_str
+                "failed vector: {mnemonic_str}"
             );
             assert_eq!(
                 &entropy,
                 &mnemonic.to_entropy(),
-                "failed vector: {}",
-                mnemonic_str
+                "failed vector: {mnemonic_str}"
             );
             assert_eq!(
                 &seed,
                 &mnemonic.to_seed("TREZOR"),
-                "failed vector: {}",
-                mnemonic_str
+                "failed vector: {mnemonic_str}"
             );
         }
     }
@@ -697,21 +692,19 @@ mod tests {
             assert_eq!(
                 seed,
                 &mnemonic.to_seed(passphrase)[..],
-                "failed vector: {}",
-                mnemonic_str
+                "failed vector: {mnemonic_str}"
             );
 
             let rt = Mnemonic::parse_in(Language::Japanese, mnemonic.as_str())
-                .unwrap_or_else(|_| panic!("vector: {}", mnemonic_str));
+                .unwrap_or_else(|_| panic!("vector: {mnemonic_str}"));
             assert_eq!(seed, &rt.to_seed(passphrase)[..]);
 
             let mnemonic = Mnemonic::parse_in(Language::Japanese, mnemonic_str)
-                .unwrap_or_else(|_| panic!("vector: {}", mnemonic_str));
+                .unwrap_or_else(|_| panic!("vector: {mnemonic_str}"));
             assert_eq!(
                 seed,
                 &mnemonic.to_seed(passphrase)[..],
-                "failed vector: {}",
-                mnemonic_str
+                "failed vector: {mnemonic_str}"
             );
         }
     }

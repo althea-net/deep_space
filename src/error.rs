@@ -17,8 +17,6 @@ use std::{error::Error, str::Utf8Error};
 use std::{fmt, time::Duration};
 use tonic::transport::Error as TonicError;
 use tonic::Status;
-
-#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 pub enum CosmosGrpcError {
     NoToken,
@@ -66,19 +64,19 @@ impl Display for CosmosGrpcError {
             CosmosGrpcError::NoToken => {
                 write!(f, "Account has no tokens! No details!")
             }
-            CosmosGrpcError::BadResponse(val) => write!(f, "CosmosGrpc bad response {}", val),
+            CosmosGrpcError::BadResponse(val) => write!(f, "CosmosGrpc bad response {val}"),
             CosmosGrpcError::BadStruct(val) => {
-                write!(f, "CosmosGrpc unexpected json returned {}", val)
+                write!(f, "CosmosGrpc unexpected json returned {val}")
             }
-            CosmosGrpcError::BadInput(val) => write!(f, "CosmosGrpc bad input {}", val),
+            CosmosGrpcError::BadInput(val) => write!(f, "CosmosGrpc bad input {val}"),
             CosmosGrpcError::DecodeError { error: val } => {
-                write!(f, "CosmosGrpc bad any unpacking {}", val)
+                write!(f, "CosmosGrpc bad any unpacking {val}")
             }
             CosmosGrpcError::ConnectionError { error } => {
-                write!(f, "CosmosGrpc Connection error {} {:?}", error, error)
+                write!(f, "CosmosGrpc Connection error {error} {error:?}")
             }
             CosmosGrpcError::RequestError { error } => {
-                write!(f, "CosmosGrpc Request error {} {:?}", error, error)
+                write!(f, "CosmosGrpc Request error {error} {error:?}")
             }
             CosmosGrpcError::ChainNotRunning => {
                 write!(f, "CosmosGrpc this node is waiting on a blockchain start")
@@ -87,7 +85,7 @@ impl Display for CosmosGrpcError {
                 write!(f, "CosmosGrpc this node is syncing")
             }
             CosmosGrpcError::SigningError { error } => {
-                write!(f, "CosmosGrpc could not sign using private key {:?}", error)
+                write!(f, "CosmosGrpc could not sign using private key {error:?}")
             }
             CosmosGrpcError::NoBlockProduced { time } => {
                 write!(f, "CosmosGrpc NoBlockProduced in {}ms", time.as_millis())
@@ -109,16 +107,15 @@ impl Display for CosmosGrpcError {
                 )
             }
             CosmosGrpcError::InsufficientFees { fee_info } => {
-                write!(f, "Insufficient fees or gas for transaction {:?}", fee_info)
+                write!(f, "Insufficient fees or gas for transaction {fee_info:?}")
             }
             CosmosGrpcError::ParseError { error } => {
-                write!(f, "Failed to Parse BigInt {:?}", error)
+                write!(f, "Failed to Parse BigInt {error:?}")
             }
             CosmosGrpcError::GasRequiredExceedsBlockMaximum { max, required } => {
                 write!(
                     f,
-                    "The required gas for this operation {} exceeds the maximum gas per block {}. This tx is impossible to execute",
-                    required, max
+                    "The required gas for this operation {required} exceeds the maximum gas per block {max}. This tx is impossible to execute"
                 )
             }
         }
@@ -174,9 +171,9 @@ impl fmt::Display for AddressError {
             AddressError::Bech32WrongLength => write!(f, "Bech32WrongLength"),
             AddressError::Bech32InvalidBase32 => write!(f, "Bech32InvalidBase32"),
             AddressError::Bech32InvalidEncoding => write!(f, "Bech32InvalidEncoding"),
-            AddressError::HexDecodeError(val) => write!(f, "HexDecodeError {}", val),
+            AddressError::HexDecodeError(val) => write!(f, "HexDecodeError {val}"),
             AddressError::HexDecodeErrorWrongLength => write!(f, "HexDecodeError Wrong Length"),
-            AddressError::PrefixTooLong(val) => write!(f, "Prefix too long {}", val),
+            AddressError::PrefixTooLong(val) => write!(f, "Prefix too long {val}"),
             AddressError::BytesDecodeErrorWrongLength => write!(f, "BytesDecodeError Wrong Length"),
         }
     }
@@ -213,8 +210,8 @@ pub enum ByteDecodeError {
 impl Display for ByteDecodeError {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         match self {
-            ByteDecodeError::DecodeError(val) => write!(f, "ByteDecodeError {}", val),
-            ByteDecodeError::ParseError(val) => write!(f, "ByteParseError {}", val),
+            ByteDecodeError::DecodeError(val) => write!(f, "ByteDecodeError {val}"),
+            ByteDecodeError::ParseError(val) => write!(f, "ByteParseError {val}"),
         }
     }
 }
@@ -239,13 +236,13 @@ impl fmt::Display for PublicKeyError {
             PublicKeyError::Bech32WrongLength => write!(f, "Bech32WrongLength"),
             PublicKeyError::Bech32InvalidBase32 => write!(f, "Bech32InvalidBase32"),
             PublicKeyError::Bech32InvalidEncoding => write!(f, "Bech32InvalidEncoding"),
-            PublicKeyError::HexDecodeError(val) => write!(f, "HexDecodeError {}", val),
-            PublicKeyError::Base64DecodeError(val) => write!(f, "Base64DecodeError {}", val),
+            PublicKeyError::HexDecodeError(val) => write!(f, "HexDecodeError {val}"),
+            PublicKeyError::Base64DecodeError(val) => write!(f, "Base64DecodeError {val}"),
             PublicKeyError::BytesDecodeErrorWrongLength => {
                 write!(f, "BytesDecodeError Wrong Length")
             }
             PublicKeyError::HexDecodeErrorWrongLength => write!(f, "HexDecodeError Wrong Length"),
-            PublicKeyError::PrefixTooLong(val) => write!(f, "Prefix too long {}", val),
+            PublicKeyError::PrefixTooLong(val) => write!(f, "Prefix too long {val}"),
         }
     }
 }
@@ -288,15 +285,15 @@ pub enum PrivateKeyError {
 impl fmt::Display for PrivateKeyError {
     fn fmt(&self, f: &mut fmt::Formatter) -> FormatResult {
         match self {
-            PrivateKeyError::HexDecodeError(val) => write!(f, "PrivateKeyError {}", val),
+            PrivateKeyError::HexDecodeError(val) => write!(f, "PrivateKeyError {val}"),
             PrivateKeyError::HexDecodeErrorWrongLength => write!(f, "PrivateKeyError Wrong Length"),
-            PrivateKeyError::CurveError(val) => write!(f, "Secp256k1 Error {}", val),
-            PrivateKeyError::EncodeError(val) => write!(f, "Could not encode message {}", val),
-            PrivateKeyError::PublicKeyError(val) => write!(f, "{}", val),
-            PrivateKeyError::AddressError(val) => write!(f, "{}", val),
-            PrivateKeyError::HdWalletError(val) => write!(f, "{}", val),
+            PrivateKeyError::CurveError(val) => write!(f, "Secp256k1 Error {val}"),
+            PrivateKeyError::EncodeError(val) => write!(f, "Could not encode message {val}"),
+            PrivateKeyError::PublicKeyError(val) => write!(f, "{val}"),
+            PrivateKeyError::AddressError(val) => write!(f, "{val}"),
+            PrivateKeyError::HdWalletError(val) => write!(f, "{val}"),
             PrivateKeyError::InvalidMnemonic { error } => {
-                write!(f, "Failed to process mnemonic {:?}", error)
+                write!(f, "Failed to process mnemonic {error:?}")
             }
             PrivateKeyError::ZeroPrivateKey => write!(f, "PrivateKeyError Zero Private Key"),
         }
@@ -356,8 +353,8 @@ pub enum HdWalletError {
 impl fmt::Display for HdWalletError {
     fn fmt(&self, f: &mut fmt::Formatter) -> FormatResult {
         match self {
-            HdWalletError::Bip39Error(val) => write!(f, "{}", val),
-            HdWalletError::InvalidPathSpec(val) => write!(f, "HDWalletError invalid path {}", val),
+            HdWalletError::Bip39Error(val) => write!(f, "{val}"),
+            HdWalletError::InvalidPathSpec(val) => write!(f, "HDWalletError invalid path {val}"),
         }
     }
 }
@@ -384,20 +381,18 @@ impl fmt::Display for Bip39Error {
         match *self {
             Bip39Error::BadWordCount(c) => write!(
                 f,
-                "mnemonic has a word count that is not a multiple of 6: {}",
-                c,
+                "mnemonic has a word count that is not a multiple of 6: {c}",
             ),
             Bip39Error::UnknownWord(ref w) => {
-                write!(f, "mnemonic contains an unknown word: {}", w,)
+                write!(f, "mnemonic contains an unknown word: {w}",)
             }
             Bip39Error::BadEntropyBitCount(c) => write!(
                 f,
-                "entropy was not between 128-256 bits or not a multiple of 32 bits: {} bits",
-                c,
+                "entropy was not between 128-256 bits or not a multiple of 32 bits: {c} bits",
             ),
             Bip39Error::InvalidChecksum => write!(f, "the mnemonic has an invalid checksum"),
             Bip39Error::AmbiguousWordList(ref langs) => {
-                write!(f, "ambiguous word list: {:?}", langs)
+                write!(f, "ambiguous word list: {langs:?}")
             }
         }
     }

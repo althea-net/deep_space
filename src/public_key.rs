@@ -297,7 +297,7 @@ impl FromStr for CosmosPublicKey {
 impl Display for CosmosPublicKey {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let display = self.to_bech32(self.get_prefix()).unwrap();
-        write!(f, "{}", display).expect("Unable to write");
+        write!(f, "{display}").expect("Unable to write");
         Ok(())
     }
 }
