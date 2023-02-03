@@ -27,8 +27,8 @@ use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
     QueryDelegationTotalRewardsResponse, QueryDelegatorValidatorsRequest,
 };
 use num256::Uint256;
-use num_bigint::ParseBigIntError;
 use std::time::Duration;
+use num256::error::ParseError;
 
 // required because dec coins are multiplied by 1*10^18
 const ONE_ETH: u128 = 10u128.pow(18);
@@ -45,7 +45,7 @@ impl Contact {
         let val = res.into_inner().pool;
         let mut res = Vec::new();
         for v in val {
-            let parse_result: Result<Uint256, ParseBigIntError> = v.amount.parse();
+            let parse_result: Result<Uint256, ParseError> = v.amount.parse();
             match parse_result {
                 Ok(parse_result) => res.push(Coin {
                     denom: v.denom,

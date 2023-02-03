@@ -3,7 +3,7 @@ use crate::utils::FeeInfo;
 use base64::DecodeError as Base64DecodeError;
 use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use fmt::Debug;
-use num_bigint::ParseBigIntError;
+use num256::error::ParseError;
 use prost::DecodeError;
 use prost::EncodeError;
 use secp256k1::Error as CurveError;
@@ -52,7 +52,7 @@ pub enum CosmosGrpcError {
         fee_info: FeeInfo,
     },
     ParseError {
-        error: ParseBigIntError,
+        error: ParseError,
     },
     GasRequiredExceedsBlockMaximum {
         max: u64,

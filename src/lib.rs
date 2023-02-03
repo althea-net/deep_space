@@ -5,7 +5,6 @@
 extern crate base64;
 extern crate bech32;
 extern crate num256;
-extern crate num_bigint;
 extern crate num_traits;
 extern crate ripemd;
 extern crate serde;

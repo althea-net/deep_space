@@ -11,7 +11,7 @@ use cosmos_sdk_proto::cosmos::tx::v1beta1::Tx;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::{
     mode_info, AuthInfo, ModeInfo, SignDoc, SignerInfo, TxBody, TxRaw,
 };
-use num_bigint::BigUint;
+use num256::Uint256;
 use prost::Message;
 use secp256k1::constants::CURVE_ORDER as CurveN;
 use secp256k1::Message as CurveMessage;
@@ -439,23 +439,17 @@ impl FromStr for EthermintPrivateKey {
 fn from_secret(secret: &[u8]) -> [u8; 32] {
     let sec_hash = Sha256::digest(secret);
 
-    let mut i = BigUint::from_bytes_be(&sec_hash);
+    let mut i = Uint256::from_be_bytes(&sec_hash);
 
     // Parameters of the curve as explained in https://en.bitcoin.it/wiki/Secp256k1
-    let mut n = BigUint::from_bytes_be(&CurveN);
-    n -= 1u64;
+    let mut n = Uint256::from_be_bytes(&CurveN);
+    n -= 1u64.into();
 
     i %= n;
-    i += 1u64;
+    i += 1u64.into();
 
     let mut result: [u8; 32] = Default::default();
-    let mut i_bytes = i.to_bytes_be();
-    // key has leading or trailing zero that's not displayed
-    // by default since this is a big int library missing a defined
-    // integer width.
-    while i_bytes.len() < 32 {
-        i_bytes.push(0);
-    }
+    let i_bytes = i.to_be_bytes();
     result.copy_from_slice(&i_bytes);
     result
 }
