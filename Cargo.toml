@@ -27,11 +27,13 @@ rust_decimal = "1.9"
 secp256k1 = {version = "0.26", features = ["global-context"]}
 tonic = {version = "0.7", features = ["compression", "tls", "tls-roots"]}
 bytes = "1.0"
-cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "0.13"}
 log = "0.4"
 tokio = {version = "1", features=["time"]}
 clarity = {version = "0.7", optional = true}
 sha3 = {version = "0.10", optional = true}
+
+cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "0.13"}
+althea_proto = "0"
 
 [dev-dependencies]
 rand = "0.8"
