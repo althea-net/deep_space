@@ -1,12 +1,18 @@
 //! Contains utility functions for interacting with and modifying Cosmos validator staking status
 
+use super::type_urls::{
+    PARAMETER_CHANGE_PROPOSAL_TYPE_URL, REGISTER_COIN_PROPOSAL_TYPE_URL,
+    REGISTER_ERC20_PROPOSAL_TYPE_URL, SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL,
+};
 use super::PAGE;
-use crate::client::msgs::{MSG_SUBMIT_PROPOSAL_TYPE_URL, MSG_VOTE_TYPE_URL};
+use crate::client::type_urls::{MSG_SUBMIT_PROPOSAL_TYPE_URL, MSG_VOTE_TYPE_URL};
 use crate::error::CosmosGrpcError;
+use crate::utils::encode_any;
 use crate::Coin;
 use crate::Contact;
 use crate::Msg;
 use crate::PrivateKey;
+use althea_proto::canto::erc20::v1::{RegisterCoinProposal, RegisterErc20Proposal};
 use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::query_client::QueryClient as GovQueryClient;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::MsgSubmitProposal;
@@ -15,6 +21,8 @@ use cosmos_sdk_proto::cosmos::gov::v1beta1::ProposalStatus;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::QueryProposalsRequest;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::QueryProposalsResponse;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::VoteOption;
+use cosmos_sdk_proto::cosmos::params::v1beta1::ParameterChangeProposal;
+use cosmos_sdk_proto::cosmos::upgrade::v1beta1::SoftwareUpgradeProposal;
 use prost_types::Any;
 use std::time::Duration;
 
@@ -129,6 +137,65 @@ impl Contact {
 
         let msg = Msg::new(MSG_SUBMIT_PROPOSAL_TYPE_URL, proposal);
         self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
+            .await
+    }
+
+    /// Encodes and submits a proposal to change bridge parameters
+    pub async fn submit_parameter_change_proposal(
+        &self,
+        proposal: ParameterChangeProposal,
+        deposit: Coin,
+        fee: Coin,
+        key: impl PrivateKey,
+        wait_timeout: Option<Duration>,
+    ) -> Result<TxResponse, CosmosGrpcError> {
+        // encode as a generic proposal
+        let any = encode_any(proposal, PARAMETER_CHANGE_PROPOSAL_TYPE_URL.to_string());
+        self.create_gov_proposal(any, deposit, fee, key, wait_timeout)
+            .await
+    }
+
+    /// Encodes and submits a proposal to upgrade chain software
+    pub async fn submit_upgrade_proposal(
+        &self,
+        proposal: SoftwareUpgradeProposal,
+        deposit: Coin,
+        fee: Coin,
+        key: impl PrivateKey,
+        wait_timeout: Option<Duration>,
+    ) -> Result<TxResponse, CosmosGrpcError> {
+        // encode as a generic proposal
+        let any = encode_any(proposal, SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL.to_string());
+        self.create_gov_proposal(any, deposit, fee, key, wait_timeout)
+            .await
+    }
+    /// Encodes and submits a proposal to register a Coin for use with the ev module
+    pub async fn submit_register_coin_proposal(
+        &self,
+        proposal: RegisterCoinProposal,
+        deposit: Coin,
+        fee: Coin,
+        key: impl PrivateKey,
+        wait_timeout: Option<Duration>,
+    ) -> Result<TxResponse, CosmosGrpcError> {
+        // encode as a generic proposal
+        let any = encode_any(proposal, REGISTER_COIN_PROPOSAL_TYPE_URL.to_string());
+        self.create_gov_proposal(any, deposit, fee, key, wait_timeout)
+            .await
+    }
+
+    /// Encodes and submits a proposal to register an ERC20 for use with the bank module
+    pub async fn submit_register_erc20_proposal(
+        &self,
+        proposal: RegisterErc20Proposal,
+        deposit: Coin,
+        fee: Coin,
+        key: impl PrivateKey,
+        wait_timeout: Option<Duration>,
+    ) -> Result<TxResponse, CosmosGrpcError> {
+        // encode as a generic proposal
+        let any = encode_any(proposal, REGISTER_ERC20_PROPOSAL_TYPE_URL.to_string());
+        self.create_gov_proposal(any, deposit, fee, key, wait_timeout)
             .await
     }
 }

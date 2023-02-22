@@ -1,4 +1,4 @@
-use crate::client::msgs::MSG_VERIFY_INVARIANT_TYPE_URL;
+use crate::client::type_urls::MSG_VERIFY_INVARIANT_TYPE_URL;
 use crate::error::CosmosGrpcError;
 use crate::{Coin, Contact, Msg, PrivateKey};
 use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;

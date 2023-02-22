@@ -23,3 +23,15 @@ pub const MSG_UNDELEGATE_TYPE_URL: &str = "/cosmos.staking.v1beta1.MsgUndelegate
 
 // ibc msgs
 pub const MSG_TRANSFER_TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
+
+// governance proposals
+
+// cosmos-sdk proposals
+pub const PARAMETER_CHANGE_PROPOSAL_TYPE_URL: &str =
+    "/cosmos.params.v1beta1.ParameterChangeProposal";
+pub const SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL: &str =
+    "/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal";
+
+// canto proposals
+pub const REGISTER_COIN_PROPOSAL_TYPE_URL: &str = "/canto.erc20.v1.RegisterCoinProposal";
+pub const REGISTER_ERC20_PROPOSAL_TYPE_URL: &str = "/canto.erc20.v1.RegisterERC20Proposal";

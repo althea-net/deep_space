@@ -9,9 +9,13 @@ use serde::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;
 use serde::Serializer;
+use sha2::{Digest, Sha256};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::str::FromStr;
+
+#[cfg(feature = "ethermint")]
+use clarity::address::Address as EthAddress;
 
 /// In cases where it's impossible to know the Bech32 prefix
 /// we fall back to this value
@@ -208,6 +212,34 @@ impl DerivedAddress {
             prefix: ArrayString::new(&prefix.into())?,
         })
     }
+}
+
+// Locally computes the address for a Cosmos ModuleAccount, which is the first 20 bytes of
+// the sha256 hash of the name of the module.
+// See Module() for more info: https://github.com/cosmos/cosmos-sdk/blob/main/types/address/hash.go
+//
+// Note: some accounts like the Distribution module's "fee_collector" work the same way,
+// despite the fact that "fee_collector" is not a module
+pub fn get_module_account_address(
+    module_name: &str,
+    prefix: Option<&str>,
+) -> Result<Address, AddressError> {
+    let prefix = prefix.unwrap_or(DEFAULT_PREFIX);
+
+    // create a Sha256 object
+    let mut hasher = Sha256::new();
+    hasher.update(module_name.as_bytes());
+    let result = hasher.finalize();
+
+    Address::from_slice(&result[0..20], prefix)
+}
+
+#[cfg(feature = "ethermint")]
+// Swaps the byte interpretation of an address from CosmosAddress to EthAddress
+pub fn cosmos_address_to_eth_address(
+    address: Address,
+) -> Result<EthAddress, clarity::error::Error> {
+    EthAddress::from_slice(address.get_bytes())
 }
 
 #[test]
