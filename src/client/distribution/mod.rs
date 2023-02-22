@@ -2,7 +2,7 @@
 //! including the community pool
 
 use super::{ChainStatus, PAGE};
-use crate::client::msgs::{
+use crate::client::type_urls::{
     MSG_FUND_COMMUNITY_POOL_TYPE_URL, MSG_WITHDRAW_DELEGATOR_REWARD_TYPE_URL,
     MSG_WITHDRAW_VALIDATOR_COMMISSION_TYPE_URL,
 };

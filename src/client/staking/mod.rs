@@ -1,7 +1,7 @@
 //! Contains utility functions for interacting with and submitting Cosmos governance proposals
 
 use super::PAGE;
-use crate::client::msgs::{
+use crate::client::type_urls::{
     MSG_BEGIN_REDELEGATE_TYPE_URL, MSG_DELEGATE_TYPE_URL, MSG_UNDELEGATE_TYPE_URL,
 };
 use crate::error::CosmosGrpcError;

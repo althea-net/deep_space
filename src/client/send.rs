@@ -1,5 +1,5 @@
 use crate::address::Address;
-use crate::client::msgs::MSG_SEND_TYPE_URL;
+use crate::client::type_urls::MSG_SEND_TYPE_URL;
 use crate::client::Contact;
 use crate::client::MEMO;
 use crate::coin::Coin;
@@ -40,7 +40,7 @@ impl Contact {
     /// use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
     /// use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
     /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, CosmosPrivateKey, PrivateKey, PublicKey};
-    /// use deep_space::client::msgs::SECP256K1_PUBKEY_TYPE_URL;
+    /// use deep_space::client::type_urls::SECP256K1_PUBKEY_TYPE_URL;
     /// use std::time::Duration;
     /// let private_key = CosmosPrivateKey::from_secret("mySecret".as_bytes());
     /// let public_key = private_key.to_public_key("cosmospub").unwrap();
@@ -115,7 +115,7 @@ impl Contact {
     /// use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
     /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, CosmosPrivateKey, PrivateKey, PublicKey};
     /// use std::time::Duration;
-    /// use deep_space::client::msgs::SECP256K1_PUBKEY_TYPE_URL;
+    /// use deep_space::client::type_urls::SECP256K1_PUBKEY_TYPE_URL;
     /// let private_key = CosmosPrivateKey::from_secret("mySecret".as_bytes());
     /// let public_key = private_key.to_public_key("cosmospub").unwrap();
     /// let address = public_key.to_address();

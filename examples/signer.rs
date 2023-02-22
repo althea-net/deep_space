@@ -1,6 +1,6 @@
 extern crate deep_space;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
-use deep_space::client::msgs::SECP256K1_PUBKEY_TYPE_URL;
+use deep_space::client::type_urls::SECP256K1_PUBKEY_TYPE_URL;
 use deep_space::Fee;
 use deep_space::Msg;
 use deep_space::{Coin, MessageArgs};
