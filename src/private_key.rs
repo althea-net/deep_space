@@ -257,7 +257,7 @@ impl FromStr for CosmosPrivateKey {
 
 /// This structure represents a private key of an EVM Network.
 #[cfg(feature = "ethermint")]
-#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash, Serialize, Deserialize)]
 pub struct EthermintPrivateKey([u8; 32]);
 
 #[cfg(feature = "ethermint")]
