@@ -1,9 +1,6 @@
 //! Contains utility functions for interacting with and modifying Cosmos validator staking status
 
-use super::type_urls::{
-    PARAMETER_CHANGE_PROPOSAL_TYPE_URL, REGISTER_COIN_PROPOSAL_TYPE_URL,
-    REGISTER_ERC20_PROPOSAL_TYPE_URL, SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL,
-};
+use super::type_urls::{PARAMETER_CHANGE_PROPOSAL_TYPE_URL, SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL};
 use super::PAGE;
 use crate::client::type_urls::{MSG_SUBMIT_PROPOSAL_TYPE_URL, MSG_VOTE_TYPE_URL};
 use crate::error::CosmosGrpcError;
@@ -12,7 +9,6 @@ use crate::Coin;
 use crate::Contact;
 use crate::Msg;
 use crate::PrivateKey;
-use althea_proto::canto::erc20::v1::{RegisterCoinProposal, RegisterErc20Proposal};
 use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::query_client::QueryClient as GovQueryClient;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::MsgSubmitProposal;
@@ -25,6 +21,11 @@ use cosmos_sdk_proto::cosmos::params::v1beta1::ParameterChangeProposal;
 use cosmos_sdk_proto::cosmos::upgrade::v1beta1::SoftwareUpgradeProposal;
 use prost_types::Any;
 use std::time::Duration;
+
+#[cfg(feature = "althea")]
+use super::type_urls::{REGISTER_COIN_PROPOSAL_TYPE_URL, REGISTER_ERC20_PROPOSAL_TYPE_URL};
+#[cfg(feature = "althea")]
+use althea_proto::canto::erc20::v1::{RegisterCoinProposal, RegisterErc20Proposal};
 
 impl Contact {
     /// Gets a list of governance proposals, user provides filter items
@@ -169,6 +170,10 @@ impl Contact {
         self.create_gov_proposal(any, deposit, fee, key, wait_timeout)
             .await
     }
+}
+
+#[cfg(feature = "althea")]
+impl Contact {
     /// Encodes and submits a proposal to register a Coin for use with the ev module
     pub async fn submit_register_coin_proposal(
         &self,
