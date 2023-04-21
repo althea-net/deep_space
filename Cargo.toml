@@ -32,8 +32,8 @@ tokio = {version = "1", features=["time"]}
 clarity = {version = "0.7", optional = true}
 sha3 = {version = "0.10", optional = true}
 
-cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "0.13"}
-althea_proto = "0"
+cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "0.14"}
+althea_proto = {version="0.1", optional=true}
 
 [dev-dependencies]
 rand = "0.8"
@@ -43,3 +43,4 @@ actix-rt = "2.2"
 
 [features]
 ethermint = ["clarity", "sha3"]
+althea = ["ethermint", "dep:althea_proto"]
