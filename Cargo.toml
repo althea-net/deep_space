@@ -20,16 +20,16 @@ base64 = "0.21"
 unicode-normalization = {version = "0.1"}
 prost-types = "0.10"
 prost = "0.10"
-pbkdf2 = {version = "0.11"}
+pbkdf2 = {version = "0.12"}
 hmac = {version = "0.12"}
 rand = {version = "0.8"}
 rust_decimal = "1.9"
-secp256k1 = {version = "0.26", features = ["global-context"]}
+secp256k1 = {version = "0.27", features = ["global-context"]}
 tonic = {version = "0.7", features = ["compression", "tls", "tls-roots"]}
 bytes = "1.0"
 log = "0.4"
 tokio = {version = "1", features=["time"]}
-clarity = {version = "0.7", optional = true}
+clarity = {version = "1", optional = true}
 sha3 = {version = "0.10", optional = true}
 
 cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "0.14"}

@@ -241,7 +241,7 @@ impl Mnemonic {
             normalized_salt_cow.as_ref().as_bytes(),
             PBKDF2_ROUNDS,
             &mut seed,
-        );
+        ).unwrap();
         seed
     }
 
