@@ -397,7 +397,7 @@ impl EthermintPrivateKey {
         sign_doc.encode(&mut signdoc_buf).unwrap();
 
         // Sign the signdoc
-        let clarity_sk = clarity::PrivateKey::from_slice(&self.0).unwrap();
+        let clarity_sk = clarity::PrivateKey::from_bytes(self.0).unwrap();
 
         let signed = clarity_sk.sign_insecure_msg(&signdoc_buf);
 
@@ -864,7 +864,7 @@ fn test_ethermint_signatures() {
     let address = "evmos1zkunj49253lc6wgm0gp5nk8kj2naat0j8fzkfa".to_string();
     let sk = EthermintPrivateKey::from_phrase(mnemonic, "").unwrap();
     let msg = "hello world".to_string();
-    let clarity_sk = clarity::private_key::PrivateKey::from_slice(&sk.0).unwrap();
+    let clarity_sk = clarity::private_key::PrivateKey::from_bytes(sk.0).unwrap();
     let signature = clarity_sk.sign_insecure_msg(msg.as_bytes());
     let mut sigbytes = signature.to_bytes();
     let v = signature.get_v();
