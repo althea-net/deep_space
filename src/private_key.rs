@@ -437,7 +437,7 @@ use clarity::PrivateKey as EthPrivateKey;
 #[cfg(feature = "ethermint")]
 impl From<EthPrivateKey> for EthermintPrivateKey {
     fn from(value: EthPrivateKey) -> Self {
-       EthermintPrivateKey(value.to_bytes())
+        EthermintPrivateKey(value.to_bytes())
     }
 }
 
