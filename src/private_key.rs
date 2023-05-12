@@ -432,6 +432,15 @@ impl FromStr for EthermintPrivateKey {
     }
 }
 
+#[cfg(feature = "ethermint")]
+use clarity::PrivateKey as EthPrivateKey;
+#[cfg(feature = "ethermint")]
+impl From<EthPrivateKey> for EthermintPrivateKey {
+    fn from(value: EthPrivateKey) -> Self {
+       EthermintPrivateKey(value.to_bytes())
+    }
+}
+
 /// Create a private key using an arbitrary slice of bytes. This function is not resistant to side
 /// channel attacks and may reveal your secret and private key. It is on the other hand more compact
 /// than the bip32+bip39 logic.
@@ -858,7 +867,7 @@ fn test_ethermint_signatures() {
     let clarity_sk = clarity::private_key::PrivateKey::from_slice(&sk.0).unwrap();
     let signature = clarity_sk.sign_insecure_msg(msg.as_bytes());
     let mut sigbytes = signature.to_bytes();
-    let v = signature.v;
+    let v = signature.get_v();
     sigbytes[64] = (v.to_u8().unwrap()) - 27u8; // Fix some weirdness in the clarity implementation
 
     assert_eq!(
