@@ -150,7 +150,6 @@ impl Contact {
         let fee = self
             .get_fee_info(messages, fee_coin, private_key.clone())
             .await?;
-
         let args = self.get_message_args(our_address, fee).await?;
         trace!("got optional tx info");
 
@@ -194,7 +193,7 @@ impl Contact {
         private_key: impl PrivateKey,
     ) -> Result<Fee, CosmosGrpcError> {
         let gas_info = self
-            .simulate_tx(messages, private_key.clone())
+            .simulate_tx(messages, Some(fee_token), private_key.clone())
             .await?
             .gas_info
             .unwrap();
@@ -242,15 +241,17 @@ impl Contact {
     pub async fn simulate_tx(
         &self,
         messages: &[Msg],
+        fee_amount: Option<&[Coin]>,
         private_key: impl PrivateKey,
     ) -> Result<SimulateResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
+        let fee_amount = fee_amount.unwrap_or_default();
         let mut txrpc = TxServiceClient::connect(self.get_url())
             .await?
             .accept_gzip();
 
         let fee_obj = Fee {
-            amount: vec![],
+            amount: fee_amount.to_vec(),
             // derived from this constant https://github.com/cosmos/cosmos-sdk/blob/master/types/tx/types.go#L13
             gas_limit: 9223372036854775807,
             granter: None,
@@ -428,5 +429,39 @@ impl Contact {
             time: timeout,
             sdk_error: None,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::CosmosPrivateKey;
+
+    use super::*;
+
+    const TIMEOUT: Duration = Duration::from_secs(60);
+
+    #[ignore]
+    #[actix_rt::test]
+    async fn test_send_to_althea() {
+        env_logger::init();
+        let contact = Contact::new("http://localhost:9090", TIMEOUT, "althea").unwrap();
+        let mnemonic = "prepare meadow assault rifle biology animal visit eight purchase dinosaur question question inside sister ignore any airport tell ecology extend dove wrist mean comfort";
+        let private_key: CosmosPrivateKey = PrivateKey::from_phrase(mnemonic, "").unwrap();
+        let coin = Coin {
+            denom: "aalthea".to_string(),
+            amount: 100u32.into(),
+        };
+        let destination =
+            Address::from_bech32("althea1nldz7ns4hn4waar3e90mafdyucqts5xzemg28d".to_string())
+                .unwrap();
+        let fee = Coin {
+            denom: "aalthea".to_string(),
+            amount: 100u32.into(),
+        };
+
+        let res = contact
+            .send_coins(coin, Some(fee), destination, Some(TIMEOUT), private_key)
+            .await;
+        assert!(res.is_ok())
     }
 }
