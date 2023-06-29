@@ -1,7 +1,7 @@
 use crate::address::Address;
-use crate::client::type_urls::MSG_SEND_TYPE_URL;
 #[cfg(feature = "althea")]
-use crate::client::type_urls::MSG_XFER_TYPE_URL;
+use crate::client::type_urls::MSG_MICROTX_TYPE_URL;
+use crate::client::type_urls::MSG_SEND_TYPE_URL;
 use crate::client::Contact;
 use crate::client::MEMO;
 use crate::coin::Coin;
@@ -12,7 +12,7 @@ use crate::private_key::PrivateKey;
 use crate::utils::check_for_sdk_error;
 use crate::MessageArgs;
 #[cfg(feature = "althea")]
-use althea_proto::microtx::v1::MsgXfer;
+use althea_proto::microtx::v1::MsgMicrotx;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastTxRequest;
@@ -345,7 +345,7 @@ impl Contact {
     /// * `private_key` - A private key used to sign and send the transaction
     /// # Examples
     /// ```rust
-    /// use althea_proto::microtx::v1::MsgXfer;
+    /// use althea_proto::microtx::v1::MsgMicrotx;
     /// use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
     /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, CosmosPrivateKey, PrivateKey, PublicKey};
     /// use std::time::Duration;
@@ -376,12 +376,12 @@ impl Contact {
         trace!("Creating transaction");
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
 
-        let send = MsgXfer {
+        let send = MsgMicrotx {
             sender: our_address.to_bech32(&self.chain_prefix).unwrap(),
             receiver: destination.to_bech32(&self.chain_prefix).unwrap(),
             amounts: vec![coin.into()],
         };
-        let msg = Msg::new(MSG_XFER_TYPE_URL, send);
+        let msg = Msg::new(MSG_MICROTX_TYPE_URL, send);
         self.send_message(
             &[msg],
             None,
