@@ -379,7 +379,7 @@ impl Contact {
         let send = MsgMicrotx {
             sender: our_address.to_bech32(&self.chain_prefix).unwrap(),
             receiver: destination.to_bech32(&self.chain_prefix).unwrap(),
-            amounts: vec![coin.into()],
+            amount: Some(coin.into()),
         };
         let msg = Msg::new(MSG_MICROTX_TYPE_URL, send);
         self.send_message(
