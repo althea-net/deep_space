@@ -1,6 +1,6 @@
 [package]
 name = "deep_space"
-version = "2.21.2"
+version = "2.21.3"
 authors = ["Justin Kilpatrick <justin@althea.net>", "Michał Papierski <michal@papierski.net>"]
 repository = "https://github.com/althea-net/deep_space"
 description = "A highly portable, batteries included, transaction generation and key management library for CosmosSDK blockchains"
@@ -25,7 +25,7 @@ hmac = {version = "0.12"}
 rand = {version = "0.8"}
 rust_decimal = "1.9"
 secp256k1 = {version = "0.27", features = ["global-context"]}
-tonic = {version = "0.7", features = ["compression", "tls", "tls-roots"]}
+tonic = {version = "0.7", features = ["compression"]}
 bytes = "1.0"
 log = "0.4"
 tokio = {version = "1", features=["time"]}
@@ -42,5 +42,7 @@ actix-rt = "2.2"
 
 
 [features]
+default = ["ssl"]
 ethermint = ["clarity", "sha3"]
 althea = ["ethermint", "dep:althea_proto"]
+ssl = ["tonic/tls", "tonic/tls-roots"]
