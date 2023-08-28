@@ -26,9 +26,7 @@ impl Contact {
         &self,
         address: Address,
     ) -> Result<AccountType, CosmosGrpcError> {
-        let mut agrpc = AuthQueryClient::connect(self.url.clone())
-            .await?
-            .accept_gzip();
+        let mut agrpc = AuthQueryClient::connect(self.url.clone()).await?;
         let query = QueryAccountRequest {
             address: address.to_bech32(&self.chain_prefix).unwrap(),
         };
@@ -48,9 +46,7 @@ impl Contact {
 
     /// Gets account info for every account on the chain, a large query
     pub async fn get_all_accounts(&self) -> Result<Vec<AccountType>, CosmosGrpcError> {
-        let mut agrpc = AuthQueryClient::connect(self.url.clone())
-            .await?
-            .accept_gzip();
+        let mut agrpc = AuthQueryClient::connect(self.url.clone()).await?;
         let query = QueryAccountsRequest { pagination: PAGE };
         let res = agrpc.accounts(query).await?;
         let mut accounts = Vec::new();

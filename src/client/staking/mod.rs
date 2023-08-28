@@ -28,9 +28,7 @@ impl Contact {
         &self,
         filters: QueryValidatorsRequest,
     ) -> Result<Vec<Validator>, CosmosGrpcError> {
-        let mut grpc = StakingQueryClient::connect(self.url.clone())
-            .await?
-            .accept_gzip();
+        let mut grpc = StakingQueryClient::connect(self.url.clone()).await?;
 
         let res = grpc.validators(filters).await?.into_inner().validators;
         Ok(res)
@@ -50,9 +48,7 @@ impl Contact {
         &self,
         validator: Address,
     ) -> Result<Vec<DelegationResponse>, CosmosGrpcError> {
-        let mut grpc = StakingQueryClient::connect(self.url.clone())
-            .await?
-            .accept_gzip();
+        let mut grpc = StakingQueryClient::connect(self.url.clone()).await?;
 
         let res = grpc
             .validator_delegations(QueryValidatorDelegationsRequest {
@@ -71,9 +67,7 @@ impl Contact {
         validator: Address,
         delegator: Address,
     ) -> Result<Option<DelegationResponse>, CosmosGrpcError> {
-        let mut grpc = StakingQueryClient::connect(self.url.clone())
-            .await?
-            .accept_gzip();
+        let mut grpc = StakingQueryClient::connect(self.url.clone()).await?;
 
         let res = grpc
             .delegation(QueryDelegationRequest {

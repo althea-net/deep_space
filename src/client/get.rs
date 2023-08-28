@@ -22,9 +22,7 @@ impl Contact {
     /// Gets the current chain status, returns an enum taking into account the various possible states
     /// of the chain and the requesting full node. In the common case this provides the block number
     pub async fn get_chain_status(&self) -> Result<ChainStatus, CosmosGrpcError> {
-        let mut grpc = TendermintServiceClient::connect(self.url.clone())
-            .await?
-            .accept_gzip();
+        let mut grpc = TendermintServiceClient::connect(self.url.clone()).await?;
         let syncing = grpc.get_syncing(GetSyncingRequest {}).await?.into_inner();
 
         if syncing.syncing {
@@ -61,9 +59,7 @@ impl Contact {
     /// Gets the latest block from the node, taking into account the possibility that the chain is halted
     /// and also the possibility that the node is syncing
     pub async fn get_latest_block(&self) -> Result<LatestBlock, CosmosGrpcError> {
-        let mut grpc = TendermintServiceClient::connect(self.url.clone())
-            .await?
-            .accept_gzip();
+        let mut grpc = TendermintServiceClient::connect(self.url.clone()).await?;
         let syncing = grpc
             .get_syncing(GetSyncingRequest {})
             .await?
@@ -86,9 +82,7 @@ impl Contact {
 
     /// Gets the specified block from the node, returns none if no block is available
     pub async fn get_block(&self, block: u64) -> Result<Option<Block>, CosmosGrpcError> {
-        let mut grpc = TendermintServiceClient::connect(self.url.clone())
-            .await?
-            .accept_gzip();
+        let mut grpc = TendermintServiceClient::connect(self.url.clone()).await?;
 
         let block = grpc
             .get_block_by_height(GetBlockByHeightRequest {
@@ -108,9 +102,7 @@ impl Contact {
         start: u64,
         end: u64,
     ) -> Result<Vec<Option<Block>>, CosmosGrpcError> {
-        let mut grpc = TendermintServiceClient::connect(self.url.clone())
-            .await?
-            .accept_gzip();
+        let mut grpc = TendermintServiceClient::connect(self.url.clone()).await?;
 
         let mut result = Vec::new();
         for i in start..end {
@@ -154,9 +146,7 @@ impl Contact {
         subspace: impl ToString,
         key: impl ToString,
     ) -> Result<QueryParamsResponse, CosmosGrpcError> {
-        let mut grpc = ParamsQueryClient::connect(self.url.clone())
-            .await?
-            .accept_gzip();
+        let mut grpc = ParamsQueryClient::connect(self.url.clone()).await?;
         Ok(grpc
             .params(QueryParamsRequest {
                 subspace: subspace.to_string(),
@@ -168,9 +158,7 @@ impl Contact {
 
     // Gets a transaction using it's hash value, TODO should fail if the transaction isn't found
     pub async fn get_tx_by_hash(&self, txhash: String) -> Result<GetTxResponse, CosmosGrpcError> {
-        let mut txrpc = TxServiceClient::connect(self.url.clone())
-            .await?
-            .accept_gzip();
+        let mut txrpc = TxServiceClient::connect(self.url.clone()).await?;
         let res = txrpc
             .get_tx(GetTxRequest { hash: txhash })
             .await?
