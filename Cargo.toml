@@ -24,7 +24,7 @@ pbkdf2 = {version = "0.12"}
 hmac = {version = "0.12"}
 rand = {version = "0.8"}
 rust_decimal = "1.9"
-secp256k1 = {version = "0.27", features = ["global-context"]}
+secp256k1 = {version = "0.28", features = ["global-context"]}
 tonic = {version = "0.10", features = ["gzip"]}
 bytes = "1.0"
 log = "0.4"

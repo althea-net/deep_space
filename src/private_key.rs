@@ -220,7 +220,7 @@ impl CosmosPrivateKey {
         let secp256k1 = Secp256k1::new();
         let sk = SecretKey::from_slice(&self.0)?;
         let digest = Sha256::digest(&signdoc_buf);
-        let msg = CurveMessage::from_slice(&digest)?;
+        let msg = CurveMessage::from_digest_slice(&digest)?;
         // Sign the signdoc
         let signed = secp256k1.sign_ecdsa(&msg, &sk);
         let compact = signed.serialize_compact().to_vec();
