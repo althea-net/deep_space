@@ -1,4 +1,3 @@
-use super::PAGE;
 use crate::address::Address;
 use crate::client::types::BaseAccount;
 use crate::client::types::*;
@@ -6,6 +5,7 @@ use crate::{client::Contact, error::CosmosGrpcError};
 use cosmos_sdk_proto::cosmos::auth::v1beta1::{
     query_client::QueryClient as AuthQueryClient, QueryAccountRequest, QueryAccountsRequest,
 };
+use cosmos_sdk_proto::cosmos::base::query::v1beta1::PageRequest;
 use tonic::Code as GrpcCode;
 
 impl Contact {
@@ -47,11 +47,36 @@ impl Contact {
     /// Gets account info for every account on the chain, a large query
     pub async fn get_all_accounts(&self) -> Result<Vec<AccountType>, CosmosGrpcError> {
         let mut agrpc = AuthQueryClient::connect(self.url.clone()).await?;
-        let query = QueryAccountsRequest { pagination: PAGE };
-        let res = agrpc.accounts(query).await?;
+        // this response can be very large so we use pagination
+        let mut page: PageRequest = PageRequest {
+            key: Vec::new(),
+            offset: 0,
+            limit: 20_000,
+            count_total: false,
+            reverse: false,
+        };
         let mut accounts = Vec::new();
-        for value in res.into_inner().accounts {
-            accounts.push(AccountType::decode_from_any(value)?);
+
+        loop {
+            let query = QueryAccountsRequest {
+                pagination: Some(page.clone()),
+            };
+            let res = agrpc.accounts(query).await?;
+            let res = res.into_inner();
+
+            for value in res.accounts {
+                accounts.push(AccountType::decode_from_any(value)?);
+            }
+            match res.pagination {
+                Some(page_response) => {
+                    if page_response.next_key.is_empty() {
+                        break;
+                    } else {
+                        page.key = page_response.next_key;
+                    }
+                }
+                None => break,
+            }
         }
 
         Ok(accounts)
