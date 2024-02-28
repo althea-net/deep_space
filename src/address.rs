@@ -249,7 +249,7 @@ pub fn eth_address_to_cosmos_address(
     prefix: Option<&str>,
 ) -> Result<Address, AddressError> {
     let prefix = prefix.unwrap_or(DEFAULT_PREFIX);
-    Address::from_slice(&address.as_bytes(), prefix)
+    Address::from_slice(address.as_bytes(), prefix)
 }
 
 #[test]

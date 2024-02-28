@@ -182,7 +182,7 @@ mod tests {
 
         for &(sum, lang) in &checksums {
             let mut hasher = Sha256::new();
-            for (_idx, word) in lang.word_list().iter().enumerate() {
+            for word in lang.word_list().iter() {
                 assert!(::unicode_normalization::is_nfkd(word));
                 hasher.update(format!("{word}\n"));
             }
