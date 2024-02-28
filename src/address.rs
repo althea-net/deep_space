@@ -242,6 +242,16 @@ pub fn cosmos_address_to_eth_address(
     EthAddress::from_slice(address.get_bytes())
 }
 
+#[cfg(feature = "ethermint")]
+// Swaps the byte interpretation of an address from EthAddress to CosmosAddress
+pub fn eth_address_to_cosmos_address(
+    address: EthAddress,
+    prefix: Option<&str>,
+) -> Result<Address, AddressError> {
+    let prefix = prefix.unwrap_or(DEFAULT_PREFIX);
+    Address::from_slice(&address.as_bytes(), prefix)
+}
+
 #[test]
 fn test_bech32() {
     let address = Address::from_slice(&[0; 20], "cosmos").unwrap();
@@ -275,4 +285,14 @@ fn test_parse() {
     let _test: Address = "cosmos1vlms2r8f6x7yxjh3ynyzc7ckarqd8a96ckjvrp"
         .parse()
         .unwrap();
+}
+
+#[cfg(feature = "ethermint")]
+#[test]
+fn test_address_conversion() {
+    let test: Address = "cosmos1vlms2r8f6x7yxjh3ynyzc7ckarqd8a96ckjvrp"
+        .parse()
+        .unwrap();
+    let eth_address = cosmos_address_to_eth_address(test).unwrap();
+    let _cosmos_address = eth_address_to_cosmos_address(eth_address, None).unwrap();
 }
