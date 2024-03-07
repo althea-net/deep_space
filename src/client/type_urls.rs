@@ -33,7 +33,7 @@ pub const SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL: &str =
     "/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal";
 
 // althea msgs
-pub const MSG_MICROTX_TYPE_URL: &str = "/microtx.v1.MsgMicrotx";
+pub const MSG_MICROTX_TYPE_URL: &str = "/althea.microtx.v1.MsgMicrotx";
 
 // canto proposals
 pub const REGISTER_COIN_PROPOSAL_TYPE_URL: &str = "/canto.erc20.v1.RegisterCoinProposal";
