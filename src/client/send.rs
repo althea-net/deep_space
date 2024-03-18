@@ -12,7 +12,7 @@ use crate::private_key::PrivateKey;
 use crate::utils::check_for_sdk_error;
 use crate::MessageArgs;
 #[cfg(feature = "althea")]
-use althea_proto::microtx::v1::MsgMicrotx;
+use althea_proto::althea::microtx::v1::MsgMicrotx;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastTxRequest;
