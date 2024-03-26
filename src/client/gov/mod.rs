@@ -21,6 +21,7 @@ use cosmos_sdk_proto::cosmos::params::v1beta1::ParameterChangeProposal;
 use cosmos_sdk_proto::cosmos::upgrade::v1beta1::SoftwareUpgradeProposal;
 use prost_types::Any;
 use std::time::Duration;
+use tokio::time::timeout;
 
 #[cfg(feature = "althea")]
 use super::type_urls::{REGISTER_COIN_PROPOSAL_TYPE_URL, REGISTER_ERC20_PROPOSAL_TYPE_URL};
@@ -33,8 +34,14 @@ impl Contact {
         &self,
         filters: QueryProposalsRequest,
     ) -> Result<QueryProposalsResponse, CosmosGrpcError> {
-        let mut grpc = GovQueryClient::connect(self.url.clone()).await?;
-        let res = grpc.proposals(filters).await?.into_inner();
+        let mut grpc = timeout(
+            self.get_timeout(),
+            GovQueryClient::connect(self.url.clone()),
+        )
+        .await??;
+        let res = timeout(self.get_timeout(), grpc.proposals(filters))
+            .await??
+            .into_inner();
         Ok(res)
     }
 

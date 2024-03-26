@@ -29,6 +29,7 @@ use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
 use num256::error::ParseError;
 use num256::Uint256;
 use std::time::Duration;
+use tokio::time::timeout;
 
 // required because dec coins are multiplied by 1*10^18
 const ONE_ETH: u128 = 10u128.pow(18);
@@ -38,8 +39,16 @@ impl Contact {
     /// are in DecCoins for precision, for the sake of ease of use this endpoint converts them
     /// into their normal form, for easy comparison against any other coin or amount.
     pub async fn query_community_pool(&self) -> Result<Vec<Coin>, CosmosGrpcError> {
-        let mut grpc = DistQueryClient::connect(self.url.clone()).await?;
-        let res = grpc.community_pool(QueryCommunityPoolRequest {}).await?;
+        let mut grpc = timeout(
+            self.get_timeout(),
+            DistQueryClient::connect(self.url.clone()),
+        )
+        .await??;
+        let res = timeout(
+            self.get_timeout(),
+            grpc.community_pool(QueryCommunityPoolRequest {}),
+        )
+        .await??;
         let val = res.into_inner().pool;
         let mut res = Vec::new();
         for v in val {
@@ -60,22 +69,28 @@ impl Contact {
         &self,
         validator_address: impl ToString,
     ) -> Result<Vec<ValidatorSlashEvent>, CosmosGrpcError> {
-        let mut grpc = DistQueryClient::connect(self.url.clone()).await?;
+        let mut grpc = timeout(
+            self.get_timeout(),
+            DistQueryClient::connect(self.url.clone()),
+        )
+        .await??;
         let current_block = self.get_chain_status().await?;
         let current_block = match current_block {
             ChainStatus::Moving { block_height } => block_height,
             _ => return Err(CosmosGrpcError::ChainNotRunning),
         };
 
-        let res = grpc
-            .validator_slashes(QueryValidatorSlashesRequest {
+        let res = timeout(
+            self.get_timeout(),
+            grpc.validator_slashes(QueryValidatorSlashesRequest {
                 validator_address: validator_address.to_string(),
                 starting_height: 0,
                 ending_height: current_block,
                 pagination: PAGE,
-            })
-            .await?
-            .into_inner();
+            }),
+        )
+        .await??
+        .into_inner();
         Ok(res.slashes)
     }
 
@@ -103,13 +118,19 @@ impl Contact {
         &self,
         delegator_address: Address,
     ) -> Result<Vec<String>, CosmosGrpcError> {
-        let mut grpc = DistQueryClient::connect(self.url.clone()).await?;
-        let res = grpc
-            .delegator_validators(QueryDelegatorValidatorsRequest {
+        let mut grpc = timeout(
+            self.get_timeout(),
+            DistQueryClient::connect(self.url.clone()),
+        )
+        .await??;
+        let res = timeout(
+            self.get_timeout(),
+            grpc.delegator_validators(QueryDelegatorValidatorsRequest {
                 delegator_address: delegator_address.to_string(),
-            })
-            .await?
-            .into_inner();
+            }),
+        )
+        .await??
+        .into_inner();
         Ok(res.validators)
     }
 
@@ -119,15 +140,21 @@ impl Contact {
         delegator_address: Address,
         validator_address: Address,
     ) -> Result<Vec<DecCoin>, CosmosGrpcError> {
-        let mut grpc = DistQueryClient::connect(self.url.clone()).await?;
-        let res = grpc
-            .delegation_rewards(QueryDelegationRewardsRequest {
+        let mut grpc = timeout(
+            self.get_timeout(),
+            DistQueryClient::connect(self.url.clone()),
+        )
+        .await??;
+        let res = timeout(
+            self.get_timeout(),
+            grpc.delegation_rewards(QueryDelegationRewardsRequest {
                 delegator_address: delegator_address.to_string(),
                 validator_address: validator_address.to_string(),
-            })
-            .await?
-            .into_inner()
-            .rewards;
+            }),
+        )
+        .await??
+        .into_inner()
+        .rewards;
         Ok(res)
     }
 
@@ -136,13 +163,19 @@ impl Contact {
         &self,
         delegator_address: Address,
     ) -> Result<QueryDelegationTotalRewardsResponse, CosmosGrpcError> {
-        let mut grpc = DistQueryClient::connect(self.url.clone()).await?;
-        let res = grpc
-            .delegation_total_rewards(QueryDelegationTotalRewardsRequest {
+        let mut grpc = timeout(
+            self.get_timeout(),
+            DistQueryClient::connect(self.url.clone()),
+        )
+        .await??;
+        let res = timeout(
+            self.get_timeout(),
+            grpc.delegation_total_rewards(QueryDelegationTotalRewardsRequest {
                 delegator_address: delegator_address.to_string(),
-            })
-            .await?
-            .into_inner();
+            }),
+        )
+        .await??
+        .into_inner();
         Ok(res)
     }
 

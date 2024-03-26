@@ -16,19 +16,29 @@ use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxResponse;
 use cosmos_sdk_proto::tendermint::types::Block;
 use std::time::Duration;
 use std::time::Instant;
-use tokio::time::sleep;
+use tokio::time::{sleep, timeout};
 
 impl Contact {
     /// Gets the current chain status, returns an enum taking into account the various possible states
     /// of the chain and the requesting full node. In the common case this provides the block number
     pub async fn get_chain_status(&self) -> Result<ChainStatus, CosmosGrpcError> {
-        let mut grpc = TendermintServiceClient::connect(self.url.clone()).await?;
-        let syncing = grpc.get_syncing(GetSyncingRequest {}).await?.into_inner();
+        let mut grpc = timeout(
+            self.get_timeout(),
+            TendermintServiceClient::connect(self.url.clone()),
+        )
+        .await??;
+        let syncing = timeout(self.get_timeout(), grpc.get_syncing(GetSyncingRequest {}))
+            .await??
+            .into_inner();
 
         if syncing.syncing {
             Ok(ChainStatus::Syncing)
         } else {
-            let block = grpc.get_latest_block(GetLatestBlockRequest {}).await;
+            let block = timeout(
+                self.get_timeout(),
+                grpc.get_latest_block(GetLatestBlockRequest {}),
+            )
+            .await?;
             match block {
                 Ok(block) => match block.into_inner().block {
                     Some(block) => match block.last_commit {
@@ -59,14 +69,22 @@ impl Contact {
     /// Gets the latest block from the node, taking into account the possibility that the chain is halted
     /// and also the possibility that the node is syncing
     pub async fn get_latest_block(&self) -> Result<LatestBlock, CosmosGrpcError> {
-        let mut grpc = TendermintServiceClient::connect(self.url.clone()).await?;
-        let syncing = grpc
-            .get_syncing(GetSyncingRequest {})
-            .await?
+        let mut grpc = timeout(
+            self.get_timeout(),
+            TendermintServiceClient::connect(self.url.clone()),
+        )
+        .await??;
+        let syncing = timeout(self.get_timeout(), grpc.get_syncing(GetSyncingRequest {}))
+            .await??
             .into_inner()
             .syncing;
 
-        let block = grpc.get_latest_block(GetLatestBlockRequest {}).await?;
+        let block = timeout(
+            self.get_timeout(),
+            grpc.get_latest_block(GetLatestBlockRequest {}),
+        )
+        .await?
+        .unwrap();
         let block = block.into_inner().block;
         match block {
             Some(block) => {
@@ -82,14 +100,20 @@ impl Contact {
 
     /// Gets the specified block from the node, returns none if no block is available
     pub async fn get_block(&self, block: u64) -> Result<Option<Block>, CosmosGrpcError> {
-        let mut grpc = TendermintServiceClient::connect(self.url.clone()).await?;
+        let mut grpc = timeout(
+            self.get_timeout(),
+            TendermintServiceClient::connect(self.url.clone()),
+        )
+        .await??;
 
-        let block = grpc
-            .get_block_by_height(GetBlockByHeightRequest {
+        let block = timeout(
+            self.get_timeout(),
+            grpc.get_block_by_height(GetBlockByHeightRequest {
                 height: block as i64,
-            })
-            .await?
-            .into_inner();
+            }),
+        )
+        .await??
+        .into_inner();
         Ok(block.block)
     }
 
@@ -102,14 +126,19 @@ impl Contact {
         start: u64,
         end: u64,
     ) -> Result<Vec<Option<Block>>, CosmosGrpcError> {
-        let mut grpc = TendermintServiceClient::connect(self.url.clone()).await?;
-
+        let mut grpc = timeout(
+            self.get_timeout(),
+            TendermintServiceClient::connect(self.url.clone()),
+        )
+        .await??;
         let mut result = Vec::new();
         for i in start..end {
-            let block = grpc
-                .get_block_by_height(GetBlockByHeightRequest { height: i as i64 })
-                .await?
-                .into_inner();
+            let block = timeout(
+                self.get_timeout(),
+                grpc.get_block_by_height(GetBlockByHeightRequest { height: i as i64 }),
+            )
+            .await??
+            .into_inner();
             result.push(block.block);
         }
 
@@ -146,23 +175,35 @@ impl Contact {
         subspace: impl ToString,
         key: impl ToString,
     ) -> Result<QueryParamsResponse, CosmosGrpcError> {
-        let mut grpc = ParamsQueryClient::connect(self.url.clone()).await?;
-        Ok(grpc
-            .params(QueryParamsRequest {
+        let mut grpc = timeout(
+            self.get_timeout(),
+            ParamsQueryClient::connect(self.url.clone()),
+        )
+        .await??;
+        let res = timeout(
+            self.get_timeout(),
+            grpc.params(QueryParamsRequest {
                 subspace: subspace.to_string(),
                 key: key.to_string(),
-            })
-            .await?
-            .into_inner())
+            }),
+        )
+        .await??;
+        Ok(res.into_inner())
     }
 
     // Gets a transaction using it's hash value, TODO should fail if the transaction isn't found
     pub async fn get_tx_by_hash(&self, txhash: String) -> Result<GetTxResponse, CosmosGrpcError> {
-        let mut txrpc = TxServiceClient::connect(self.url.clone()).await?;
-        let res = txrpc
-            .get_tx(GetTxRequest { hash: txhash })
-            .await?
-            .into_inner();
+        let mut txrpc = timeout(
+            self.get_timeout(),
+            TxServiceClient::connect(self.url.clone()),
+        )
+        .await??;
+        let res = timeout(
+            self.get_timeout(),
+            txrpc.get_tx(GetTxRequest { hash: txhash }),
+        )
+        .await??
+        .into_inner();
         Ok(res)
     }
 

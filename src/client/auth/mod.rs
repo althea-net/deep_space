@@ -6,6 +6,7 @@ use cosmos_sdk_proto::cosmos::auth::v1beta1::{
     query_client::QueryClient as AuthQueryClient, QueryAccountRequest, QueryAccountsRequest,
 };
 use cosmos_sdk_proto::cosmos::base::query::v1beta1::PageRequest;
+use tokio::time::timeout;
 use tonic::Code as GrpcCode;
 
 impl Contact {
@@ -26,11 +27,15 @@ impl Contact {
         &self,
         address: Address,
     ) -> Result<AccountType, CosmosGrpcError> {
-        let mut agrpc = AuthQueryClient::connect(self.url.clone()).await?;
+        let mut agrpc = timeout(
+            self.get_timeout(),
+            AuthQueryClient::connect(self.url.clone()),
+        )
+        .await??;
         let query = QueryAccountRequest {
             address: address.to_bech32(&self.chain_prefix).unwrap(),
         };
-        let res = agrpc.account(query).await;
+        let res = timeout(self.get_timeout(), agrpc.account(query)).await?;
         match res {
             Ok(account) => {
                 // null pointer if this fails to unwrap
@@ -46,7 +51,11 @@ impl Contact {
 
     /// Gets account info for every account on the chain, a large query
     pub async fn get_all_accounts(&self) -> Result<Vec<AccountType>, CosmosGrpcError> {
-        let mut agrpc = AuthQueryClient::connect(self.url.clone()).await?;
+        let mut agrpc = timeout(
+            self.get_timeout(),
+            AuthQueryClient::connect(self.url.clone()),
+        )
+        .await??;
         // this response can be very large so we use pagination
         let mut page: PageRequest = PageRequest {
             key: Vec::new(),
@@ -61,7 +70,7 @@ impl Contact {
             let query = QueryAccountsRequest {
                 pagination: Some(page.clone()),
             };
-            let res = agrpc.accounts(query).await?;
+            let res = timeout(self.get_timeout(), agrpc.accounts(query)).await??;
             let res = res.into_inner();
 
             for value in res.accounts {

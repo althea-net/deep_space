@@ -24,6 +24,7 @@ use cosmos_sdk_proto::cosmos::{
 use std::time::Instant;
 use std::{clone::Clone, time::Duration};
 use tokio::time::sleep;
+use tokio::time::timeout;
 use tonic::Code as TonicCode;
 
 impl Contact {
@@ -83,16 +84,17 @@ impl Contact {
         msg: Vec<u8>,
         mode: BroadcastMode,
     ) -> Result<TxResponse, CosmosGrpcError> {
-        let mut txrpc = TxServiceClient::connect(self.get_url()).await?;
-        let response = txrpc
-            .broadcast_tx(BroadcastTxRequest {
+        let mut txrpc =
+            timeout(self.get_timeout(), TxServiceClient::connect(self.get_url())).await??;
+        let response = timeout(
+            self.get_timeout(),
+            txrpc.broadcast_tx(BroadcastTxRequest {
                 tx_bytes: msg,
                 mode: mode.into(),
-            })
-            .await?
-            .into_inner()
-            .tx_response
-            .unwrap();
+            }),
+        )
+        .await??;
+        let response = response.into_inner().tx_response.unwrap();
         // checks only for sdk errors, other types will not be handled
         check_for_sdk_error(&response)?;
         Ok(response)
@@ -244,7 +246,8 @@ impl Contact {
     ) -> Result<SimulateResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let fee_amount = fee_amount.unwrap_or_default();
-        let mut txrpc = TxServiceClient::connect(self.get_url()).await?;
+        let mut txrpc =
+            timeout(self.get_timeout(), TxServiceClient::connect(self.get_url())).await??;
 
         let fee_obj = Fee {
             amount: fee_amount.to_vec(),
@@ -262,7 +265,8 @@ impl Contact {
         #[allow(deprecated)]
         let sim_request = SimulateRequest { tx_bytes, tx: None };
 
-        let response = txrpc.simulate(sim_request).await?.into_inner();
+        let response = timeout(self.get_timeout(), txrpc.simulate(sim_request)).await??;
+        let response = response.into_inner();
 
         Ok(response)
     }

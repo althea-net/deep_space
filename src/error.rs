@@ -56,6 +56,7 @@ pub enum CosmosGrpcError {
         max: u64,
         required: u64,
     },
+    TimeoutError,
 }
 
 impl Display for CosmosGrpcError {
@@ -118,6 +119,7 @@ impl Display for CosmosGrpcError {
                     "The required gas for this operation {required} exceeds the maximum gas per block {max}. This tx is impossible to execute"
                 )
             }
+            CosmosGrpcError::TimeoutError {} => write!(f, "Timed out"),
         }
     }
 }
@@ -151,6 +153,12 @@ impl From<DecodeError> for CosmosGrpcError {
 impl From<PrivateKeyError> for CosmosGrpcError {
     fn from(error: PrivateKeyError) -> Self {
         CosmosGrpcError::SigningError { error }
+    }
+}
+
+impl From<tokio::time::error::Elapsed> for CosmosGrpcError {
+    fn from(_error: tokio::time::error::Elapsed) -> Self {
+        CosmosGrpcError::TimeoutError
     }
 }
 

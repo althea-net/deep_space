@@ -21,6 +21,7 @@ use cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorDelegationsRequest
 use cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorsRequest;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::Validator;
 use std::time::Duration;
+use tokio::time::timeout;
 
 impl Contact {
     /// Gets a list of validators
@@ -28,9 +29,16 @@ impl Contact {
         &self,
         filters: QueryValidatorsRequest,
     ) -> Result<Vec<Validator>, CosmosGrpcError> {
-        let mut grpc = StakingQueryClient::connect(self.url.clone()).await?;
+        let mut grpc = timeout(
+            self.get_timeout(),
+            StakingQueryClient::connect(self.url.clone()),
+        )
+        .await??;
 
-        let res = grpc.validators(filters).await?.into_inner().validators;
+        let res = timeout(self.get_timeout(), grpc.validators(filters))
+            .await??
+            .into_inner()
+            .validators;
         Ok(res)
     }
 
@@ -48,16 +56,22 @@ impl Contact {
         &self,
         validator: Address,
     ) -> Result<Vec<DelegationResponse>, CosmosGrpcError> {
-        let mut grpc = StakingQueryClient::connect(self.url.clone()).await?;
+        let mut grpc = timeout(
+            self.get_timeout(),
+            StakingQueryClient::connect(self.url.clone()),
+        )
+        .await??;
 
-        let res = grpc
-            .validator_delegations(QueryValidatorDelegationsRequest {
+        let res = timeout(
+            self.get_timeout(),
+            grpc.validator_delegations(QueryValidatorDelegationsRequest {
                 validator_addr: validator.to_string(),
                 pagination: PAGE,
-            })
-            .await?
-            .into_inner()
-            .delegation_responses;
+            }),
+        )
+        .await??
+        .into_inner()
+        .delegation_responses;
         Ok(res)
     }
 
@@ -67,16 +81,22 @@ impl Contact {
         validator: Address,
         delegator: Address,
     ) -> Result<Option<DelegationResponse>, CosmosGrpcError> {
-        let mut grpc = StakingQueryClient::connect(self.url.clone()).await?;
+        let mut grpc = timeout(
+            self.get_timeout(),
+            StakingQueryClient::connect(self.url.clone()),
+        )
+        .await??;
 
-        let res = grpc
-            .delegation(QueryDelegationRequest {
+        let res = timeout(
+            self.get_timeout(),
+            grpc.delegation(QueryDelegationRequest {
                 delegator_addr: delegator.to_string(),
                 validator_addr: validator.to_string(),
-            })
-            .await?
-            .into_inner()
-            .delegation_response;
+            }),
+        )
+        .await??
+        .into_inner()
+        .delegation_response;
 
         Ok(res)
     }
