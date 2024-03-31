@@ -112,6 +112,8 @@ impl Contact {
     /// * `memo` - An optional memo to be included in the transaction, if None the default memo value is set
     /// * `fee_coin` - A fee amount and coin type to use, pass an empty array to send a zero fee transaction
     /// * `wait_timeout` - An optional amount of time to wait for the transaction to enter the blockchain
+    /// * `block_timeout` - An optional number of blocks into the future that this transaction should be valid for. 
+    ///                     If None, DEFAULT_TRANSACTION_TIMEOUT_BLOCKS is used.
     /// * `private_key` - A private key used to sign and send the transaction
     /// # Examples
     /// ```rust
@@ -143,6 +145,7 @@ impl Contact {
         memo: Option<String>,
         fee_coin: &[Coin],
         wait_timeout: Option<Duration>,
+        block_timeout: Option<u64>,
         private_key: impl PrivateKey,
     ) -> Result<TxResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
@@ -150,7 +153,7 @@ impl Contact {
         let fee = self
             .get_fee_info(messages, fee_coin, private_key.clone())
             .await?;
-        let args = self.get_message_args(our_address, fee).await?;
+        let args = self.get_message_args(our_address, fee, block_timeout).await?;
         trace!("got optional tx info");
 
         self.send_message_with_args(messages, memo, args, wait_timeout, private_key)
@@ -257,7 +260,7 @@ impl Contact {
             payer: None,
         };
 
-        let args = self.get_message_args(our_address, fee_obj).await?;
+        let args = self.get_message_args(our_address, fee_obj, None).await?;
 
         let tx_bytes = private_key.sign_std_msg(messages, args, MEMO)?;
 
@@ -327,6 +330,7 @@ impl Contact {
             None,
             &[fee_coin.unwrap_or_default()],
             wait_timeout,
+            None,
             private_key,
         )
         .await
@@ -342,6 +346,8 @@ impl Contact {
     /// * `fee_coin` - A fee amount and coin type to use, pass None to send a zero fee transaction
     /// * `destination` - The target destination address
     /// * `wait_timeout` - An optional amount of time to wait for the transaction to enter the blockchain
+    /// * `block_timeout` - A time period in blocks from when this tx is sent that it will be valid for.
+    ///                     The default value is DEFAULT_TRANSACTION_TIMEOUT_BLOCKS
     /// * `private_key` - A private key used to sign and send the transaction
     /// # Examples
     /// ```rust
@@ -371,6 +377,7 @@ impl Contact {
         fee_coin: Option<Coin>,
         destination: Address,
         wait_timeout: Option<Duration>,
+        block_timeout: Option<u64>,
         private_key: impl PrivateKey,
     ) -> Result<TxResponse, CosmosGrpcError> {
         trace!("Creating transaction");
@@ -387,6 +394,7 @@ impl Contact {
             None,
             &[fee_coin.unwrap_or_default()],
             wait_timeout,
+            block_timeout,
             private_key,
         )
         .await

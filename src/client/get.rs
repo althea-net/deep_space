@@ -18,6 +18,11 @@ use std::time::Duration;
 use std::time::Instant;
 use tokio::time::{sleep, timeout};
 
+/// This is the default block timeout, it's used when the user doesn't specify a timeout
+/// height for a transaction this will be used. It's best to always have a timeout for all transactions
+/// to prevent them from becoming stuck or being included at unexpected times
+pub const DEFAULT_TRANSACTION_TIMEOUT_BLOCKS: u64 = 100;
+
 impl Contact {
     /// Gets the current chain status, returns an enum taking into account the various possible states
     /// of the chain and the requesting full node. In the common case this provides the block number
@@ -215,6 +220,7 @@ impl Contact {
         &self,
         our_address: Address,
         fee: Fee,
+        timeout_block: Option<u64>,
     ) -> Result<MessageArgs, CosmosGrpcError> {
         let account_info = self.get_account_info(our_address).await?;
 
@@ -228,7 +234,8 @@ impl Contact {
                         account_number: account_info.account_number,
                         chain_id: header.chain_id,
                         fee,
-                        timeout_height: header.height as u64 + 100,
+                        timeout_height: header.height as u64
+                            + timeout_block.unwrap_or(DEFAULT_TRANSACTION_TIMEOUT_BLOCKS),
                     })
                 } else {
                     Err(CosmosGrpcError::BadResponse(

@@ -93,6 +93,7 @@ impl Contact {
             Some("AAAAAAAHHHHHHH".to_string()),
             &[fee_coin.unwrap_or_default()],
             Some(wait_timeout),
+            None,
             private_key,
         )
         .await

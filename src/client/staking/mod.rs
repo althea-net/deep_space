@@ -118,7 +118,7 @@ impl Contact {
         };
 
         let msg = Msg::new(MSG_DELEGATE_TYPE_URL, vote);
-        self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
+        self.send_message(&[msg], None, &[fee], wait_timeout, None, private_key)
             .await
     }
 
@@ -144,7 +144,7 @@ impl Contact {
         };
 
         let msg = Msg::new(MSG_BEGIN_REDELEGATE_TYPE_URL, redelegate);
-        self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
+        self.send_message(&[msg], None, &[fee], wait_timeout, None, private_key)
             .await
     }
 
@@ -167,7 +167,7 @@ impl Contact {
         };
 
         let msg = Msg::new(MSG_UNDELEGATE_TYPE_URL, undelegate);
-        self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
+        self.send_message(&[msg], None, &[fee], wait_timeout, None, private_key)
             .await
     }
 }

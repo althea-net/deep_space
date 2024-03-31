@@ -109,7 +109,7 @@ impl Contact {
         };
 
         let msg = Msg::new(MSG_WITHDRAW_DELEGATOR_REWARD_TYPE_URL, msg);
-        self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
+        self.send_message(&[msg], None, &[fee], wait_timeout, None, private_key)
             .await
     }
 
@@ -202,7 +202,7 @@ impl Contact {
             msgs.push(msg);
         }
 
-        self.send_message(&msgs, None, &[fee], wait_timeout, private_key)
+        self.send_message(&msgs, None, &[fee], wait_timeout, None, private_key)
             .await
     }
 
@@ -219,7 +219,7 @@ impl Contact {
         };
 
         let msg = Msg::new(MSG_WITHDRAW_VALIDATOR_COMMISSION_TYPE_URL, msg);
-        self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
+        self.send_message(&[msg], None, &[fee], wait_timeout, None, private_key)
             .await
     }
 
@@ -238,7 +238,7 @@ impl Contact {
         };
 
         let msg = Msg::new(MSG_FUND_COMMUNITY_POOL_TYPE_URL, msg);
-        self.send_message(&[msg], None, &[fee], wait_timeout, private_key)
+        self.send_message(&[msg], None, &[fee], wait_timeout, None, private_key)
             .await
     }
 }
