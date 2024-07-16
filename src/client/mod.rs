@@ -89,7 +89,7 @@ mod tests {
     #[actix_rt::test]
     async fn test_endpoints() {
         env_logger::init();
-        let contact = Contact::new("http://gravitychain.io:9090", TIMEOUT, "gravity").unwrap();
+        let contact = Contact::new("https://gravitychain.io:9090", TIMEOUT, "gravity").unwrap();
 
         let chain_status = contact.get_chain_status().await.unwrap();
         match chain_status {

@@ -9,6 +9,22 @@ use std::fmt::Formatter;
 use std::fmt::Result as FmtResult;
 use std::time::Duration;
 use std::{str, usize};
+use tonic::metadata::AsciiMetadataValue;
+use tonic::{IntoRequest, Request};
+
+/// Converts a standard GRPC query Request struct into a historical one at the given `past_height` by adding
+/// the "x-cosmos-block-height" gRPC metadata to the request
+/// `req` should be a standard GRPC request like cosmos_sdk_proto_althea::cosmos::bank::v1beta1::QueryBalancesRequest
+///
+/// Returns a Request with the set gRPC metadata
+pub fn historical_grpc_query<T>(req: impl IntoRequest<T>, past_height: u64) -> Request<T> {
+    let mut request = req.into_request();
+    request.metadata_mut().insert(
+        "x-cosmos-block-height",
+        AsciiMetadataValue::from(past_height),
+    );
+    request
+}
 
 /// A function that takes a hexadecimal representation of bytes
 /// back into a stream of bytes.
