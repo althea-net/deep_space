@@ -44,6 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         account_number: 0,
         chain_id: "mychainid".to_string(),
         fee,
+        tip: None,
         timeout_height: 100,
     };
 

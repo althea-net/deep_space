@@ -1,10 +1,11 @@
 use crate::client::type_urls::MSG_VERIFY_INVARIANT_TYPE_URL;
 use crate::error::CosmosGrpcError;
 use crate::{Coin, Contact, Msg, PrivateKey};
-use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use cosmos_sdk_proto::cosmos::crisis::v1beta1::MsgVerifyInvariant;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::SimulateResponse;
 use std::time::Duration;
+
+use super::send::TransactionResponse;
 
 impl Contact {
     /// A utility function which simulates the specified invariant and returns the given SimulationResponse
@@ -77,7 +78,7 @@ impl Contact {
         fee_coin: Option<Coin>,
         wait_timeout: Duration,
         private_key: impl PrivateKey,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         trace!("Creating chain-halting invariant transaction");
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
 

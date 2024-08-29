@@ -1,6 +1,7 @@
 //! Contains utility functions for interacting with and modifying the Cosmos sdk distribution module
 //! including the community pool
 
+use super::send::TransactionResponse;
 use super::{ChainStatus, PAGE};
 use crate::client::type_urls::{
     MSG_FUND_COMMUNITY_POOL_TYPE_URL, MSG_WITHDRAW_DELEGATOR_REWARD_TYPE_URL,
@@ -8,7 +9,6 @@ use crate::client::type_urls::{
 };
 use crate::error::CosmosGrpcError;
 use crate::{Address, Coin, Contact, Msg, PrivateKey};
-use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use cosmos_sdk_proto::cosmos::base::v1beta1::DecCoin;
 use cosmos_sdk_proto::cosmos::distribution::v1beta1::query_client::QueryClient as DistQueryClient;
 use cosmos_sdk_proto::cosmos::distribution::v1beta1::{
@@ -101,7 +101,7 @@ impl Contact {
         fee: Coin,
         private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let msg = MsgWithdrawDelegatorReward {
             delegator_address: our_address.to_string(),
@@ -186,7 +186,7 @@ impl Contact {
         fee: Coin,
         private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
 
         let delegated = self.query_delegator_validators(our_address).await?;
@@ -213,7 +213,7 @@ impl Contact {
         fee: Coin,
         private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         let msg = MsgWithdrawValidatorCommission {
             validator_address: validator_address.to_string(),
         };
@@ -230,7 +230,7 @@ impl Contact {
         fee: Coin,
         private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let msg = MsgFundCommunityPool {
             amount: amount.into_iter().map(|a| a.into()).collect(),

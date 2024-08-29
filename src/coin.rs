@@ -1,6 +1,7 @@
 use crate::address::Address;
 use cosmos_sdk_proto::cosmos::base::v1beta1::Coin as ProtoCoin;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::Fee as ProtoFee;
+use cosmos_sdk_proto::cosmos::tx::v1beta1::Tip as ProtoTip;
 use num256::Uint256;
 use std::convert::TryFrom;
 use std::fmt;
@@ -130,11 +131,7 @@ impl From<Fee> for ProtoFee {
         } else {
             String::new()
         };
-        let granter = if let Some(v) = value.granter {
-            v
-        } else {
-            String::new()
-        };
+        let granter = value.granter.unwrap_or_default();
         ProtoFee {
             amount: converted_coins,
             gas_limit: value.gas_limit,
@@ -144,6 +141,48 @@ impl From<Fee> for ProtoFee {
     }
 }
 
+/// Tip represents everything about a Cosmos transaction tip, including who pays
+#[derive(Serialize, Debug, Default, Clone, Deserialize, Eq, PartialEq, Hash)]
+pub struct Tip {
+    pub amount: Vec<Coin>,
+    pub tipper: Option<Address>,
+}
+
+impl From<ProtoTip> for Tip {
+    fn from(value: ProtoTip) -> Self {
+        let mut converted_coins = Vec::new();
+        for coin in value.amount {
+            converted_coins.push(coin.into());
+        }
+        let tipper = if let Ok(addr) = value.tipper.parse() {
+            Some(addr)
+        } else {
+            None
+        };
+        Tip {
+            amount: converted_coins,
+            tipper,
+        }
+    }
+}
+
+impl From<Tip> for ProtoTip {
+    fn from(value: Tip) -> Self {
+        let mut converted_coins = Vec::new();
+        for coin in value.amount {
+            converted_coins.push(coin.into());
+        }
+        let tipper = if let Some(s) = value.tipper {
+            s.to_string()
+        } else {
+            String::new()
+        };
+        ProtoTip {
+            amount: converted_coins,
+            tipper,
+        }
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

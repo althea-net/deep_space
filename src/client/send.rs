@@ -14,6 +14,7 @@ use crate::MessageArgs;
 #[cfg(feature = "althea")]
 use althea_proto::althea::microtx::v1::MsgMicrotx;
 use cosmos_sdk_proto::cosmos::bank::v1beta1::MsgSend;
+use cosmos_sdk_proto::cosmos::base::abci::v1beta1::AbciMessageLog;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastTxRequest;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::SimulateRequest;
@@ -21,6 +22,9 @@ use cosmos_sdk_proto::cosmos::tx::v1beta1::SimulateResponse;
 use cosmos_sdk_proto::cosmos::{
     base::abci::v1beta1::TxResponse, tx::v1beta1::service_client::ServiceClient as TxServiceClient,
 };
+use cosmos_sdk_proto::tendermint::abci::Event;
+use std::fmt;
+use std::fmt::Debug;
 use std::time::Instant;
 use std::{clone::Clone, time::Duration};
 use tokio::time::sleep;
@@ -83,7 +87,7 @@ impl Contact {
         // proto serialized message for us to turn into an 'any' object
         msg: Vec<u8>,
         mode: BroadcastMode,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         let mut txrpc =
             timeout(self.get_timeout(), TxServiceClient::connect(self.get_url())).await??;
         let response = timeout(
@@ -97,7 +101,7 @@ impl Contact {
         let response = response.into_inner().tx_response.unwrap();
         // checks only for sdk errors, other types will not be handled
         check_for_sdk_error(&response)?;
-        Ok(response)
+        Ok(TransactionResponse(response))
     }
 
     /// High level message sending function, you provide an arbitrary vector of messages to send
@@ -112,7 +116,7 @@ impl Contact {
     /// * `memo` - An optional memo to be included in the transaction, if None the default memo value is set
     /// * `fee_coin` - A fee amount and coin type to use, pass an empty array to send a zero fee transaction
     /// * `wait_timeout` - An optional amount of time to wait for the transaction to enter the blockchain
-    /// * `block_timeout` - An optional number of blocks into the future that this transaction should be valid for. 
+    /// * `block_timeout` - An optional number of blocks into the future that this transaction should be valid for.
     ///                     If None, DEFAULT_TRANSACTION_TIMEOUT_BLOCKS is used.
     /// * `private_key` - A private key used to sign and send the transaction
     /// # Examples
@@ -147,13 +151,15 @@ impl Contact {
         wait_timeout: Option<Duration>,
         block_timeout: Option<u64>,
         private_key: impl PrivateKey,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
 
         let fee = self
             .get_fee_info(messages, fee_coin, private_key.clone())
             .await?;
-        let args = self.get_message_args(our_address, fee, block_timeout).await?;
+        let args = self
+            .get_message_args(our_address, fee, block_timeout)
+            .await?;
         trace!("got optional tx info");
 
         self.send_message_with_args(messages, memo, args, wait_timeout, private_key)
@@ -171,7 +177,7 @@ impl Contact {
         args: MessageArgs,
         wait_timeout: Option<Duration>,
         private_key: impl PrivateKey,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         let memo = memo.unwrap_or_else(|| MEMO.to_string());
         let msg_bytes = private_key.sign_std_msg(messages, args, &memo)?;
 
@@ -315,7 +321,7 @@ impl Contact {
         destination: Address,
         wait_timeout: Option<Duration>,
         private_key: impl PrivateKey,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         trace!("Creating transaction");
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
 
@@ -379,7 +385,7 @@ impl Contact {
         wait_timeout: Option<Duration>,
         block_timeout: Option<u64>,
         private_key: impl PrivateKey,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         trace!("Creating transaction");
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
 
@@ -405,24 +411,24 @@ impl Contact {
     /// and unrecoverable
     pub async fn wait_for_tx(
         &self,
-        response: TxResponse,
+        response: TransactionResponse,
         timeout: Duration,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         let start = Instant::now();
         while Instant::now() - start < timeout {
             // TODO what actually determines when the tx is in the chain?
-            let status = self.get_tx_by_hash(response.txhash.clone()).await;
+            let status = self.get_tx_by_hash(response.0.txhash.clone()).await;
             match status {
                 Ok(status) => {
                     if let Some(res) = status.tx_response {
-                        return Ok(res);
+                        return Ok(TransactionResponse(res));
                     }
                 }
                 Err(CosmosGrpcError::RequestError { error }) => match error.code() {
                     TonicCode::NotFound | TonicCode::Unknown | TonicCode::InvalidArgument => {}
                     _ => {
                         return Err(CosmosGrpcError::TransactionFailed {
-                            tx: response,
+                            tx: response.into(),
                             time: Instant::now() - start,
                             sdk_error: None,
                         });
@@ -433,10 +439,86 @@ impl Contact {
             sleep(Duration::from_secs(1)).await;
         }
         Err(CosmosGrpcError::TransactionFailed {
-            tx: response,
+            tx: response.into(),
             time: timeout,
             sdk_error: None,
         })
+    }
+}
+
+/// A wrapper for TxResponse with better debug printing
+#[derive(Clone)]
+pub struct TransactionResponse(TxResponse);
+
+#[allow(dead_code)]
+impl TransactionResponse {
+    fn height(&self) -> i64 {
+        self.0.height
+    }
+
+    fn txhash(&self) -> String {
+        self.0.txhash.clone()
+    }
+
+    fn gas_wanted(&self) -> i64 {
+        self.0.gas_wanted
+    }
+
+    fn gas_used(&self) -> i64 {
+        self.0.gas_used
+    }
+
+    fn timestamp(&self) -> String {
+        self.0.timestamp.clone()
+    }
+
+    fn code(&self) -> u32 {
+        self.0.code
+    }
+
+    fn codespace(&self) -> String {
+        self.0.codespace.clone()
+    }
+
+    fn raw_log(&self) -> String {
+        self.0.raw_log.clone()
+    }
+
+    fn logs(&self) -> Vec<AbciMessageLog> {
+        self.0.logs.clone()
+    }
+
+    fn info(&self) -> String {
+        self.0.info.clone()
+    }
+
+    fn tx(&self) -> Option<::prost_types::Any> {
+        self.0.tx.clone()
+    }
+
+    fn events(&self) -> Vec<Event> {
+        self.0.events.clone()
+    }
+}
+
+impl Debug for TransactionResponse {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,
+            "TxResponse{{ height: {}, txhash: {}, gas_wanted: {}, gas_used: {}, timestamp: {}, code: {}, codespace: {}, raw_log: {}}}",
+            self.0.height, self.0.txhash, self.0.gas_wanted, self.0.gas_used, self.0.timestamp, self.0.code, self.0.codespace, self.0.raw_log,
+        )
+    }
+}
+
+impl From<TxResponse> for TransactionResponse {
+    fn from(tx: TxResponse) -> Self {
+        TransactionResponse(tx)
+    }
+}
+
+impl From<TransactionResponse> for TxResponse {
+    fn from(tx: TransactionResponse) -> Self {
+        tx.0
     }
 }
 

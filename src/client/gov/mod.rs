@@ -1,5 +1,6 @@
 //! Contains utility functions for interacting with and modifying Cosmos validator staking status
 
+use super::send::TransactionResponse;
 use super::type_urls::{PARAMETER_CHANGE_PROPOSAL_TYPE_URL, SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL};
 use super::PAGE;
 use crate::client::type_urls::{MSG_SUBMIT_PROPOSAL_TYPE_URL, MSG_VOTE_TYPE_URL};
@@ -9,7 +10,6 @@ use crate::Coin;
 use crate::Contact;
 use crate::Msg;
 use crate::PrivateKey;
-use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::query_client::QueryClient as GovQueryClient;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::MsgSubmitProposal;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::MsgVote;
@@ -112,7 +112,7 @@ impl Contact {
         fee: Coin,
         private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let vote = MsgVote {
             proposal_id,
@@ -133,7 +133,7 @@ impl Contact {
         fee: Coin,
         private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let proposal = MsgSubmitProposal {
             proposer: our_address.to_string(),
@@ -154,7 +154,7 @@ impl Contact {
         fee: Coin,
         key: impl PrivateKey,
         wait_timeout: Option<Duration>,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         // encode as a generic proposal
         let any = encode_any(proposal, PARAMETER_CHANGE_PROPOSAL_TYPE_URL.to_string());
         self.create_gov_proposal(any, deposit, fee, key, wait_timeout)
@@ -169,7 +169,7 @@ impl Contact {
         fee: Coin,
         key: impl PrivateKey,
         wait_timeout: Option<Duration>,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         // encode as a generic proposal
         let any = encode_any(proposal, SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL.to_string());
         self.create_gov_proposal(any, deposit, fee, key, wait_timeout)
@@ -187,7 +187,7 @@ impl Contact {
         fee: Coin,
         key: impl PrivateKey,
         wait_timeout: Option<Duration>,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         // encode as a generic proposal
         let any = encode_any(proposal, REGISTER_COIN_PROPOSAL_TYPE_URL.to_string());
         self.create_gov_proposal(any, deposit, fee, key, wait_timeout)
@@ -202,7 +202,7 @@ impl Contact {
         fee: Coin,
         key: impl PrivateKey,
         wait_timeout: Option<Duration>,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         // encode as a generic proposal
         let any = encode_any(proposal, REGISTER_ERC20_PROPOSAL_TYPE_URL.to_string());
         self.create_gov_proposal(any, deposit, fee, key, wait_timeout)

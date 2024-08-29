@@ -4,7 +4,7 @@ use crate::public_key::{CosmosPublicKey, PublicKey};
 use crate::utils::bytes_to_hex_str;
 use crate::utils::encode_any;
 use crate::utils::hex_str_to_bytes;
-use crate::{coin::Fee, Address};
+use crate::{coin::Fee, coin::Tip, Address};
 use crate::{error::*, utils::contains_non_hex_chars};
 use cosmos_sdk_proto::cosmos::crypto::secp256k1::PubKey as ProtoSecp256k1Pubkey;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::Tx;
@@ -34,6 +34,7 @@ pub const DEFAULT_ETHEREUM_HD_PATH: &str = "m/44'/60'/0'/0/0";
 pub struct MessageArgs {
     pub sequence: u64,
     pub fee: Fee,
+    pub tip: Option<Tip>,
     pub timeout_height: u64,
     pub chain_id: String,
     pub account_number: u64,
@@ -624,6 +625,7 @@ fn build_unfinished_tx<P: prost::Message>(
     let auth_info = AuthInfo {
         signer_infos: vec![signer_info],
         fee: Some(args.fee.into()),
+        tip: args.tip.map(|v| v.into()),
     };
 
     // Protobuf serialization of `AuthInfo`
@@ -941,6 +943,7 @@ fn test_ethermint_signatures() {
             payer: None,
             granter: None,
         },
+        tip: None,
         timeout_height: 0,
         chain_id: "chain-0".to_string(),
         account_number: 0,

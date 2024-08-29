@@ -234,6 +234,7 @@ impl Contact {
                         account_number: account_info.account_number,
                         chain_id: header.chain_id,
                         fee,
+                        tip: None,
                         timeout_height: header.height as u64
                             + timeout_block.unwrap_or(DEFAULT_TRANSACTION_TIMEOUT_BLOCKS),
                     })

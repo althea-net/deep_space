@@ -1,5 +1,6 @@
 //! Contains utility functions for interacting with and submitting Cosmos governance proposals
 
+use super::send::TransactionResponse;
 use super::PAGE;
 use crate::client::type_urls::{
     MSG_BEGIN_REDELEGATE_TYPE_URL, MSG_DELEGATE_TYPE_URL, MSG_UNDELEGATE_TYPE_URL,
@@ -10,7 +11,6 @@ use crate::Coin;
 use crate::Contact;
 use crate::Msg;
 use crate::PrivateKey;
-use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::query_client::QueryClient as StakingQueryClient;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::DelegationResponse;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::MsgBeginRedelegate;
@@ -109,7 +109,7 @@ impl Contact {
         fee: Coin,
         private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let vote = MsgDelegate {
             amount: Some(amount_to_delegate.into()),
@@ -134,7 +134,7 @@ impl Contact {
         fee: Coin,
         private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let redelegate = MsgBeginRedelegate {
             amount: Some(amount_to_redelegate.into()),
@@ -158,7 +158,7 @@ impl Contact {
         fee: Coin,
         private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
-    ) -> Result<TxResponse, CosmosGrpcError> {
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let undelegate = MsgUndelegate {
             amount: Some(amount_to_undelegate.into()),
