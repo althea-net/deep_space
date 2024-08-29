@@ -452,51 +452,51 @@ pub struct TransactionResponse(TxResponse);
 
 #[allow(dead_code)]
 impl TransactionResponse {
-    fn height(&self) -> i64 {
+    pub fn height(&self) -> i64 {
         self.0.height
     }
 
-    fn txhash(&self) -> String {
+    pub fn txhash(&self) -> String {
         self.0.txhash.clone()
     }
 
-    fn gas_wanted(&self) -> i64 {
+    pub fn gas_wanted(&self) -> i64 {
         self.0.gas_wanted
     }
 
-    fn gas_used(&self) -> i64 {
+    pub fn gas_used(&self) -> i64 {
         self.0.gas_used
     }
 
-    fn timestamp(&self) -> String {
+    pub fn timestamp(&self) -> String {
         self.0.timestamp.clone()
     }
 
-    fn code(&self) -> u32 {
+    pub fn code(&self) -> u32 {
         self.0.code
     }
 
-    fn codespace(&self) -> String {
+    pub fn codespace(&self) -> String {
         self.0.codespace.clone()
     }
 
-    fn raw_log(&self) -> String {
+    pub fn raw_log(&self) -> String {
         self.0.raw_log.clone()
     }
 
-    fn logs(&self) -> Vec<AbciMessageLog> {
+    pub fn logs(&self) -> Vec<AbciMessageLog> {
         self.0.logs.clone()
     }
 
-    fn info(&self) -> String {
+    pub fn info(&self) -> String {
         self.0.info.clone()
     }
 
-    fn tx(&self) -> Option<::prost_types::Any> {
+    pub fn tx(&self) -> Option<::prost_types::Any> {
         self.0.tx.clone()
     }
 
-    fn events(&self) -> Vec<Event> {
+    pub fn events(&self) -> Vec<Event> {
         self.0.events.clone()
     }
 }
