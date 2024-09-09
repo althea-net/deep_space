@@ -129,7 +129,7 @@ impl PublicKey for CosmosPublicKey {
     /// Create a bech32 encoded public key with an arbitrary prefix
     ///
     /// * `hrp` - A prefix for a bech32 encoding. By a convention
-    /// Cosmos Network uses `cosmospub` as a prefix for encoding public keys.
+    ///   Cosmos Network uses `cosmospub` as a prefix for encoding public keys.
     fn to_bech32<T: Into<String>>(&self, hrp: T) -> Result<String, PublicKeyError> {
         let bech32 = bech32::encode(
             &hrp.into(),

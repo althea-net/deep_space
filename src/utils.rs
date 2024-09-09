@@ -7,8 +7,8 @@ use prost_types::Any;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::Result as FmtResult;
+use std::str;
 use std::time::Duration;
-use std::{str, usize};
 use tonic::metadata::AsciiMetadataValue;
 use tonic::{IntoRequest, Request};
 
