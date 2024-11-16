@@ -75,6 +75,7 @@ impl Contact {
     ///     account_number: 0,
     ///     chain_id: "mychainid".to_string(),
     ///     fee,
+    ///     tip: None,
     ///     timeout_height: 100,
     /// };
     /// let tx = private_key.sign_std_msg(&[msg], args, "").unwrap();
@@ -141,7 +142,7 @@ impl Contact {
     /// let msg = Msg::new(SECP256K1_PUBKEY_TYPE_URL, send);
     /// let contact = Contact::new("https:://your-grpc-server", Duration::from_secs(5), "prefix").unwrap();
     /// // future must be awaited in tokio runtime
-    /// contact.send_message(&vec![msg], None, &[coin], None, private_key);
+    /// contact.send_message(&vec![msg], None, &[coin], None, None, private_key);
     /// ```
     pub async fn send_message(
         &self,
