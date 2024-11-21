@@ -4,7 +4,8 @@ use crate::error::CosmosGrpcError;
 use crate::Contact;
 use cosmos_sdk_proto::cosmos::mint::v1beta1::query_client::QueryClient as MintQueryClient;
 use cosmos_sdk_proto::cosmos::mint::v1beta1::{
-    QueryAnnualProvisionsRequest, QueryInflationRequest,
+    Params as MintParms, QueryAnnualProvisionsRequest, QueryInflationRequest,
+    QueryParamsRequest as QueryMintParamsRequest,
 };
 use tokio::time::timeout;
 
@@ -13,6 +14,36 @@ use tokio::time::timeout;
 const DEC_MANTISSA: f64 = 1_000_000_000_000_000_000.0;
 
 impl Contact {
+    /// Returns the mint denom, or the native token on the chain
+    pub async fn get_mint_denom(&self) -> Result<String, CosmosGrpcError> {
+        let mut grpc = timeout(
+            self.get_timeout(),
+            MintQueryClient::connect(self.url.clone()),
+        )
+        .await??;
+
+        let res = timeout(self.get_timeout(), grpc.params(QueryMintParamsRequest {}))
+            .await??
+            .into_inner();
+
+        Ok(res.params.unwrap().mint_denom)
+    }
+
+    /// Returns the mint module parameters
+    pub async fn get_mint_params(&self) -> Result<MintParms, CosmosGrpcError> {
+        let mut grpc = timeout(
+            self.get_timeout(),
+            MintQueryClient::connect(self.url.clone()),
+        )
+        .await??;
+
+        let res = timeout(self.get_timeout(), grpc.params(QueryMintParamsRequest {}))
+            .await??
+            .into_inner();
+
+        Ok(res.params.unwrap())
+    }
+
     /// Returns the inflation rate for the chain, in decimal format
     pub async fn get_inflation(&self) -> Result<f64, CosmosGrpcError> {
         let mut grpc = timeout(
