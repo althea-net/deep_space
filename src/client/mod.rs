@@ -6,6 +6,7 @@ pub mod distribution;
 pub mod get;
 pub mod gov;
 pub mod invariant;
+pub mod mint;
 pub mod send;
 pub mod staking;
 pub mod type_urls;

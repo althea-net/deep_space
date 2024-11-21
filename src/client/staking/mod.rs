@@ -12,18 +12,49 @@ use crate::Contact;
 use crate::Msg;
 use crate::PrivateKey;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::query_client::QueryClient as StakingQueryClient;
-use cosmos_sdk_proto::cosmos::staking::v1beta1::DelegationResponse;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::MsgBeginRedelegate;
-use cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::MsgUndelegate;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::QueryDelegationRequest;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorDelegationsRequest;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::QueryValidatorsRequest;
 use cosmos_sdk_proto::cosmos::staking::v1beta1::Validator;
+use cosmos_sdk_proto::cosmos::staking::v1beta1::{DelegationResponse, QueryPoolRequest};
+use cosmos_sdk_proto::cosmos::staking::v1beta1::{MsgDelegate, Pool};
+use num256::Uint256;
 use std::time::Duration;
 use tokio::time::timeout;
 
+/// A parsed staking pool response type
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StakingPool {
+    pub bonded_tokens: Uint256,
+    pub not_bonded_tokens: Uint256,
+}
+
+impl From<Pool> for StakingPool {
+    fn from(pool: Pool) -> Self {
+        StakingPool {
+            bonded_tokens: pool.bonded_tokens.parse().unwrap(),
+            not_bonded_tokens: pool.not_bonded_tokens.parse().unwrap(),
+        }
+    }
+}
+
 impl Contact {
+    /// Gets info about the staking pool
+    pub async fn get_staking_pool_info(&self) -> Result<Pool, CosmosGrpcError> {
+        let mut grpc = timeout(
+            self.get_timeout(),
+            StakingQueryClient::connect(self.url.clone()),
+        )
+        .await??;
+
+        let res = timeout(self.get_timeout(), grpc.pool(QueryPoolRequest {}))
+            .await??
+            .into_inner();
+        Ok(res.pool.unwrap())
+    }
+
     /// Gets a list of validators
     pub async fn get_validators_list(
         &self,
