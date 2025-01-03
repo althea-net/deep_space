@@ -56,7 +56,6 @@ impl Contact {
             .await??
             .into_inner();
 
-        println!("{:?}", res);
         let string = String::from_utf8(res.inflation).unwrap();
         let float: f64 = string.parse().unwrap();
         Ok(float / DEC_MANTISSA)
@@ -76,7 +75,6 @@ impl Contact {
         )
         .await??
         .into_inner();
-        println!("{:?}", res);
         let string = String::from_utf8(res.annual_provisions).unwrap();
         let float: f64 = string.parse().unwrap();
         Ok(float / DEC_MANTISSA)
