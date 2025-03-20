@@ -72,6 +72,10 @@ impl Contact {
     pub fn get_timeout(&self) -> Duration {
         self.timeout
     }
+
+    pub fn set_timeout(&mut self, timeout: Duration) {
+        self.timeout = timeout;
+    }
 }
 
 #[cfg(test)]
