@@ -14,6 +14,7 @@ use cosmos_sdk_proto::cosmos::tx::v1beta1::service_client::ServiceClient as TxSe
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxRequest;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxResponse;
 use cosmos_sdk_proto::tendermint::types::Block;
+use std::collections::HashSet;
 use std::time::Duration;
 use std::time::Instant;
 use tokio::time::{sleep, timeout};
@@ -138,6 +139,33 @@ impl Contact {
         .await??;
         let mut result = Vec::new();
         for i in start..end {
+            let block = timeout(
+                self.get_timeout(),
+                grpc.get_block_by_height(GetBlockByHeightRequest { height: i as i64 }),
+            )
+            .await??
+            .into_inner();
+            result.push(block.block);
+        }
+
+        Ok(result)
+    }
+
+    /// Gets the specified set of blocks from the node, returning None if the block is not available
+    /// this is more efficient than querying individually since it uses a single grpc session
+    /// this could be made more efficient by distributing requests over several grpc sessions
+    /// once some minimum size requirement was met
+    pub async fn get_block_set(
+        &self,
+        blocks: HashSet<u64>,
+    ) -> Result<Vec<Option<Block>>, CosmosGrpcError> {
+        let mut grpc = timeout(
+            self.get_timeout(),
+            TendermintServiceClient::connect(self.url.clone()),
+        )
+        .await??;
+        let mut result = Vec::new();
+        for i in blocks {
             let block = timeout(
                 self.get_timeout(),
                 grpc.get_block_by_height(GetBlockByHeightRequest { height: i as i64 }),
