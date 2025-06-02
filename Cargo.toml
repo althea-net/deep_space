@@ -32,7 +32,7 @@ tokio = {version = "1", features=["time"]}
 clarity = {version = "1.5", optional = true}
 sha3 = {version = "0.10", optional = true}
 
-cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "0.18"}
+cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "0.19"}
 althea_proto = {version="0.9", optional=true}
 
 [dev-dependencies]

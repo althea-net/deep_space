@@ -3,16 +3,21 @@
 use super::send::TransactionResponse;
 use super::type_urls::{PARAMETER_CHANGE_PROPOSAL_TYPE_URL, SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL};
 use super::PAGE;
-use crate::client::type_urls::{MSG_SUBMIT_PROPOSAL_TYPE_URL, MSG_VOTE_TYPE_URL};
+use crate::client::type_urls::{
+    LEGACY_MSG_SUBMIT_PROPOSAL_TYPE_URL, LEGACY_MSG_VOTE_TYPE_URL, MSG_SUBMIT_PROPOSAL_TYPE_URL,
+    MSG_VOTE_TYPE_URL,
+};
 use crate::error::CosmosGrpcError;
 use crate::utils::encode_any;
 use crate::Coin;
 use crate::Contact;
 use crate::Msg;
 use crate::PrivateKey;
+use cosmos_sdk_proto::cosmos::gov::v1::MsgSubmitProposal;
+use cosmos_sdk_proto::cosmos::gov::v1::MsgVote;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::query_client::QueryClient as GovQueryClient;
-use cosmos_sdk_proto::cosmos::gov::v1beta1::MsgSubmitProposal;
-use cosmos_sdk_proto::cosmos::gov::v1beta1::MsgVote;
+use cosmos_sdk_proto::cosmos::gov::v1beta1::MsgSubmitProposal as LegacyMsgSubmitProposal;
+use cosmos_sdk_proto::cosmos::gov::v1beta1::MsgVote as LegacyMsgVote;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::ProposalStatus;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::QueryProposalsRequest;
 use cosmos_sdk_proto::cosmos::gov::v1beta1::QueryProposalsResponse;
@@ -105,10 +110,52 @@ impl Contact {
         self.get_governance_proposals(req).await
     }
 
+    pub async fn legacy_vote_on_gov_proposal(
+        &self,
+        proposal_id: u64,
+        vote: VoteOption,
+        fee: Coin,
+        private_key: impl PrivateKey,
+        wait_timeout: Option<Duration>,
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
+        let our_address = private_key.to_address(&self.chain_prefix).unwrap();
+        let vote = LegacyMsgVote {
+            proposal_id,
+            voter: our_address.to_string(),
+            option: vote.into(),
+        };
+
+        let msg = Msg::new(LEGACY_MSG_VOTE_TYPE_URL, vote);
+        self.send_message(&[msg], None, &[fee], wait_timeout, None, private_key)
+            .await
+    }
+
+    /// Provides an interface for submitting legacy governance proposals
+    pub async fn create_legacy_gov_proposal(
+        &self,
+        content: Any,
+        deposit: Coin,
+        fee: Coin,
+        private_key: impl PrivateKey,
+        wait_timeout: Option<Duration>,
+    ) -> Result<TransactionResponse, CosmosGrpcError> {
+        let our_address = private_key.to_address(&self.chain_prefix).unwrap();
+        let proposal = LegacyMsgSubmitProposal {
+            proposer: our_address.to_string(),
+            content: Some(content),
+            initial_deposit: vec![deposit.into()],
+        };
+
+        let msg = Msg::new(LEGACY_MSG_SUBMIT_PROPOSAL_TYPE_URL, proposal);
+        self.send_message(&[msg], None, &[fee], wait_timeout, None, private_key)
+            .await
+    }
+
     pub async fn vote_on_gov_proposal(
         &self,
         proposal_id: u64,
         vote: VoteOption,
+        metadata: String,
         fee: Coin,
         private_key: impl PrivateKey,
         wait_timeout: Option<Duration>,
@@ -118,6 +165,7 @@ impl Contact {
             proposal_id,
             voter: our_address.to_string(),
             option: vote.into(),
+            metadata,
         };
 
         let msg = Msg::new(MSG_VOTE_TYPE_URL, vote);
@@ -125,10 +173,11 @@ impl Contact {
             .await
     }
 
-    /// Provides an interface for submitting governance proposals
+    /// Provides an interface for submitting msg-based governance proposals
     pub async fn create_gov_proposal(
         &self,
-        content: Any,
+        messages: Vec<Any>,
+        metadata: String,
         deposit: Coin,
         fee: Coin,
         private_key: impl PrivateKey,
@@ -136,8 +185,9 @@ impl Contact {
     ) -> Result<TransactionResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let proposal = MsgSubmitProposal {
+            messages,
+            metadata,
             proposer: our_address.to_string(),
-            content: Some(content),
             initial_deposit: vec![deposit.into()],
         };
 
@@ -157,7 +207,7 @@ impl Contact {
     ) -> Result<TransactionResponse, CosmosGrpcError> {
         // encode as a generic proposal
         let any = encode_any(proposal, PARAMETER_CHANGE_PROPOSAL_TYPE_URL.to_string());
-        self.create_gov_proposal(any, deposit, fee, key, wait_timeout)
+        self.create_legacy_gov_proposal(any, deposit, fee, key, wait_timeout)
             .await
     }
 
@@ -172,7 +222,7 @@ impl Contact {
     ) -> Result<TransactionResponse, CosmosGrpcError> {
         // encode as a generic proposal
         let any = encode_any(proposal, SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL.to_string());
-        self.create_gov_proposal(any, deposit, fee, key, wait_timeout)
+        self.create_legacy_gov_proposal(any, deposit, fee, key, wait_timeout)
             .await
     }
 }
@@ -190,7 +240,7 @@ impl Contact {
     ) -> Result<TransactionResponse, CosmosGrpcError> {
         // encode as a generic proposal
         let any = encode_any(proposal, REGISTER_COIN_PROPOSAL_TYPE_URL.to_string());
-        self.create_gov_proposal(any, deposit, fee, key, wait_timeout)
+        self.create_legacy_gov_proposal(any, deposit, fee, key, wait_timeout)
             .await
     }
 
@@ -205,7 +255,7 @@ impl Contact {
     ) -> Result<TransactionResponse, CosmosGrpcError> {
         // encode as a generic proposal
         let any = encode_any(proposal, REGISTER_ERC20_PROPOSAL_TYPE_URL.to_string());
-        self.create_gov_proposal(any, deposit, fee, key, wait_timeout)
+        self.create_legacy_gov_proposal(any, deposit, fee, key, wait_timeout)
             .await
     }
 }
