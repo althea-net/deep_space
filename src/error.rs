@@ -119,7 +119,7 @@ impl Display for CosmosGrpcError {
                     "The required gas for this operation {required} exceeds the maximum gas per block {max}. This tx is impossible to execute"
                 )
             }
-            CosmosGrpcError::TimeoutError {} => write!(f, "Timed out"),
+            CosmosGrpcError::TimeoutError => write!(f, "Timed out"),
         }
     }
 }

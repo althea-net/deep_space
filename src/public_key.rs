@@ -211,6 +211,7 @@ impl PublicKey for EthermintPublicKey {
         key_bytes
     }
 
+    #[allow(clippy::doc_overindented_list_items)]
     /// Create a bech32 encoded public key with an arbitrary prefix
     ///
     /// * `hrp` - A prefix for a bech32 encoding. By a convention

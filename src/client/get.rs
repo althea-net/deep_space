@@ -273,7 +273,7 @@ impl Contact {
                 }
             }
             LatestBlock::Syncing { .. } => Err(CosmosGrpcError::NodeNotSynced),
-            LatestBlock::WaitingToStart { .. } => Err(CosmosGrpcError::ChainNotRunning),
+            LatestBlock::WaitingToStart => Err(CosmosGrpcError::ChainNotRunning),
         }
     }
 
@@ -313,10 +313,7 @@ struct BlockParamsJson {
 }
 impl From<BlockParamsJson> for BlockParams {
     fn from(input: BlockParamsJson) -> Self {
-        let max_gas = match input.max_gas.parse() {
-            Ok(v) => Some(v),
-            Err(_) => None,
-        };
+        let max_gas = input.max_gas.parse().ok();
         let max_bytes = input.max_bytes.parse().unwrap_or(0u64);
         BlockParams { max_bytes, max_gas }
     }

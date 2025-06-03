@@ -101,11 +101,7 @@ impl From<ProtoFee> for Fee {
         for coin in value.amount {
             converted_coins.push(coin.into());
         }
-        let payer = if let Ok(addr) = value.payer.parse() {
-            Some(addr)
-        } else {
-            None
-        };
+        let payer = value.payer.parse().ok();
         let granter = if value.granter.is_empty() {
             None
         } else {
@@ -154,11 +150,7 @@ impl From<ProtoTip> for Tip {
         for coin in value.amount {
             converted_coins.push(coin.into());
         }
-        let tipper = if let Ok(addr) = value.tipper.parse() {
-            Some(addr)
-        } else {
-            None
-        };
+        let tipper = value.tipper.parse().ok();
         Tip {
             amount: converted_coins,
             tipper,

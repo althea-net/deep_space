@@ -32,6 +32,7 @@ use tokio::time::timeout;
 use tonic::Code as TonicCode;
 
 impl Contact {
+    #[allow(clippy::doc_overindented_list_items)]
     /// Sends an already serialized and signed transaction, checking for various errors in the
     /// transaction response. This is the lowest level transaction sending function and you
     /// probably shouldn't use it unless you have specific needs. `send_message` is more
@@ -105,6 +106,7 @@ impl Contact {
         Ok(TransactionResponse(response))
     }
 
+    #[allow(clippy::doc_overindented_list_items)]
     /// High level message sending function, you provide an arbitrary vector of messages to send
     /// a private key to sign with, and a fee coin (if any). The gas is then estimated and set
     /// automatically. This function will return on or before the provided wait_timeout value
@@ -344,6 +346,7 @@ impl Contact {
     }
 
     #[cfg(feature = "althea")]
+    #[allow(clippy::doc_overindented_list_items)]
     /// A utility function that executes a microtransaction on the Althea Chain, meant to be used by routers
     /// on Althea networks to pay peers for internet service.
     ///

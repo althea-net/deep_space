@@ -117,7 +117,7 @@ impl Mnemonic {
         for (i, word) in words.iter().enumerate() {
             if let Some(idx) = language.find_word(word) {
                 for j in 0..11 {
-                    bits[i * 11 + j] = idx >> (10 - j) & 1 == 1;
+                    bits[i * 11 + j] = (idx >> (10 - j)) & 1 == 1;
                 }
             } else {
                 return Err(Bip39Error::UnknownWord(word.to_string()));
