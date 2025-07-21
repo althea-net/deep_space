@@ -189,6 +189,9 @@ impl Contact {
             metadata,
             proposer: our_address.to_string(),
             initial_deposit: vec![deposit.into()],
+            expedited: false,
+            summary: String::new(),
+            title: String::new(),
         };
 
         let msg = Msg::new(MSG_SUBMIT_PROPOSAL_TYPE_URL, proposal);

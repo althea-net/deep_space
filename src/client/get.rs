@@ -7,9 +7,10 @@ use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::service_client::Service
 use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetBlockByHeightRequest;
 use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetLatestBlockRequest;
 use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetSyncingRequest;
+use cosmos_sdk_proto::cosmos::consensus::v1::query_client::QueryClient as ConsensusQueryClient;
+use cosmos_sdk_proto::cosmos::consensus::v1::QueryParamsRequest;
 use cosmos_sdk_proto::cosmos::params::v1beta1::query_client::QueryClient as ParamsQueryClient;
-use cosmos_sdk_proto::cosmos::params::v1beta1::QueryParamsRequest;
-use cosmos_sdk_proto::cosmos::params::v1beta1::QueryParamsResponse;
+use cosmos_sdk_proto::cosmos::params::v1beta1::{QueryParamsRequest as LegacyQueryParamsRequest, QueryParamsResponse as LegacyQueryParamsResponse};
 use cosmos_sdk_proto::cosmos::tx::v1beta1::service_client::ServiceClient as TxServiceClient;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxRequest;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxResponse;
@@ -183,31 +184,42 @@ impl Contact {
     /// This is extra useful because cosmos-sdk behaves very strangely when
     /// a transaction above the max allowed gas is submitted.
     pub async fn get_block_params(&self) -> Result<BlockParams, CosmosGrpcError> {
-        let res = self.get_param("baseapp", "BlockParams").await?;
-        if let Some(v) = res.param {
-            match serde_json::from_str(&v.value) {
-                Ok(v) => {
-                    let v: BlockParamsJson = v;
-                    Ok(v.into())
+        let mut grpc = timeout(
+            self.get_timeout(),
+            ConsensusQueryClient::connect(self.url.clone()),
+        )
+        .await??;
+        let res = timeout(
+            self.get_timeout(),
+            grpc.params(QueryParamsRequest{}),
+        )
+        .await??;
+        if let Some(v) = res.into_inner().params {
+            match v.block {
+                Some(v) => {
+                    Ok(BlockParams { max_bytes: v.max_bytes as u64, max_gas: Some(v.max_gas as u64) })
                 }
-                Err(e) => Err(CosmosGrpcError::BadResponse(e.to_string())),
+                None => Err(CosmosGrpcError::BadResponse("No BlockParams? Deep Space/protos probably need an update".to_string())),
             }
         } else {
             // if we hit this error the value has been moved and we're probably
             // woefully out of date.
             Err(CosmosGrpcError::BadResponse(
-                "No BlockParams? Deep Space probably needs to be upgraded".to_string(),
+                "No BlockParams? Deep Space/protos probably need an update".to_string(),
             ))
         }
     }
 
     /// Queries a registered parameter given it's subspace and key, this should work
     /// for any module so long as it has registered the parameter
+    #[deprecated(
+        note = "Modules manage their own parameters now, use the module's grpc client to get parameters",
+    )]
     pub async fn get_param(
         &self,
         subspace: impl ToString,
         key: impl ToString,
-    ) -> Result<QueryParamsResponse, CosmosGrpcError> {
+    ) -> Result<LegacyQueryParamsResponse, CosmosGrpcError> {
         let mut grpc = timeout(
             self.get_timeout(),
             ParamsQueryClient::connect(self.url.clone()),
@@ -215,7 +227,7 @@ impl Contact {
         .await??;
         let res = timeout(
             self.get_timeout(),
-            grpc.params(QueryParamsRequest {
+            grpc.params(LegacyQueryParamsRequest {
                 subspace: subspace.to_string(),
                 key: key.to_string(),
             }),

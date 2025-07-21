@@ -100,6 +100,7 @@ impl Contact {
                 // panic
                 address: address.to_bech32(&self.chain_prefix).unwrap(),
                 pagination: PAGE,
+                resolve_denom: false,
             }),
         )
         .await??
