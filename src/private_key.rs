@@ -625,6 +625,7 @@ fn build_unfinished_tx<P: prost::Message>(
     let auth_info = AuthInfo {
         signer_infos: vec![signer_info],
         fee: Some(args.fee.into()),
+        #[allow(deprecated)]
         tip: args.tip.map(|v| v.into()),
     };
 
