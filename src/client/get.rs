@@ -37,7 +37,6 @@ impl Contact {
         let syncing = timeout(self.get_timeout(), grpc.get_syncing(GetSyncingRequest {}))
             .await??
             .into_inner();
-
         if syncing.syncing {
             Ok(ChainStatus::Syncing)
         } else {
@@ -193,8 +192,17 @@ impl Contact {
             self.get_timeout(),
             grpc.params(QueryParamsRequest{}),
         )
-        .await??;
-        if let Some(v) = res.into_inner().params {
+        .await?;
+        if let Err(e) = res {
+            if e.code() == tonic::Code::Unimplemented {
+                // this means the chain doesn't have the new params query endpoint so we fall back to the old method
+                debug!("Chain does not support new params query endpoint, falling back to legacy method");
+                return self.get_block_params_fallback().await;
+            } else {
+                return Err(e.into());
+            }
+        }
+        if let Some(v) = res.unwrap().into_inner().params {
             match v.block {
                 Some(v) => {
                     Ok(BlockParams { max_bytes: v.max_bytes as u64, max_gas: Some(v.max_gas as u64) })
@@ -206,6 +214,33 @@ impl Contact {
             // woefully out of date.
             Err(CosmosGrpcError::BadResponse(
                 "No BlockParams? Deep Space/protos probably need an update".to_string(),
+            ))
+        }
+    }
+
+    async fn get_block_params_fallback(&self) -> Result<BlockParams, CosmosGrpcError> {
+        // this is a fallback for chains that don't have the new params query
+        // endpoint, it will be removed in the future
+        #[allow(deprecated)]
+        let res = self.get_param("baseapp", "BlockParams").await?;
+        if let Some(v) = res.param {
+            match serde_json::from_str(&v.value) {
+                Ok(v) => {
+                    let v: BlockParamsJson = v;
+                    Ok(v.into())
+                }
+                Err(e) => {
+                    Err(CosmosGrpcError::BadResponse(format!(
+                        "Failed to parse BlockParams: {}",
+                        e
+                    )))
+                }
+            }
+        } else {
+             // if we hit this error the value has been moved and we're probably
+             // woefully out of date.
+             Err(CosmosGrpcError::BadResponse(
+                "No BlockParams? Deep Space probably needs to be upgraded".to_string(),
             ))
         }
     }
@@ -263,8 +298,10 @@ impl Contact {
         timeout_block: Option<u64>,
     ) -> Result<MessageArgs, CosmosGrpcError> {
         let account_info = self.get_account_info(our_address).await?;
+        debug!("Account info: {:?}", account_info);
 
         let latest_block = self.get_latest_block().await?;
+        debug!("Latest block: {:?}", latest_block);
 
         match latest_block {
             LatestBlock::Latest { block } => {
@@ -295,7 +332,9 @@ impl Contact {
         let start = Instant::now();
         let mut last_height = None;
         while Instant::now() - start < timeout {
-            match (self.get_chain_status().await, last_height) {
+            let res = self.get_chain_status().await;
+            debug!("Got chain status: {:?}", res);
+            match (res, last_height) {
                 (Ok(ChainStatus::Moving { block_height }), None) => {
                     last_height = Some(block_height)
                 }
