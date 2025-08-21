@@ -10,7 +10,10 @@ use cosmos_sdk_proto::cosmos::base::tendermint::v1beta1::GetSyncingRequest;
 use cosmos_sdk_proto::cosmos::consensus::v1::query_client::QueryClient as ConsensusQueryClient;
 use cosmos_sdk_proto::cosmos::consensus::v1::QueryParamsRequest;
 use cosmos_sdk_proto::cosmos::params::v1beta1::query_client::QueryClient as ParamsQueryClient;
-use cosmos_sdk_proto::cosmos::params::v1beta1::{QueryParamsRequest as LegacyQueryParamsRequest, QueryParamsResponse as LegacyQueryParamsResponse};
+use cosmos_sdk_proto::cosmos::params::v1beta1::{
+    QueryParamsRequest as LegacyQueryParamsRequest,
+    QueryParamsResponse as LegacyQueryParamsResponse,
+};
 use cosmos_sdk_proto::cosmos::tx::v1beta1::service_client::ServiceClient as TxServiceClient;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxRequest;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::GetTxResponse;
@@ -188,11 +191,7 @@ impl Contact {
             ConsensusQueryClient::connect(self.url.clone()),
         )
         .await??;
-        let res = timeout(
-            self.get_timeout(),
-            grpc.params(QueryParamsRequest{}),
-        )
-        .await?;
+        let res = timeout(self.get_timeout(), grpc.params(QueryParamsRequest {})).await?;
         if let Err(e) = res {
             if e.code() == tonic::Code::Unimplemented {
                 // this means the chain doesn't have the new params query endpoint so we fall back to the old method
@@ -204,10 +203,13 @@ impl Contact {
         }
         if let Some(v) = res.unwrap().into_inner().params {
             match v.block {
-                Some(v) => {
-                    Ok(BlockParams { max_bytes: v.max_bytes as u64, max_gas: Some(v.max_gas as u64) })
-                }
-                None => Err(CosmosGrpcError::BadResponse("No BlockParams? Deep Space/protos probably need an update".to_string())),
+                Some(v) => Ok(BlockParams {
+                    max_bytes: v.max_bytes as u64,
+                    max_gas: Some(v.max_gas as u64),
+                }),
+                None => Err(CosmosGrpcError::BadResponse(
+                    "No BlockParams? Deep Space/protos probably need an update".to_string(),
+                )),
             }
         } else {
             // if we hit this error the value has been moved and we're probably
@@ -229,17 +231,15 @@ impl Contact {
                     let v: BlockParamsJson = v;
                     Ok(v.into())
                 }
-                Err(e) => {
-                    Err(CosmosGrpcError::BadResponse(format!(
-                        "Failed to parse BlockParams: {}",
-                        e
-                    )))
-                }
+                Err(e) => Err(CosmosGrpcError::BadResponse(format!(
+                    "Failed to parse BlockParams: {}",
+                    e
+                ))),
             }
         } else {
-             // if we hit this error the value has been moved and we're probably
-             // woefully out of date.
-             Err(CosmosGrpcError::BadResponse(
+            // if we hit this error the value has been moved and we're probably
+            // woefully out of date.
+            Err(CosmosGrpcError::BadResponse(
                 "No BlockParams? Deep Space probably needs to be upgraded".to_string(),
             ))
         }
@@ -248,7 +248,7 @@ impl Contact {
     /// Queries a registered parameter given it's subspace and key, this should work
     /// for any module so long as it has registered the parameter
     #[deprecated(
-        note = "Modules manage their own parameters now, use the module's grpc client to get parameters",
+        note = "Modules manage their own parameters now, use the module's grpc client to get parameters"
     )]
     pub async fn get_param(
         &self,

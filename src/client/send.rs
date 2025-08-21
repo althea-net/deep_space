@@ -204,15 +204,20 @@ impl Contact {
         fee_token: &[Coin],
         private_key: impl PrivateKey,
     ) -> Result<Fee, CosmosGrpcError> {
+        let block_params = self.get_block_params().await?;
         let gas_info = self
-            .simulate_tx(messages, Some(fee_token), private_key.clone())
+            .simulate_tx(
+                messages,
+                Some(fee_token),
+                private_key.clone(),
+                block_params.max_gas,
+            )
             .await?
             .gas_info
             .unwrap();
         let gas_used = gas_info.gas_used;
         trace!("Got {} gas used!", gas_used);
 
-        let block_params = self.get_block_params().await?;
         if let Some(max_gas) = block_params.max_gas {
             if gas_used > max_gas {
                 return Err(CosmosGrpcError::GasRequiredExceedsBlockMaximum {
@@ -255,6 +260,7 @@ impl Contact {
         messages: &[Msg],
         fee_amount: Option<&[Coin]>,
         private_key: impl PrivateKey,
+        max_gas: Option<u64>,
     ) -> Result<SimulateResponse, CosmosGrpcError> {
         let our_address = private_key.to_address(&self.chain_prefix).unwrap();
         let fee_amount = fee_amount.unwrap_or_default();
@@ -264,7 +270,7 @@ impl Contact {
         let fee_obj = Fee {
             amount: fee_amount.to_vec(),
             // derived from this constant https://github.com/cosmos/cosmos-sdk/blob/master/types/tx/types.go#L13
-            gas_limit: 9223372036854775807,
+            gas_limit: max_gas.unwrap_or(10_000_000),
             granter: None,
             payer: None,
         };

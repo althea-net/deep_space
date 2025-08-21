@@ -42,7 +42,9 @@ impl Contact {
         };
         let msg = Msg::new(MSG_VERIFY_INVARIANT_TYPE_URL, verify);
         trace!("Submitting simulation");
-        self.simulate_tx(&[msg], None, private_key).await
+        let block_params = self.get_block_params().await?;
+        self.simulate_tx(&[msg], None, private_key, block_params.max_gas)
+            .await
     }
 
     /// A utility function which executes the specified invariant and returns the TxResponse if one is given
