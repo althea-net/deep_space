@@ -270,7 +270,7 @@ impl Contact {
         let fee_obj = Fee {
             amount: fee_amount.to_vec(),
             // derived from this constant https://github.com/cosmos/cosmos-sdk/blob/master/types/tx/types.go#L13
-            gas_limit: max_gas.unwrap_or(10_000_000),
+            gas_limit: max_gas.unwrap_or(u64::MAX),
             granter: None,
             payer: None,
         };
