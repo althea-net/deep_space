@@ -266,11 +266,12 @@ impl Contact {
         let fee_amount = fee_amount.unwrap_or_default();
         let mut txrpc =
             timeout(self.get_timeout(), TxServiceClient::connect(self.get_url())).await??;
+        let max_gas = max_gas.map_or_else(|| 10_000_000, |v| v.clamp(0, 9223372036854775807)) as u64;
 
         let fee_obj = Fee {
             amount: fee_amount.to_vec(),
             // derived from this constant https://github.com/cosmos/cosmos-sdk/blob/master/types/tx/types.go#L13
-            gas_limit: max_gas.unwrap_or(u64::MAX),
+            gas_limit: max_gas,
             granter: None,
             payer: None,
         };
