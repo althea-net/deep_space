@@ -144,6 +144,20 @@ impl Address {
         Ok(())
     }
 
+    /// Changes the `prefix` field to modify the resulting Bech32 `hrp`, returns the updated Address
+    pub fn re_prefix<T: Into<String>>(&self, prefix: T) -> Result<Address, AddressError> {
+        match self {
+            Address::Base(base_address) => Ok(Address::Base(BaseAddress {
+                bytes: base_address.bytes,
+                prefix: ArrayString::new(&prefix.into())?,
+            })),
+            Address::Derived(derived_address) => Ok(Address::Derived(DerivedAddress {
+                bytes: derived_address.bytes,
+                prefix: ArrayString::new(&prefix.into())?,
+            })),
+        }
+    }
+
     /// Returns the underlying `bytes` buffer as a slice
     pub fn get_bytes(&self) -> &[u8] {
         match self {
@@ -165,7 +179,6 @@ impl Address {
         }
         .to_string()
     }
-
 }
 
 // Ethermint address conversion, note there's no way to determine from an address how the signers wallet is configured, if you convert Cosmos addressed

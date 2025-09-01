@@ -266,7 +266,8 @@ impl Contact {
         let fee_amount = fee_amount.unwrap_or_default();
         let mut txrpc =
             timeout(self.get_timeout(), TxServiceClient::connect(self.get_url())).await??;
-        let max_gas = max_gas.map_or_else(|| 10_000_000, |v| v.clamp(0, 9223372036854775807)) as u64;
+        let max_gas =
+            max_gas.map_or_else(|| 10_000_000, |v| v.clamp(0, 9223372036854775807)) as u64;
 
         let fee_obj = Fee {
             amount: fee_amount.to_vec(),
