@@ -176,6 +176,8 @@ impl Contact {
     /// Provides an interface for submitting msg-based governance proposals
     pub async fn create_gov_proposal(
         &self,
+        title: String,
+        summary: String,
         messages: Vec<Any>,
         metadata: String,
         deposit: Coin,
@@ -190,8 +192,8 @@ impl Contact {
             proposer: our_address.to_string(),
             initial_deposit: vec![deposit.into()],
             expedited: false,
-            summary: String::new(),
-            title: String::new(),
+            summary: summary,
+            title: title,
         };
 
         let msg = Msg::new(MSG_SUBMIT_PROPOSAL_TYPE_URL, proposal);
