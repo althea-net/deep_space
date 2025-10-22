@@ -35,6 +35,6 @@ pub const SOFTWARE_UPGRADE_PROPOSAL_TYPE_URL: &str =
 // althea msgs
 pub const MSG_MICROTX_TYPE_URL: &str = "/althea.microtx.v1.MsgMicrotx";
 
-// canto proposals
-pub const REGISTER_COIN_PROPOSAL_TYPE_URL: &str = "/canto.erc20.v1.RegisterCoinProposal";
-pub const REGISTER_ERC20_PROPOSAL_TYPE_URL: &str = "/canto.erc20.v1.RegisterERC20Proposal";
+// althea proposals
+pub const REGISTER_COIN_PROPOSAL_TYPE_URL: &str = "/althea.erc20.v1.RegisterCoinProposal";
+pub const REGISTER_ERC20_PROPOSAL_TYPE_URL: &str = "/althea.erc20.v1.RegisterERC20Proposal";
