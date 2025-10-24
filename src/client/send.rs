@@ -361,7 +361,7 @@ impl Contact {
     /// * `private_key` - A private key used to sign and send the transaction
     /// # Examples
     /// ```rust
-    /// use althea_proto::microtx::v1::MsgMicrotx;
+    /// use althea_proto::althea::microtx::v1::MsgMicrotx;
     /// use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
     /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, CosmosPrivateKey, PrivateKey, PublicKey};
     /// use std::time::Duration;
@@ -378,8 +378,9 @@ impl Contact {
     /// };
     /// let contact = Contact::new("https:://your-grpc-server", Duration::from_secs(5), "prefix").unwrap();
     /// let duration = Duration::from_secs(30);
+    /// let block_timeout = 5u64;
     /// // future must be awaited in tokio runtime
-    /// contact.send_microtx(coin.clone(), Some(fee), address, Some(duration), private_key);
+    /// contact.send_microtx(coin.clone(), Some(fee), address, Some(duration), Some(block_timeout), private_key);
     /// ```
     pub async fn send_microtx(
         &self,
