@@ -21,6 +21,7 @@ use secp256k1::{PublicKey as PublicKeyEC, SecretKey};
 use sha2::Sha512;
 use sha2::{Digest, Sha256};
 use std::cell::RefCell;
+use std::convert::TryInto;
 use std::str::FromStr;
 
 thread_local! {
@@ -177,7 +178,7 @@ impl CosmosPrivateKey {
     /// Obtain a public key for a given private key
     pub fn to_public_key(&self, prefix: &str) -> Result<CosmosPublicKey, PrivateKeyError> {
         let secp256k1 = Secp256k1::new();
-        let sk = SecretKey::from_slice(&self.0)?;
+        let sk = SecretKey::from_byte_array(self.0)?;
         let pkey = PublicKeyEC::from_secret_key(&secp256k1, &sk);
         let compressed = pkey.serialize();
         Ok(CosmosPublicKey::from_bytes(compressed, prefix)?)
@@ -219,11 +220,11 @@ impl CosmosPrivateKey {
         sign_doc.encode(&mut signdoc_buf).unwrap();
 
         let secp256k1 = Secp256k1::new();
-        let sk = SecretKey::from_slice(&self.0)?;
+        let sk = SecretKey::from_byte_array(self.0)?;
         let digest = Sha256::digest(&signdoc_buf);
-        let msg = CurveMessage::from_digest_slice(&digest)?;
+        let msg = CurveMessage::from_digest(digest.into());
         // Sign the signdoc
-        let signed = secp256k1.sign_ecdsa(&msg, &sk);
+        let signed = secp256k1.sign_ecdsa(msg, &sk);
         let compact = signed.serialize_compact().to_vec();
 
         // Finish the TxParts and return
@@ -348,7 +349,7 @@ impl EthermintPrivateKey {
         self,
         prefix: &str,
     ) -> Result<crate::public_key::EthermintPublicKey, PrivateKeyError> {
-        let sk = SecretKey::from_slice(&self.0)?;
+        let sk = SecretKey::from_byte_array(self.0)?;
         let pkey = SECP256K1.with(move |object| -> Result<_, PrivateKeyError> {
             let secp256k1 = object.borrow();
             let pkey = PublicKeyEC::from_secret_key(&secp256k1, &sk);
@@ -522,7 +523,7 @@ fn master_key_from_seed(seed_bytes: &[u8]) -> ([u8; 32], [u8; 32]) {
     master_chain_code.copy_from_slice(&hash[32..64]);
 
     // key check
-    let _ = SecretKey::from_slice(&master_secret_key).unwrap();
+    let _ = SecretKey::from_byte_array(master_secret_key).unwrap();
 
     (master_secret_key, master_chain_code)
 }
@@ -547,7 +548,7 @@ fn get_child_key(
         hasher.update(&k_parent);
     } else {
         let scep = Secp256k1::new();
-        let private_key = SecretKey::from_slice(&k_parent).unwrap();
+        let private_key = SecretKey::from_byte_array(k_parent).unwrap();
         let public_key = PublicKeyEC::from_secret_key(&scep, &private_key);
         hasher.update(&public_key.serialize());
     }
@@ -576,7 +577,12 @@ fn get_child_key(
 
     let k_parent = Scalar::from_be_bytes(k_parent).unwrap();
 
-    let mut parse_i_l = SecretKey::from_slice(&l_param[0..32]).unwrap();
+    let mut parse_i_l = SecretKey::from_byte_array(
+        l_param[0..32]
+            .try_into()
+            .expect("slice with incorrect length"),
+    )
+    .unwrap();
     parse_i_l = parse_i_l.add_tweak(&k_parent).unwrap();
     let child_key = parse_i_l;
 
@@ -827,8 +833,8 @@ fn test_vector_unhardened() {
 fn test_many_key_generation() {
     use rand::Rng;
     for _ in 0..1000 {
-        let mut rng = rand::thread_rng();
-        let secret: [u8; 32] = rng.gen();
+        let mut rng = rand::rng();
+        let secret: [u8; 32] = rng.random();
         let cosmos_key = CosmosPrivateKey::from_secret(&secret);
         let _cosmos_address = cosmos_key.to_public_key("cosmospub").unwrap().to_address();
     }

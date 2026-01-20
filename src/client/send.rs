@@ -275,8 +275,7 @@ impl Contact {
         let fee_amount = fee_amount.unwrap_or_default();
         let mut txrpc =
             timeout(self.get_timeout(), TxServiceClient::connect(self.get_url())).await??;
-        let max_gas =
-            max_gas.map_or_else(|| 10_000_000, |v| v.clamp(0, 9223372036854775807)) as u64;
+        let max_gas = max_gas.map_or_else(|| 10_000_000, |v| v.clamp(0, 9223372036854775807));
 
         let fee_obj = Fee {
             amount: fee_amount.to_vec(),
@@ -378,7 +377,7 @@ impl Contact {
     /// * `private_key` - A private key used to sign and send the transaction
     /// # Examples
     /// ```rust
-    /// use althea_proto::microtx::v1::MsgMicrotx;
+    /// use althea_proto::althea::microtx::v1::MsgMicrotx;
     /// use cosmos_sdk_proto::cosmos::tx::v1beta1::BroadcastMode;
     /// use deep_space::{Coin, client::Contact, Fee, MessageArgs, Msg, CosmosPrivateKey, PrivateKey, PublicKey};
     /// use std::time::Duration;
@@ -396,7 +395,7 @@ impl Contact {
     /// let contact = Contact::new("https:://your-grpc-server", Duration::from_secs(5), "prefix").unwrap();
     /// let duration = Duration::from_secs(30);
     /// // future must be awaited in tokio runtime
-    /// contact.send_microtx(coin.clone(), Some(fee), address, Some(duration), private_key);
+    /// contact.send_microtx(coin.clone(), Some(fee), address, Some(duration), Some(5), private_key);
     /// ```
     pub async fn send_microtx(
         &self,
