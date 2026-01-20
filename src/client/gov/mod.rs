@@ -31,7 +31,7 @@ use tokio::time::timeout;
 #[cfg(feature = "althea")]
 use super::type_urls::{REGISTER_COIN_PROPOSAL_TYPE_URL, REGISTER_ERC20_PROPOSAL_TYPE_URL};
 #[cfg(feature = "althea")]
-use althea_proto::canto::erc20::v1::{RegisterCoinProposal, RegisterErc20Proposal};
+use althea_proto::althea::erc20::v1::{RegisterCoinProposal, RegisterErc20Proposal};
 
 impl Contact {
     /// Gets a list of governance proposals, user provides filter items
