@@ -345,16 +345,16 @@ fn test_address_conversion() {
 #[test]
 fn test_trait_conversions() {
     use std::convert::TryInto;
-    
+
     // Test TryInto<EthAddress> for &Address
     let test: Address = "cosmos1vlms2r8f6x7yxjh3ynyzc7ckarqd8a96ckjvrp"
         .parse()
         .unwrap();
     let eth_address: EthAddress = (&test).try_into().unwrap();
-    
+
     // Test From<EthAddress> for Address
     let cosmos_address: Address = eth_address.into();
-    
+
     // Verify the roundtrip works
     assert_eq!(test.get_bytes(), cosmos_address.get_bytes());
 }
@@ -364,14 +364,17 @@ fn test_re_prefix() {
     let test: Address = "cosmos1vlms2r8f6x7yxjh3ynyzc7ckarqd8a96ckjvrp"
         .parse()
         .unwrap();
-    
+
     // Test re_prefix with a different prefix
     let osmosis_address = test.re_prefix("osmo").unwrap();
-    assert_eq!(osmosis_address.to_string(), "osmo1vlms2r8f6x7yxjh3ynyzc7ckarqd8a96sdpu4n");
-    
+    assert_eq!(
+        osmosis_address.to_string(),
+        "osmo1vlms2r8f6x7yxjh3ynyzc7ckarqd8a96sdpu4n"
+    );
+
     // Verify the underlying bytes are the same
     assert_eq!(test.get_bytes(), osmosis_address.get_bytes());
-    
+
     // Test re_prefix with the same prefix
     let cosmos_address = test.re_prefix("cosmos").unwrap();
     assert_eq!(test.to_string(), cosmos_address.to_string());

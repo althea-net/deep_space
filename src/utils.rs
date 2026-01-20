@@ -255,11 +255,14 @@ mod tests {
         // Using a simple test vector
         let test_bytes = vec![0x01, 0x02, 0x03, 0x04];
         let hash = get_txhash(test_bytes);
-        
+
         // Expected: SHA256 of [0x01, 0x02, 0x03, 0x04] in uppercase hex
         // SHA256([0x01, 0x02, 0x03, 0x04]) = 9F64A747E1B97F131FABB6B447296C9B6F0201E79FB3C5356E6C77E89B6A806A
-        assert_eq!(hash, "9F64A747E1B97F131FABB6B447296C9B6F0201E79FB3C5356E6C77E89B6A806A");
-        
+        assert_eq!(
+            hash,
+            "9F64A747E1B97F131FABB6B447296C9B6F0201E79FB3C5356E6C77E89B6A806A"
+        );
+
         // Test that the hash is uppercase
         assert_eq!(hash, hash.to_uppercase());
     }

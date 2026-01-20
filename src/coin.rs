@@ -85,7 +85,6 @@ impl From<Coin> for ProtoCoin {
     }
 }
 
-
 /// Fee represents everything about a Cosmos transaction fee, including the gas limit
 /// who pays, and how much of an arbitrary number of Coin structs.
 #[derive(Serialize, Debug, Default, Clone, Deserialize, Eq, PartialEq, Hash)]
