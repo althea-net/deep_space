@@ -4,6 +4,7 @@ use bytes::BytesMut;
 use cosmos_sdk_proto::cosmos::base::abci::v1beta1::TxResponse;
 use prost::{DecodeError, Message};
 use prost_types::Any;
+use sha2::Digest;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::Result as FmtResult;
@@ -101,6 +102,13 @@ pub fn contains_non_hex_chars(input: &str) -> bool {
     false
 }
 
+/// CosmosSDK txhashes are the sha256 hash of the signed protobuf tx bytes encoded as uppercase hex
+/// Returns the txhash as a String
+pub fn get_txhash(input: Vec<u8>) -> String {
+    let hash = sha2::Sha256::digest(&input);
+    bytes_to_hex_str(&hash).to_uppercase()
+}
+
 /// An enum
 #[derive(PartialEq, Eq, Clone, Hash, Deserialize, Serialize, Debug)]
 pub enum FeeInfo {
@@ -155,7 +163,7 @@ pub fn determine_min_fees_and_gas(input: &TxResponse) -> Option<FeeInfo> {
 /// Checks a tx response code for known issues returns true if tx is good, false if the tx
 /// has some known error
 pub fn check_for_sdk_error(input: &TxResponse) -> Result<(), CosmosGrpcError> {
-    // check for gas errors
+    // check for gas errors, in this case no txid is retured because the tx never made it to the mempool
     if let Some(v) = determine_min_fees_and_gas(input) {
         return Err(CosmosGrpcError::InsufficientFees { fee_info: v });
     }
@@ -168,6 +176,7 @@ pub fn check_for_sdk_error(input: &TxResponse) -> Result<(), CosmosGrpcError> {
                 tx: input.clone(),
                 time: Duration::from_secs(0),
                 sdk_error: Some(e),
+                tonic_code: None,
             });
         }
     }

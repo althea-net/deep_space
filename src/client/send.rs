@@ -10,6 +10,7 @@ use crate::error::CosmosGrpcError;
 use crate::msg::Msg;
 use crate::private_key::PrivateKey;
 use crate::utils::check_for_sdk_error;
+use crate::utils::get_txhash;
 use crate::MessageArgs;
 #[cfg(feature = "althea")]
 use althea_proto::althea::microtx::v1::MsgMicrotx;
@@ -92,14 +93,22 @@ impl Contact {
     ) -> Result<TransactionResponse, CosmosGrpcError> {
         let mut txrpc =
             timeout(self.get_timeout(), TxServiceClient::connect(self.get_url())).await??;
-        let response = timeout(
+
+        let txid = get_txhash(msg.clone());
+        let response = match timeout(
             self.get_timeout(),
             txrpc.broadcast_tx(BroadcastTxRequest {
                 tx_bytes: msg,
                 mode: mode.into(),
             }),
         )
-        .await??;
+        .await
+        {
+            Ok(res) => res?,
+            // broadcasting the signed tx, if we return here the signed tx bytes MAY have been
+            // published so we must return an error containing the txid for the caller to check
+            Err(_) => return Err(CosmosGrpcError::TimeoutErrorSigned { txid }),
+        };
         let response = response.into_inner().tx_response.unwrap();
         // checks only for sdk errors, other types will not be handled
         check_for_sdk_error(&response)?;
@@ -438,11 +447,12 @@ impl Contact {
                 }
                 Err(CosmosGrpcError::RequestError { error }) => match error.code() {
                     TonicCode::NotFound | TonicCode::Unknown | TonicCode::InvalidArgument => {}
-                    _ => {
+                    v => {
                         return Err(CosmosGrpcError::TransactionFailed {
                             tx: response.into(),
                             time: Instant::now() - start,
                             sdk_error: None,
+                            tonic_code: Some(v),
                         });
                     }
                 },
@@ -454,6 +464,7 @@ impl Contact {
             tx: response.into(),
             time: timeout,
             sdk_error: None,
+            tonic_code: None,
         })
     }
 }
