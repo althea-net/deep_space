@@ -64,7 +64,7 @@ pub enum CosmosGrpcError {
     TimeoutErrorSigned {
         txid: String,
     },
-    /// This timeout error occurs when no transaction has been signed and therfore we have
+    /// This timeout error occurs when no transaction has been signed and therefore we have
     /// complete confidence that no transaction has been broadcast
     TimeoutError,
 }

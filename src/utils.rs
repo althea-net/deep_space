@@ -163,7 +163,7 @@ pub fn determine_min_fees_and_gas(input: &TxResponse) -> Option<FeeInfo> {
 /// Checks a tx response code for known issues returns true if tx is good, false if the tx
 /// has some known error
 pub fn check_for_sdk_error(input: &TxResponse) -> Result<(), CosmosGrpcError> {
-    // check for gas errors, in this case no txid is retured because the tx never made it to the mempool
+    // check for gas errors, in this case no txid is returned because the tx never made it to the mempool
     if let Some(v) = determine_min_fees_and_gas(input) {
         return Err(CosmosGrpcError::InsufficientFees { fee_info: v });
     }
@@ -247,5 +247,20 @@ mod tests {
             determine_min_fees_and_gas(&below_min_fees_tx_response),
             correct_output
         );
+    }
+
+    #[test]
+    fn test_get_txhash() {
+        // Test with known input to verify the SHA256 hash is computed correctly
+        // Using a simple test vector
+        let test_bytes = vec![0x01, 0x02, 0x03, 0x04];
+        let hash = get_txhash(test_bytes);
+        
+        // Expected: SHA256 of [0x01, 0x02, 0x03, 0x04] in uppercase hex
+        // SHA256([0x01, 0x02, 0x03, 0x04]) = 9F64A747E1B97F131FABB6B447296C9B6F0201E79FB3C5356E6C77E89B6A806A
+        assert_eq!(hash, "9F64A747E1B97F131FABB6B447296C9B6F0201E79FB3C5356E6C77E89B6A806A");
+        
+        // Test that the hash is uppercase
+        assert_eq!(hash, hash.to_uppercase());
     }
 }

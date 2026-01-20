@@ -182,10 +182,10 @@ impl Address {
 }
 
 // Ethermint address conversion, note there's no way to determine from an address how the signers wallet is configured, if you convert Cosmos addressed
-// used with a non-eth signing scheme using this method that public key goes to a completely different address and the user will never be able to retieve
+// used with a non-eth signing scheme using this method that public key goes to a completely different address and the user will never be able to retrieve
 // funds sent to that address, so use caution when making assumptions.
 #[cfg(feature = "ethermint")]
-impl TryInto<EthAddress> for Address {
+impl TryInto<EthAddress> for &Address {
     type Error = clarity::error::Error;
 
     fn try_into(self) -> Result<EthAddress, Self::Error> {
@@ -328,4 +328,40 @@ fn test_address_conversion() {
         .unwrap();
     let eth_address = cosmos_address_to_eth_address(test).unwrap();
     let _cosmos_address = eth_address_to_cosmos_address(eth_address, None).unwrap();
+}
+
+#[cfg(feature = "ethermint")]
+#[test]
+fn test_trait_conversions() {
+    use std::convert::TryInto;
+    
+    // Test TryInto<EthAddress> for &Address
+    let test: Address = "cosmos1vlms2r8f6x7yxjh3ynyzc7ckarqd8a96ckjvrp"
+        .parse()
+        .unwrap();
+    let eth_address: EthAddress = (&test).try_into().unwrap();
+    
+    // Test From<EthAddress> for Address
+    let cosmos_address: Address = eth_address.into();
+    
+    // Verify the roundtrip works
+    assert_eq!(test.get_bytes(), cosmos_address.get_bytes());
+}
+
+#[test]
+fn test_re_prefix() {
+    let test: Address = "cosmos1vlms2r8f6x7yxjh3ynyzc7ckarqd8a96ckjvrp"
+        .parse()
+        .unwrap();
+    
+    // Test re_prefix with a different prefix
+    let osmosis_address = test.re_prefix("osmo").unwrap();
+    assert_eq!(osmosis_address.to_string(), "osmo1vlms2r8f6x7yxjh3ynyzc7ckarqd8a96sdpu4n");
+    
+    // Verify the underlying bytes are the same
+    assert_eq!(test.get_bytes(), osmosis_address.get_bytes());
+    
+    // Test re_prefix with the same prefix
+    let cosmos_address = test.re_prefix("cosmos").unwrap();
+    assert_eq!(test.to_string(), cosmos_address.to_string());
 }
