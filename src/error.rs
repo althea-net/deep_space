@@ -45,6 +45,7 @@ pub enum CosmosGrpcError {
         tx: TxResponse,
         time: Duration,
         sdk_error: Option<SdkErrorCode>,
+        tonic_code: Option<tonic::Code>,
     },
     InsufficientFees {
         fee_info: FeeInfo,
@@ -56,7 +57,27 @@ pub enum CosmosGrpcError {
         max: u64,
         required: u64,
     },
+    /// This timeout error occurs when a transaction has been signed but we
+    /// have not seen it appear on chain yet. We return the txid so the caller
+    /// can check if it made it into the chain or not.
+    /// DEVELOPER: you must be cautious not to ? away a timeout error that needs the txid
+    TimeoutErrorSigned {
+        txid: String,
+    },
+    /// This timeout error occurs when no transaction has been signed and therefore we have
+    /// complete confidence that no transaction has been broadcast
     TimeoutError,
+}
+
+impl CosmosGrpcError {
+    /// Returns the txid if this error is associated with a signed and potential published transaction
+    pub fn get_txid(&self) -> Option<String> {
+        match self {
+            CosmosGrpcError::TimeoutErrorSigned { txid } => Some(txid.clone()),
+            CosmosGrpcError::TransactionFailed { tx, .. } => Some(tx.txhash.clone()),
+            _ => None,
+        }
+    }
 }
 
 impl Display for CosmosGrpcError {
@@ -98,12 +119,14 @@ impl Display for CosmosGrpcError {
                 tx,
                 time,
                 sdk_error,
+                tonic_code,
             } => {
                 write!(
                     f,
-                    "CosmosGrpc Transaction {:?} {:?} did not enter chain in {}ms",
+                    "CosmosGrpc Transaction {:?} {:?} {:?} did not enter chain in {}ms",
                     tx,
                     sdk_error,
+                    tonic_code,
                     time.as_millis()
                 )
             }
@@ -120,6 +143,12 @@ impl Display for CosmosGrpcError {
                 )
             }
             CosmosGrpcError::TimeoutError => write!(f, "Timed out"),
+            CosmosGrpcError::TimeoutErrorSigned { txid } => {
+                write!(
+                    f,
+                    "Timed out waiting for tx to appear on chain. Txid: {txid}"
+                )
+            }
         }
     }
 }
