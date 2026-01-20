@@ -45,7 +45,7 @@ impl Mnemonic {
     /// Create a new [Mnemonic] in the specified language from the given entropy.
     /// Entropy must be a multiple of 32 bits (4 bytes) and 128-256 bits in length.
     pub fn from_entropy_in(language: Language, entropy: &[u8]) -> Result<Mnemonic, Bip39Error> {
-        if entropy.len() % 4 != 0 {
+        if !entropy.len().is_multiple_of(4) {
             return Err(Bip39Error::BadEntropyBitCount(entropy.len() * 8));
         }
 
@@ -89,12 +89,12 @@ impl Mnemonic {
     /// Generate a new Mnemonic in the given language.
     /// For the different supported word counts, see documentation on [Mnemonoc].
     pub fn generate_in(language: Language, word_count: usize) -> Result<Mnemonic, Bip39Error> {
-        if word_count < 6 || word_count % 6 != 0 || word_count > 24 {
+        if word_count < 6 || !word_count.is_multiple_of(6) || word_count > 24 {
             return Err(Bip39Error::BadWordCount(word_count));
         }
 
         let entropy_bytes = (word_count / 3) * 4;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut entropy = vec![0u8; entropy_bytes];
         rand::RngCore::fill_bytes(&mut rng, &mut entropy);
         Mnemonic::from_entropy_in(language, &entropy)
@@ -109,7 +109,7 @@ impl Mnemonic {
     /// Static method to validate a mnemonic in a given language.
     pub fn validate_in(language: Language, s: &str) -> Result<(), Bip39Error> {
         let words: Vec<&str> = s.split_whitespace().collect();
-        if words.len() < 6 || words.len() % 6 != 0 || words.len() > 24 {
+        if words.len() < 6 || !words.len().is_multiple_of(6) || words.len() > 24 {
             return Err(Bip39Error::BadWordCount(words.len()));
         }
 

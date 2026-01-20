@@ -173,6 +173,7 @@ impl Contact {
             .await
     }
 
+    #[allow(clippy::too_many_arguments)]
     /// Provides an interface for submitting msg-based governance proposals
     pub async fn create_gov_proposal(
         &self,
@@ -192,8 +193,8 @@ impl Contact {
             proposer: our_address.to_string(),
             initial_deposit: vec![deposit.into()],
             expedited: false,
-            summary: summary,
-            title: title,
+            summary,
+            title,
         };
 
         let msg = Msg::new(MSG_SUBMIT_PROPOSAL_TYPE_URL, proposal);
