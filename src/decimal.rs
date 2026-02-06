@@ -117,7 +117,8 @@ macro_rules! impl_from_primitive_int_for_decimal {
         $(impl From<$int> for Decimal {
             fn from(num: $int) -> Decimal {
                 #[allow(trivial_numeric_casts)]
-                Decimal::new(num as i64, 0).unwrap()
+                let i64_val = i64::try_from(num).expect("Failed to convert integer to i64");
+                Decimal::new(i64_val, 0).unwrap()
             }
         })+
     };

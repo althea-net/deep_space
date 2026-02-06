@@ -125,7 +125,7 @@ pub fn determine_min_fees_and_gas(input: &TxResponse) -> Option<FeeInfo> {
     // obvious gas problem
     if input.gas_used > input.gas_wanted {
         return Some(FeeInfo::InsufficientGas {
-            amount: input.gas_used as u64,
+            amount: u64::try_from(input.gas_used).unwrap(),
         });
     }
     // now we interpret the error and see if we can't figure out more

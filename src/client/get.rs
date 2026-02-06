@@ -54,7 +54,7 @@ impl Contact {
                         // for some reason the block height can be negative, we cast it to a u64 for the sake
                         // of logical bounds checking
                         Some(commit) => Ok(ChainStatus::Moving {
-                            block_height: commit.height as u64,
+                            block_height: u64::try_from(commit.height)?,
                         }),
                         None => Err(CosmosGrpcError::BadResponse(
                             "No commit in block?".to_string(),
@@ -113,7 +113,7 @@ impl Contact {
         match latest_block {
             LatestBlock::Latest { block } | LatestBlock::Syncing { block } => {
                 if let Some(header) = block.header {
-                    Ok(header.height as u64)
+                    Ok(u64::try_from(header.height)?)
                 } else {
                     Err(CosmosGrpcError::BadResponse(
                         "Null block header?".to_string(),
@@ -135,7 +135,7 @@ impl Contact {
         let block = timeout(
             self.get_timeout(),
             grpc.get_block_by_height(GetBlockByHeightRequest {
-                height: block as i64,
+                height: i64::try_from(block)?,
             }),
         )
         .await??
@@ -161,7 +161,9 @@ impl Contact {
         for i in start..end {
             let block = timeout(
                 self.get_timeout(),
-                grpc.get_block_by_height(GetBlockByHeightRequest { height: i as i64 }),
+                grpc.get_block_by_height(GetBlockByHeightRequest {
+                    height: i64::try_from(i)?,
+                }),
             )
             .await??
             .into_inner();
@@ -188,7 +190,9 @@ impl Contact {
         for i in blocks {
             let block = timeout(
                 self.get_timeout(),
-                grpc.get_block_by_height(GetBlockByHeightRequest { height: i as i64 }),
+                grpc.get_block_by_height(GetBlockByHeightRequest {
+                    height: i64::try_from(i)?,
+                }),
             )
             .await??
             .into_inner();
@@ -221,8 +225,8 @@ impl Contact {
         if let Some(v) = res.unwrap().into_inner().params {
             match v.block {
                 Some(v) => Ok(BlockParams {
-                    max_bytes: v.max_bytes as u64,
-                    max_gas: Some(v.max_gas as u64),
+                    max_bytes: u64::try_from(v.max_bytes)?,
+                    max_gas: Some(u64::try_from(v.max_gas)?),
                 }),
                 None => Err(CosmosGrpcError::BadResponse(
                     "No BlockParams? Deep Space/protos probably need an update".to_string(),
@@ -329,7 +333,7 @@ impl Contact {
                         chain_id: header.chain_id,
                         fee,
                         tip: None,
-                        timeout_height: header.height as u64
+                        timeout_height: u64::try_from(header.height)?
                             + timeout_block.unwrap_or(DEFAULT_TRANSACTION_TIMEOUT_BLOCKS),
                     })
                 } else {

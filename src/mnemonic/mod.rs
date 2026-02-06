@@ -261,8 +261,9 @@ impl Mnemonic {
         let words: Vec<&str> = self.as_str().split_whitespace().collect();
         for word in &words {
             let idx = language.find_word(word).unwrap();
+            let idx: u32 = u32::try_from(idx).expect("word index out of range");
 
-            remainder |= ((idx as u32) << (32 - 11)) >> offset;
+            remainder |= (idx << (32 - 11)) >> offset;
             offset += 11;
 
             while offset >= 8 {

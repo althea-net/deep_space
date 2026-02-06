@@ -13,6 +13,7 @@ use std::fmt::Result;
 use std::fmt::Result as FmtResult;
 use std::fmt::Result as FormatResult;
 use std::num::ParseIntError;
+use std::num::TryFromIntError;
 use std::{error::Error, str::Utf8Error};
 use std::{fmt, time::Duration};
 use tonic::transport::Error as TonicError;
@@ -52,6 +53,9 @@ pub enum CosmosGrpcError {
     },
     ParseError {
         error: ParseError,
+    },
+    TryFromIntError {
+        error: TryFromIntError,
     },
     GasRequiredExceedsBlockMaximum {
         max: u64,
@@ -136,6 +140,9 @@ impl Display for CosmosGrpcError {
             CosmosGrpcError::ParseError { error } => {
                 write!(f, "Failed to Parse BigInt {error:?}")
             }
+            CosmosGrpcError::TryFromIntError { error } => {
+                write!(f, "Failed to convert integer: {error}")
+            }
             CosmosGrpcError::GasRequiredExceedsBlockMaximum { max, required } => {
                 write!(
                     f,
@@ -188,6 +195,12 @@ impl From<PrivateKeyError> for CosmosGrpcError {
 impl From<tokio::time::error::Elapsed> for CosmosGrpcError {
     fn from(_error: tokio::time::error::Elapsed) -> Self {
         CosmosGrpcError::TimeoutError
+    }
+}
+
+impl From<TryFromIntError> for CosmosGrpcError {
+    fn from(error: TryFromIntError) -> Self {
+        CosmosGrpcError::TryFromIntError { error }
     }
 }
 
