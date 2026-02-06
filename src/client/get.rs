@@ -107,6 +107,23 @@ impl Contact {
         }
     }
 
+    /// Gets the latest block height from the node, returns an error if no block is available
+    pub async fn get_latest_block_height(&self) -> Result<u64, CosmosGrpcError> {
+        let latest_block = self.get_latest_block().await?;
+        match latest_block {
+            LatestBlock::Latest { block } | LatestBlock::Syncing { block } => {
+                if let Some(header) = block.header {
+                    Ok(header.height as u64)
+                } else {
+                    Err(CosmosGrpcError::BadResponse(
+                        "Null block header?".to_string(),
+                    ))
+                }
+            }
+            LatestBlock::WaitingToStart => Err(CosmosGrpcError::ChainNotRunning),
+        }
+    }
+
     /// Gets the specified block from the node, returns none if no block is available
     pub async fn get_block(&self, block: u64) -> Result<Option<Block>, CosmosGrpcError> {
         let mut grpc = timeout(
