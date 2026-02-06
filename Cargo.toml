@@ -33,7 +33,7 @@ clarity = {version = "1.5", optional = true}
 sha3 = {version = "0.10", optional = true}
 
 cosmos-sdk-proto = {package = "cosmos-sdk-proto-althea", version = "0.20"}
-althea_proto = {version="0.9", optional=true}
+althea_proto = {version="0.10", optional=true}
 
 [dev-dependencies]
 rand = "0.9"
