@@ -5,6 +5,7 @@ pub mod bank;
 pub mod distribution;
 pub mod get;
 pub mod gov;
+pub mod ibc_transfer;
 pub mod invariant;
 pub mod mint;
 pub mod send;
