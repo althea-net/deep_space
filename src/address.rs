@@ -193,6 +193,18 @@ impl TryInto<EthAddress> for &Address {
     }
 }
 
+// Ethermint address conversion, note there's no way to determine from an address how the signers wallet is configured, if you convert Cosmos addressed
+// used with a non-eth signing scheme using this method that public key goes to a completely different address and the user will never be able to retrieve
+// funds sent to that address, so use caution when making assumptions.
+#[cfg(feature = "ethermint")]
+impl TryInto<EthAddress> for Address {
+    type Error = clarity::error::Error;
+
+    fn try_into(self) -> Result<EthAddress, Self::Error> {
+        EthAddress::from_slice(self.get_bytes())
+    }
+}
+
 #[cfg(feature = "ethermint")]
 impl From<EthAddress> for Address {
     fn from(value: EthAddress) -> Self {
@@ -345,6 +357,12 @@ fn test_address_conversion() {
 #[test]
 fn test_trait_conversions() {
     use std::convert::TryInto;
+
+    // Test TryInto<EthAddress> for Address
+    let test: Address = "cosmos1vlms2r8f6x7yxjh3ynyzc7ckarqd8a96ckjvrp"
+        .parse()
+        .unwrap();
+    let _eth_address: EthAddress = test.try_into().unwrap();
 
     // Test TryInto<EthAddress> for &Address
     let test: Address = "cosmos1vlms2r8f6x7yxjh3ynyzc7ckarqd8a96ckjvrp"
