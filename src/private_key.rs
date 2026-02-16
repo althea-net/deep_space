@@ -443,6 +443,21 @@ impl From<EthPrivateKey> for EthermintPrivateKey {
     }
 }
 
+#[cfg(feature = "ethermint")]
+impl EthermintPrivateKey {
+    /// Obtain a Clarity PrivateKey for a given EthermintPrivateKey
+    pub fn as_ethereum_key(&self) -> EthPrivateKey {
+        EthPrivateKey::from_bytes(self.0).unwrap()
+    }
+}
+
+#[cfg(feature = "ethermint")]
+impl Into<EthPrivateKey> for EthermintPrivateKey {
+    fn into(self) -> EthPrivateKey {
+        self.as_ethereum_key()
+    }
+}
+
 /// Create a private key using an arbitrary slice of bytes. This function is not resistant to side
 /// channel attacks and may reveal your secret and private key. It is on the other hand more compact
 /// than the bip32+bip39 logic.
