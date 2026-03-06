@@ -133,19 +133,16 @@ pub fn determine_min_fees_and_gas(input: &TxResponse) -> Option<FeeInfo> {
     if input.codespace == "sdk" {
         if let Some(err) = SdkErrorCode::from_code(input.code) {
             if err == SdkErrorCode::ErrInsufficientFee {
-                let parts = input.raw_log.split(':').nth(2);
-                if let Some(amounts) = parts {
-                    let mut coins = Vec::new();
-                    for item in amounts.split(',') {
-                        if let Ok(coin) = item.parse() {
-                            coins.push(coin);
-                        }
-                    }
-                    Some(FeeInfo::InsufficientFees { min_fees: coins })
-                } else {
-                    error!("Failed parsing insufficient fee error, probably changed gRPC error message response");
-                    None
+                // Try parsing the standard format first (e.g., "required: 50000ualtg,250000ufootoken")
+                if let Some(coins) = parse_standard_fee_format(&input.raw_log) {
+                    return Some(FeeInfo::InsufficientFees { min_fees: coins });
                 }
+                // Try parsing the global fee format (e.g., "provided fee < minimum global fee (0aalthea < 418668600000000000aalthea)")
+                if let Some(coins) = parse_global_fee_format(&input.raw_log) {
+                    return Some(FeeInfo::InsufficientFees { min_fees: coins });
+                }
+                error!("Failed parsing insufficient fee error, probably changed gRPC error message response");
+                None
             } else {
                 // some error other than fees
                 None
@@ -157,6 +154,46 @@ pub fn determine_min_fees_and_gas(input: &TxResponse) -> Option<FeeInfo> {
     } else {
         // some non-sdk error
         None
+    }
+}
+
+/// Parse the standard insufficient fee format: "required: 50000ualtg,250000ufootoken: insufficient fee"
+fn parse_standard_fee_format(raw_log: &str) -> Option<Vec<Coin>> {
+    let parts = raw_log.split(':').nth(2)?;
+    let mut coins = Vec::new();
+    for item in parts.split(',') {
+        if let Ok(coin) = item.trim().parse() {
+            coins.push(coin);
+        }
+    }
+    if coins.is_empty() {
+        None
+    } else {
+        Some(coins)
+    }
+}
+
+/// Parse the global minimum fee format: "provided fee < minimum global fee (0aalthea < 418668600000000000aalthea)"
+fn parse_global_fee_format(raw_log: &str) -> Option<Vec<Coin>> {
+    // Look for the pattern with parentheses containing the comparison
+    let start = raw_log.find('(')?;
+    let end = raw_log.find(')')?;
+
+    if start >= end {
+        return None;
+    }
+
+    let fee_part = &raw_log[start + 1..end];
+    // Extract the amount after the '<' separator (the required fee is on the right side)
+    let parts: Vec<&str> = fee_part.split('<').collect();
+    if parts.len() != 2 {
+        return None;
+    }
+
+    let required_fee = parts[1].trim();
+    match required_fee.parse::<Coin>() {
+        Ok(coin) => Some(vec![coin]),
+        Err(_) => None,
     }
 }
 
@@ -265,5 +302,34 @@ mod tests {
 
         // Test that the hash is uppercase
         assert_eq!(hash, hash.to_uppercase());
+    }
+
+    #[test]
+    fn test_determine_fees_global_minimum_fee() {
+        let global_fee_tx_response = TxResponse {
+            height: 0,
+            txhash: "3B07E4A68F2260717E45F4469CC197DBC2637858C33B4790B83F4AE9FC058570".to_string(),
+            codespace: "sdk".to_string(),
+            code: 13,
+            data: String::new(),
+            raw_log: "provided fee < minimum global fee (0aalthea < 418668600000000000aalthea). Please increase the gas price.: insufficient fee".to_string(),
+            logs: Vec::new(),
+            info: String::new(),
+            gas_used: 0,
+            gas_wanted: 0,
+            tx: None,
+            timestamp: String::new(),
+            events: Vec::new(),
+        };
+        let correct_output = Some(FeeInfo::InsufficientFees {
+            min_fees: vec![Coin {
+                denom: "aalthea".to_string(),
+                amount: 418668600000000000u64.into(),
+            }],
+        });
+        assert_eq!(
+            determine_min_fees_and_gas(&global_fee_tx_response),
+            correct_output
+        );
     }
 }
