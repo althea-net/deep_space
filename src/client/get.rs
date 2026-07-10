@@ -225,8 +225,11 @@ impl Contact {
         if let Some(v) = res.unwrap().into_inner().params {
             match v.block {
                 Some(v) => Ok(BlockParams {
-                    max_bytes: u64::try_from(v.max_bytes)?,
-                    max_gas: Some(u64::try_from(v.max_gas)?),
+                    // max_bytes and max_gas may be set to -1 by the chain to indicate
+                    // no limit, which does not fit in a u64, so we treat a negative
+                    // value as 'no limit' (None / 0) rather than erroring out
+                    max_bytes: u64::try_from(v.max_bytes).unwrap_or(0u64),
+                    max_gas: u64::try_from(v.max_gas).ok(),
                 }),
                 None => Err(CosmosGrpcError::BadResponse(
                     "No BlockParams? Deep Space/protos probably need an update".to_string(),
